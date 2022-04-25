@@ -1,0 +1,124 @@
+Many browsers already support <script type="module" src="bundle.js"></script>, but the project is setup with support for legacy browsers, such as Marcus' newly supported Firefox 60.7 (62+ supports modules). Even if modules are supported Babel may still be needed.
+
+NODEJS:
+nodejs is a framework that can execute javascript, and it also provide support for developing code. It's the basis for npm (Node Package Manager - this is a command line utility, as well as a web-based service for third party javascript package distribution). nodejs HAS to be manually downloaded and installed from the nodejs webpage. nodejs gives the user to install npm along with it. When using npm to install third party packages these are saved into `node_modules'.
+
+DEPLOYMENT:
+Several steps need to be made when deploying the code to older browsers:
+	- bundling (combining all javascript needed into a single file): this is generally useful as it also allows the code to be minified for faster loading. Bunding is not strictly necessary, but useful.
+	- transpiling (transcribing + compiling = transcribing = rewriting the code into a version of javascript supported by some older browser): this IS required when deploying to older browsers.
+	- polyfilling (adding in additional needed functions instead of just rewriting existing ones): Array.includes, Promise.allSettled,... require polyfills. These can apparently be added in many places - the code itself, but probably it's best to somehow include them in babel. 
+
+
+DEVELOPMENT:
+It's best to just develop the final outcome. The bundled and transpiled code will be difficult to use during debugging. Using a 'sourcemap' helps during debugging, as it shows where the error is in the original code. This way we can work on the end product while using the source files.
+
+	
+OVERVIEW:
+
+Bundlers and transpilers are just modules, and can be installed using npm. Aftr being installed they can be run from the command line, e.g.: rollup -c. The commands of course differ from module to module.
+
+Several bundling scripts are available, such as webpack, esbuild, rollup,... Rollup is used because it features treeshaking (removal of functions that are duplicated, or not used at all).
+
+Babel seems to be the most common transpiling method, with large support.
+
+
+FILES:
+.gitignore			: which files git should not track
+package.json		: project npm config and dependency tracking
+package-lock.json	: project config tracking also dependency dependencies
+rollup.config.js	: rollup config
+.babelrc  			: babel config
+
+CONFIG FILES:
+package.json contains {
+  "name": "",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {  					scripts holds inline definitions of scripts that can be run when calling "npm run <scriptname>".
+    "build": "rollup -c",			call rollup using it's config.
+    "start": "serve public",		serve the "public" folder by default
+    "watch": "rollup -c -w",		automatically call rollup on files change.
+	"test": "node test/test.js",	test componenets
+    "pretest": "npm run build"		rebuild before testing
+  },
+  "author": "Aljaz Kotnik",
+  "license": "ISC",
+  "dependencies": {					libraries needed in the compiled code.
+    "d3": "^6.7.0",
+    "mobx": "^6.2.0"
+  },
+  "devDependencies": {				libraries needed to compile such as rollup and babel etc.
+    "@rollup/plugin-commonjs": "^18.0.0",
+    "@rollup/plugin-node-resolve": "^11.2.1",
+    "@rollup/plugin-replace": "^2.4.2",
+    "rollup": "^2.45.2",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-replace": "^2.2.0",
+    "serve": "^11.3.2"
+  }
+}
+
+
+
+
+
+rollup.config.js includes:
+
+
+
+import resolve from '@rollup/plugin-node-resolve';			A Rollup plugin which locates modules using the Node resolution algorithm (e.g.: to go look for the appropriate module in /node_modules)
+import commonjs from '@rollup/plugin-commonjs';				A Rollup plugin to convert CommonJS modules to ES6, so they can be included in a Rollup bundle
+import replace from '@rollup/plugin-replace';				A Rollup plugin which replaces targeted strings in files while bundling.
+import babel from '@rollup/plugin-babel';					A Rollup plugin for seamless integration between Rollup and Babel.
+
+export default {
+	input: 'src/main.js',									entry point for the bundling
+	output: {
+		file: 'public/bundle.js',							exit bundled file
+		format: 'iife', 									see below 
+		sourcemap: true										sourcemaps are used when trying to un-minify compiled code/
+	},
+	plugins: [												call the plugins in a specific order. The order can change the end results. babel must be after commonjs!
+		resolve(), 
+		commonjs(), 
+		replace({preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify( 'development' ) }),
+		babel({exclude: "node_modules/**"}),
+		commonjs(),
+		babel({exclude: "node_modules/**"}),
+    
+	]
+};
+
+
+OUTPUT FORMATS:
+iife- Immediately Invoked Function Expression (wrapper anon function).
+cjs - Common JS (using global.exports to facilitate exporting)
+es  - ES modules (use import export statement)
+umd - Universal Module Definition
+	
+ES importing exporting:
+import <default>, {<other named exports>} from "<file>", e.g.:
+import A, {B, C} from "abc.js"
+
+
+.babelrc contains:
+
+{	
+	"presets": [
+		["@babel/preset-env", {							preset of transpilation options
+			useBuiltIns: "usage",
+			corejs: {version: 3, proposals: "true"},
+		}],
+	],
+	
+	"plugins": [
+		[
+		  "@babel/plugin-proposal-class-properties", {"loose": true}
+		]
+	]
+}
+
+
+

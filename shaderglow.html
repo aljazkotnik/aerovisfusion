@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)http://stemkoski.github.io/Three.js/Shader-Glow.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>Shader - Glow (Three.js)</title>
+	
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="./shaderglow_files/base.css">
+</head>
+<body>
+
+<script src="./shaderglow_files/Three58.js.download"></script>
+<script src="./shaderglow_files/Detector.js.download"></script>
+<script src="./shaderglow_files/Stats.js.download"></script>
+<script src="./shaderglow_files/OrbitControls.js.download"></script>
+<script src="./shaderglow_files/THREEx.KeyboardState.js.download"></script>
+<script src="./shaderglow_files/THREEx.FullScreen.js.download"></script>
+<script src="./shaderglow_files/THREEx.WindowResize.js.download"></script>
+<!-- GUI for experimenting with values -->		
+<script type="text/javascript" src="./shaderglow_files/DAT.GUI.min.js.download"></script>
+
+<!-- to create a better cube glow, we need a more rounded cube... -->
+<script src="./shaderglow_files/SubdivisionModifier.js.download"></script>
+
+
+<!-- ---------------- Custom Shader Code ------------------------ -->
+<script id="vertexShader" type="x-shader/x-vertex">
+uniform vec3 viewVector;
+uniform float c;
+uniform float p;
+varying float intensity;
+void main() 
+{
+    vec3 vNormal = normalize( normalMatrix * normal );
+	vec3 vNormel = normalize( normalMatrix * viewVector );
+	intensity = pow( c - dot(vNormal, vNormel), p );
+	
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}
+</script>
+
+<!-- fragment shader a.k.a. pixel shader -->
+<script id="fragmentShader" type="x-shader/x-vertex"> 
+uniform vec3 glowColor;
+varying float intensity;
+void main() 
+{
+	vec3 glow = glowColor * intensity;
+    gl_FragColor = vec4( glow, 1.0 );
+}
+</script>
+<!-- ----------------------------------------------------------- -->
+
+<!-- jQuery code to display an information button and box when clicked. -->
+<script src="./shaderglow_files/jquery-1.9.1.js.download"></script>
+<script src="./shaderglow_files/jquery-ui.js.download"></script>
+<link rel="stylesheet" href="./shaderglow_files/jquery-ui.css">
+<link rel="stylesheet" href="./shaderglow_files/info.css">
+<script src="./shaderglow_files/info.js.download"></script>
+<div id="infoButton" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false" style="z-index: 2; background: rgba(0, 0, 0, 0); opacity: 0.9; position: absolute; top: 4px; left: 4px;"><span class="ui-button-text"><img width="32" height="32" src="./shaderglow_files/icon-info.png"></span></div>
+
+<!-- ------------------------------------------------------------ -->
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px">
+	<canvas width="1880" height="939"></canvas>
+	
+	<div style="cursor: pointer; width: 80px; opacity: 0.9; z-index: 100; position: absolute; bottom: 0px;">
+		<div style="text-align: left; line-height: 1.2em; background-color: rgb(8, 8, 24); padding: 0px 0px 3px 3px;">
+			<div style="font-family: Helvetica, Arial, sans-serif; font-size: 9px; color: rgb(0, 255, 255); font-weight: bold;">30 FPS (0-32)
+			</div>
+
+			<div style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 255);">
+			</div>
+		</div>
+		
+		<div style="text-align: left; line-height: 1.2em; background-color: rgb(8, 24, 8); padding: 0px 0px 3px 3px; display: none;">
+			<div style="font-family: Helvetica, Arial, sans-serif; font-size: 9px; color: rgb(0, 255, 0); font-weight: bold;">34 MS (1-9304043)
+			</div>
+			
+			<div style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 0);">
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+/*
+	Three.js "tutorials by example"
+	Author: Lee Stemkoski
+	Date: July 2013 (three.js v59dev)
+*/
+
+// MAIN
+
+// standard global variables
+var container, scene, camera, renderer, controls, stats;
+var keyboard = new THREEx.KeyboardState();
+var clock = new THREE.Clock();
+// custom global variables
+var cube;
+
+init();
+animate();
+
+// FUNCTIONS 		
+function init() 
+{
+	// SCENE
+	scene = new THREE.Scene();
+	// CAMERA
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	scene.add(camera);
+	camera.position.set(0,100,400);
+	camera.lookAt(scene.position);	
+	// RENDERER
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer(); 
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	container = document.getElementById( 'ThreeJS' );
+	container.appendChild( renderer.domElement );
+	// EVENTS
+	THREEx.WindowResize(renderer, camera);
+	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+	// CONTROLS
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.addEventListener( 'change', render );
+	// STATS
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.bottom = '0px';
+	stats.domElement.style.zIndex = 100;
+	container.appendChild( stats.domElement );
+	// LIGHT
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+	// FLOOR
+	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.repeat.set( 10, 10 );
+	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -100.5;
+	floor.rotation.x = Math.PI / 2;
+	//scene.add(floor);
+	
+	// SKYBOX/FOG
+	var imagePrefix = "images/dawnmountain-";
+	var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
+	var imageSuffix = ".png";
+	var skyGeometry = new THREE.CubeGeometry( 5000, 5000, 5000 );	
+	
+	var materialArray = [];
+	for (var i = 0; i < 6; i++)
+		materialArray.push( new THREE.MeshBasicMaterial({
+			map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
+			side: THREE.BackSide
+		}));
+	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+	var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+	scene.add( skyBox );
+	
+	////////////
+	// CUSTOM //
+	////////////
+
+	var sphereGeom = new THREE.SphereGeometry(100, 32, 16);
+    
+	var moonTexture = THREE.ImageUtils.loadTexture( 'images/moon.jpg' );
+	var moonMaterial = new THREE.MeshBasicMaterial( { map: moonTexture } );
+    var moon = new THREE.Mesh(sphereGeom, moonMaterial);
+	moon.position.set(150,0,-150);
+    scene.add(moon);
+
+	// create custom material from the shader code above
+	//   that is within specially labeled script tags
+	var customMaterial = new THREE.ShaderMaterial( 
+	{
+	    uniforms: 
+		{ 
+			"c":   { type: "f", value: 1.0 },
+			"p":   { type: "f", value: 1.4 },
+			glowColor: { type: "c", value: new THREE.Color(0xffff00) },
+			viewVector: { type: "v3", value: camera.position }
+		},
+		vertexShader:   document.getElementById( 'vertexShader'   ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+		side: THREE.FrontSide,
+		blending: THREE.AdditiveBlending,
+		transparent: true
+	}   );
+		
+	this.moonGlow = new THREE.Mesh( sphereGeom.clone(), customMaterial.clone() );
+    moonGlow.position = moon.position;
+	moonGlow.scale.multiplyScalar(1.2);
+	scene.add( moonGlow );
+	
+	var cubeGeom = new THREE.CubeGeometry(150,150,150,2,2,2);
+	var crateTexture = THREE.ImageUtils.loadTexture( 'images/crate.png' );
+	var crateMaterial = new THREE.MeshBasicMaterial( { map: crateTexture } );
+    this.crate = new THREE.Mesh(cubeGeom, crateMaterial);
+	crate.position.set(-150,0,-150);
+    scene.add(crate);
+
+	var smoothCubeGeom = cubeGeom.clone();
+	var modifier = new THREE.SubdivisionModifier( 2 );
+	modifier.modify( smoothCubeGeom ); 
+
+	this.crateGlow = new THREE.Mesh( smoothCubeGeom, customMaterial.clone() );
+    crateGlow.position = crate.position;
+	crateGlow.scale.multiplyScalar(1.5);
+	scene.add( crateGlow );
+	
+	/////////
+	// GUI //
+	/////////
+	
+	gui = new dat.GUI();
+	parameters = 
+	{ c: 1.0, p: 1.4, bs: false, fs: true, nb: false, ab: true, mv: true, color: "#ffff00" };
+	
+	var top = gui.addFolder('Glow Shader Attributes');
+	
+	var cGUI = top.add( parameters, 'c' ).min(0.0).max(1.0).step(0.01).name("c").listen();
+	cGUI.onChange( function(value) { 
+		moonGlow.material.uniforms[ "c" ].value = parameters.c; 
+		crateGlow.material.uniforms[ "c" ].value = parameters.c; 
+	});
+	
+	var pGUI = top.add( parameters, 'p' ).min(0.0).max(6.0).step(0.01).name("p").listen();
+	pGUI.onChange( function(value) { 
+		moonGlow.material.uniforms[ "p" ].value = parameters.p; 
+		crateGlow.material.uniforms[ "p" ].value = parameters.p; 	
+	});
+
+	var glowColor = top.addColor( parameters, 'color' ).name('Glow Color').listen();
+	glowColor.onChange( function(value) {
+		moonGlow.material.uniforms.glowColor.value.setHex( value.replace("#", "0x"));   
+		crateGlow.material.uniforms.glowColor.value.setHex( value.replace("#", "0x"));   
+	});
+	top.open();
+	
+	// toggle front side / back side 
+	var folder1 = gui.addFolder('Render side');
+	var fsGUI = folder1.add( parameters, 'fs' ).name("THREE.FrontSide").listen();
+	fsGUI.onChange( function(value) { 
+	    if (value) 
+	    {
+	        bsGUI.setValue(false);
+			moonGlow.material.side = THREE.FrontSide;  
+			crateGlow.material.side = THREE.FrontSide;  
+	    }
+	});
+	var bsGUI = folder1.add( parameters, 'bs' ).name("THREE.BackSide").listen();
+	bsGUI.onChange( function(value) { 
+		if (value)
+		{
+			fsGUI.setValue(false);
+			moonGlow.material.side = THREE.BackSide;  
+			crateGlow.material.side = THREE.BackSide;  
+		}
+	});
+	folder1.open();
+	
+	// toggle normal blending / additive blending
+	var folder2 = gui.addFolder('Blending style');
+	var nbGUI = folder2.add( parameters, 'nb' ).name("THREE.NormalBlending").listen();
+	nbGUI.onChange( function(value) { 
+	    if (value) 
+	    {
+	        abGUI.setValue(false);
+			moonGlow.material.blending = THREE.NormalBlending;  
+			crateGlow.material.blending = THREE.NormalBlending;
+	    }
+	});
+	var abGUI = folder2.add( parameters, 'ab' ).name("THREE.AdditiveBlending").listen();
+	abGUI.onChange( function(value) { 
+		if (value)
+		{
+			nbGUI.setValue(false);
+			moonGlow.material.blending = THREE.AdditiveBlending; 
+			crateGlow.material.blending = THREE.AdditiveBlending;
+		}
+	});
+	folder2.open();
+
+    // toggle mesh visibility
+	var folder3 = gui.addFolder('Miscellaneous');
+	var mvGUI = folder3.add( parameters, 'mv' ).name("Meshes-Visible").listen();
+	mvGUI.onChange( function(value) { 
+		moon.visible = value; 
+		crate.visible = value;
+	});
+	folder3.open();
+	
+}
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();		
+	update();
+}
+
+function update()
+{
+	controls.update();
+	stats.update();
+	moonGlow.material.uniforms.viewVector.value = 
+		new THREE.Vector3().subVectors( camera.position, moonGlow.position );
+	crateGlow.material.uniforms.viewVector.value = 
+		new THREE.Vector3().subVectors( camera.position, crateGlow.position );
+}
+
+function render() 
+{
+	renderer.render( scene, camera );
+}
+
+</script><div class="dg ac"><div class="dg main a" style="width: 245px;"><div style="width: 6px; margin-left: -3px; height: 336px; cursor: ew-resize; position: absolute;"></div><ul style="height: auto;"><li class="folder"><div class="dg"><ul><li class="title">Glow Shader Attributes</li><li class="cr number has-slider"><div><span class="property-name">c</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">p</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 23.3333%;"></div></div></div></div></li><li class="cr string color" style="border-left-color: rgb(255, 255, 0);"><div><span class="property-name">Glow Color</span><div class="c"><input type="text" style="outline: none; text-align: center; color: rgb(255, 255, 255); border: 0px; font-weight: bold; text-shadow: rgba(0, 0, 0, 0.7) 0px 1px 1px; background-color: rgb(255, 255, 0);"><div class="selector" style="width: 122px; height: 102px; padding: 3px; background-color: rgb(34, 34, 34); box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 3px;"><div class="field-knob" style="position: absolute; width: 12px; height: 12px; border: 2px solid rgb(255, 255, 255); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 3px; border-radius: 12px; z-index: 1; margin-left: 93px; margin-top: -7px; background-color: rgb(255, 255, 0);"></div><div class="saturation-field" style="width: 100px; height: 100px; border: 1px solid rgb(85, 85, 85); margin-right: 3px; display: inline-block; cursor: pointer; background: -webkit-linear-gradient(left, rgb(255, 255, 255) 0%, rgb(255, 255, 0) 100%);"><div style="width: 100%; height: 100%; background: -webkit-linear-gradient(top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 100%);"></div></div><div class="hue-field" style="width: 15px; height: 100px; display: inline-block; border: 1px solid rgb(85, 85, 85); cursor: ns-resize; background: -webkit-linear-gradient(top, rgb(255, 0, 0) 0%, rgb(255, 0, 255) 17%, rgb(0, 0, 255) 34%, rgb(0, 255, 255) 50%, rgb(0, 255, 0) 67%, rgb(255, 255, 0) 84%, rgb(255, 0, 0) 100%);"><div class="hue-knob" style="position: absolute; width: 15px; height: 2px; border-right: 4px solid rgb(255, 255, 255); z-index: 1; margin-top: 83.3333px;"></div></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Render side</li><li class="cr boolean"><div><span class="property-name">THREE.FrontSide</span><div class="c"><input type="checkbox" checked="checked"></div></div></li><li class="cr boolean"><div><span class="property-name">THREE.BackSide</span><div class="c"><input type="checkbox"></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Blending style</li><li class="cr boolean"><div><span class="property-name">THREE.NormalBlending</span><div class="c"><input type="checkbox"></div></div></li><li class="cr boolean"><div><span class="property-name">THREE.AdditiveBlending</span><div class="c"><input type="checkbox" checked="checked"></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul><li class="title">Miscellaneous</li><li class="cr boolean"><div><span class="property-name">Meshes-Visible</span><div class="c"><input type="checkbox" checked="checked"></div></div></li></ul></div></li></ul><div class="close-button" style="width: 245px;">Close Controls</div></div></div>
+
+
+
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="infoBox" style="display: none; position: absolute;" aria-labelledby="ui-id-1"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-1" class="ui-dialog-title">Demo Information</span><button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span class="ui-button-text">close</span></button></div><div id="infoBox" style="background: rgba(255, 255, 255, 0.5);" class="ui-dialog-content ui-widget-content">
+For a glow effect, try: <br>
+ c=0.05, p=4.5, THREE.FrontSide (sphere) or<br>
+ c=0.2, p=1.4, THREE.FrontSide (cube)<br>
+For a halo effect, try: <br>
+ c=0.6, p=6, THREE.BackSide <br>
+For a shell effect, try: <br>
+ c=1, p=2, THREE.FrontSide <br>
+ (effects work best on spheres)<br><br>
+This three.js demo is part of a collection at
+<a href="http://stemkoski.github.io/Three.js/">http://stemkoski.github.io/Three.js/</a>
+</div><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div></body></html>
