@@ -13,6 +13,7 @@
     "gl-matrix": "^3.3.0",
     "node": "^16.0.0",
     "regenerator-runtime": "^0.13.9",
+    "stats.js": "^0.17.0",
     "three": "^0.139.2",
     "twgl.js": "^4.19.2"
   },

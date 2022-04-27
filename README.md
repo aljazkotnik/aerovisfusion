@@ -40,8 +40,12 @@ AR visualisation:
 
 
 
+Geometrical annotations allow cration of training datasets for AI feature recognition.
+
 
 MISCELLANEOUS:
+Try to implement virtual smoke visualisation by seeding particles. The particles move along streamlines, but implicitly - their path is influenced at every step. By adjusting their weight, and subsequently inertia the impact of hte differences in fluid properties (smoke vs air) could be assessed.
+
 Ultimately the entry point for the user is the dbslice dash. The user filters out subsets, and observes high level data behavior. Then through the data levels they arrive to the detailed data. At the detailed data the actual flow insights are gathered.
 
 A design, or concept exploration process is done step by step, and new data is generated every step. The web based dbslice available to users should have an option to upload new data on-the-go. Maybe the metadata can be stored in a background SQL database. An initial query can be made to retrieve all the tasks, at which point the crossfilter indexing is set up to support the interactions.

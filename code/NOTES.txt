@@ -1,0 +1,15 @@
+AIMING: How should it work?
+The current setup makes it difficult to judge where the aim sphere actually is. Maybe if I add a slider to adjust it's size? Maybe the tool can also adjust the distance from the camera?
+
+Aiming can be done in world to avoid having another canvas on top. A problem occurs when the aim sphre is configured to be on the other side of the target.
+
+A svg module can be developed to control the HUD. 
+
+OrbitControls are nice and intuitive, especially when the navigation should be compatible with the touchpad.
+
+
+
+
+
+FRAMERATE DISPLAYER: should make it work again.
+
