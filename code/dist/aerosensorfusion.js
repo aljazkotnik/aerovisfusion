@@ -46,51 +46,54 @@
   b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
   });
 
-  var template$1 = "\n<div\">\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Range</label><input class=\"range\" type=\"range\">\n  </div>\n    \n  <br>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Size</label><input class=\"size\" type=\"range\">\n  </div>\n    \n</div>\n"; // This should control the aimSphereDistance and aimSphereRadius variables.
+  var template$1 = "\n<div>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Range</label><input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Size</label><input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n\t\n  <div style=\"float: right;\">\n\t<button class=\"icon remove\">\uD83E\uDDFD</button>\n  </div>\n</div>\n"; //    <button class="icon add">🎯</button>
+  //	<button class="icon edit">🔧</button>
+  // This should control the aimSphereDistance and aimSphereRadius variables.
 
   var AnnotationInterface = /*#__PURE__*/function () {
     function AnnotationInterface() {
       _classCallCheck(this, AnnotationInterface);
 
+      this.erase = false;
       var obj = this;
-      obj.node = html2element(template$1); // Default range for the sliders is 0 - 100. How should the setting of min and max be made?
+      obj.node = html2element(template$1); // The inputs are used as controllers - -1 is negative and +1 is positive increment.
 
-      obj.aimSphereDistanceInput = obj.node.querySelector("input.range");
-      obj.aimSphereRadiusInput = obj.node.querySelector("input.size");
+      obj.distanceInput = obj.node.querySelector("input.range");
+      obj.radiusInput = obj.node.querySelector("input.size");
+      obj.distanceInput.addEventListener("mouseout", function () {
+        obj.distanceInput.value = 0;
+      });
+      obj.distanceInput.addEventListener("mouseup", function () {
+        obj.distanceInput.value = 0;
+      });
+      obj.radiusInput.addEventListener("mouseout", function () {
+        obj.radiusInput.value = 0;
+      });
+      obj.radiusInput.addEventListener("mouseup", function () {
+        obj.radiusInput.value = 0;
+      }); // The buttons for handling annotation spheres.
+
+      obj.removeSphereButton = obj.node.querySelector("button.remove");
+
+      obj.removeSphereButton.onclick = function () {
+        // Toggle the button, and change its appearance.
+        obj.erase = !obj.erase;
+        obj.removeSphereButton.style.border = "2px solid ".concat(obj.erase ? "gainsboro" : "black");
+      }; // onclick
+
     } // constructor
 
 
     _createClass(AnnotationInterface, [{
-      key: "aimSphereDistanceConfig",
-      value: function aimSphereDistanceConfig(min, max, val) {
-        var obj = this;
-        obj.aimSphereDistanceInput.min = min;
-        obj.aimSphereDistanceInput.max = max;
-        obj.aimSphereDistanceInput.value = val;
-        obj.aimSphereDistanceInput.step = (max - min) / 100;
-      } // aimSphereDistanceConfig
-
-    }, {
-      key: "aimSphereRadiusConfig",
-      value: function aimSphereRadiusConfig(min, max, val) {
-        // Can't change the radius after it's been created, but the geometry can be multiplied by a scalar.
-        var obj = this;
-        obj.aimSphereRadiusInput.min = min;
-        obj.aimSphereRadiusInput.max = max;
-        obj.aimSphereRadiusInput.value = val;
-        obj.aimSphereRadiusInput.step = (max - min) / 100;
-      } // aimSphereRadiusInput
-
-    }, {
-      key: "aimSphereDistance",
+      key: "sphereDistance",
       get: function get() {
-        return Number(this.aimSphereDistanceInput.value);
+        return Number(this.distanceInput.value);
       } // aimSphereDistance
 
     }, {
-      key: "aimSphereRadius",
+      key: "sphereRadius",
       get: function get() {
-        return Number(this.aimSphereRadiusInput.value);
+        return Number(this.radiusInput.value);
       } // aimSphereRadius
 
     }]);
@@ -32623,11 +32626,9 @@
   document.body.appendChild(hud.node);
   var VIEW_ANGLE = 45; // 70
 
-  var NEAR = 0.1; // 0.01
+  var NEAR = 0.01; // 0.01
 
   var FAR = 20000; // 10
-
-  var cameraViewVector = new Vector3(); // Instantiate vector once and resue. Apparently good for speed?
 
   var camera = new PerspectiveCamera(VIEW_ANGLE, window.innerWidth / window.innerHeight, NEAR, FAR);
   camera.position.set(0, 0, 400); // Camera starting position
@@ -32636,11 +32637,11 @@
 
   var light = new DirectionalLight(0xffffff, 1);
   light.position.set(1, 1, 1).normalize();
-  scene.add(light); // A raycaster to help with interactions.
+  scene.add(light); // RAYCASTING HELPERS
 
   var intersects, intersected;
   var pointer = new Vector2();
-  var raycaster = new Raycaster(); // Make a Moon.
+  var raycaster = new Raycaster(); // MOON.
   // SphereGeometry(radius : Float, widthSegments : Integer, heightSegments : Integer, phiStart : Float, phiLength : Float, thetaStart : Float, thetaLength : Float)
 
   var moonGeom = new SphereGeometry(100, 32, 16);
@@ -32650,7 +32651,7 @@
   });
   var moon = new Mesh(moonGeom, moonMaterial);
   moon.position.set(0, 0, -150);
-  scene.add(moon); // Make the earth. It's diameter is supposed to be 4 times larger.
+  scene.add(moon); // EARTH. It's diameter is supposed to be 4 times larger.
 
   var earthGeom = new SphereGeometry(400, 32, 16);
   var earthTexture = new TextureLoader().load('./assets/earth.jpg');
@@ -32659,33 +32660,10 @@
   });
   var earth = new Mesh(earthGeom, earthMaterial);
   earth.position.set(0, 0, -1000);
-  scene.add(earth); // Add in many boxes to test out the pointing initially.
-
-  var box = new BoxGeometry(20, 20, 20);
-  var satellites = [];
-
-  for (var i = 0; i < 200; i++) {
-    var object = new Mesh(box, new MeshLambertMaterial({
-      color: Math.random() * 0xffffff
-    })); // Position the box at a random position vector from earth origin at (0,0,-1000)
-
-    var a = Math.random();
-    var x = 2 * Math.random() - 1;
-    var y = 2 * Math.random() - 1;
-    var z = 2 * Math.random() - 1;
-    var L = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-    object.position.set(x / L * (a * 100 + 400), y / L * (a * 100 + 400), z / L * (a * 100 + 400) - 1000); // object.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI)
-
-    object.rotation.x = Math.random() * 2 * Math.PI;
-    object.rotation.y = Math.random() * 2 * Math.PI;
-    object.rotation.z = Math.random() * 2 * Math.PI;
-    object.scale.x = Math.random() + 0.5;
-    object.scale.y = Math.random() + 0.5;
-    object.scale.z = Math.random() + 0.5;
-    scene.add(object);
-    satellites.push(object);
-  } // Glow material
-
+  scene.add(earth); // ENVIRONMENT
+  // It's just a square within which the scene is set! So the images are set onto the square sides to make the 3D illusion.
+  // Could be nice to add some stars?
+  // DEFINE THE ANNOTATION SPHERE AND APPEARANCE
 
   var customMaterial = new ShaderMaterial({
     uniforms: {
@@ -32711,51 +32689,35 @@
     side: FrontSide,
     blending: AdditiveBlending,
     transparent: true
-  }); // var moonGlow = new THREE.Mesh( moonGeom.clone(), customMaterial.clone() );
-  // moonGlow.position.set(moon.position.x, moon.position.y, moon.position.z);
-  // moonGlow.scale.multiplyScalar(1.2);
-  // scene.add( moonGlow );
-  // ENVIRONMENT
-  // It's just a square within which the scene is set! So the images are set onto the square sides to make the 3D illusion.
-  // Could be nice to add some stars?
-  // AIMING AID
-  // What about FPS aiming, but it produces squares? A raycaster is used to compute the intersection of an object and the view vector. At the intersection a box is placed. If a box is targeted, then a box is positioned near it. And a laser aim can be added also if needed.
-  // But it'll be dificult to envelop features in the space.
-  // Click on object to change size? 
-  // Assume a isometric plane based on camera position? And allow drag and drop based on that? And panning hte camera moves the plane? Maybe instead of the aiming the sphere is positioned by clicking on the mouse? Maybe the aim sphere hould follow the mouse?
-  // How to delete parts of the annotation that are not well placed?
-  // Add an aiming aid. The aim geometry is controlled through the HUD UI. So configure the slider there, and then use the value from it.
+  });
+  var annotationSphereGeom = new SphereGeometry(1, 32, 16);
+  var annotationSphereMaterial = customMaterial.clone();
+  new Mesh(annotationSphereGeom, annotationSphereMaterial); // ADD SATELLITES TO SCENE
 
-  hud.aui.aimSphereRadiusConfig(1, 10, 1);
-  hud.aui.aimSphereDistanceConfig(NEAR, NEAR + 400, NEAR + 100);
-  var aimGeom = new SphereGeometry(1, 32, 16);
-  var aimMaterial = customMaterial.clone();
-  aimMaterial.uniforms.glowColor = {
-    type: "c",
-    value: new Color("#ff000e")
-  };
-  var aimSphere = new Mesh(aimGeom, aimMaterial);
-  positionAimSphere();
-  scene.add(aimSphere);
+  var box = new BoxGeometry(20, 20, 20);
+  var satellites = [];
 
-  function positionAimSphere() {
-    camera.getWorldDirection(cameraViewVector);
-    aimSphere.position.set(camera.position.x + hud.aui.aimSphereDistance * cameraViewVector.x, camera.position.y + hud.aui.aimSphereDistance * cameraViewVector.y, camera.position.z + hud.aui.aimSphereDistance * cameraViewVector.z);
-  } // positionAimSphere
+  for (var i = 0; i < 200; i++) {
+    var object = new Mesh(box, new MeshLambertMaterial({
+      color: Math.random() * 0xffffff
+    })); // Position the box at a random position vector from earth origin at (0,0,-1000)
 
+    var a = Math.random();
+    var x = 2 * Math.random() - 1;
+    var y = 2 * Math.random() - 1;
+    var z = 2 * Math.random() - 1;
+    var L = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+    object.position.set(x / L * (a * 100 + 400), y / L * (a * 100 + 400), z / L * (a * 100 + 400) - 1000); // object.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI)
 
-  function scaleAimSphere() {
-    aimSphere.scale.setScalar(hud.aui.aimSphereRadius);
-  } // scaleAimSphere
-
-
-  hud.aui.aimSphereRadiusInput.oninput = function () {
-    scaleAimSphere();
-  };
-
-  hud.aui.aimSphereDistanceInput.oninput = function () {
-    positionAimSphere();
-  }; // SETUP THE ACTUAL LOOP
+    object.rotation.x = Math.random() * 2 * Math.PI;
+    object.rotation.y = Math.random() * 2 * Math.PI;
+    object.rotation.z = Math.random() * 2 * Math.PI;
+    object.scale.x = Math.random() + 0.5;
+    object.scale.y = Math.random() + 0.5;
+    object.scale.z = Math.random() + 0.5;
+    scene.add(object);
+    satellites.push(object);
+  } // SETUP THE ACTUAL LOOP
   // renderer.domElement is created in renderer.
 
 
@@ -32770,23 +32732,153 @@
   // No FPS controls - they don't work on an iPad!!!
 
   var controls = new OrbitControls(camera, renderer.domElement);
-  controls.addEventListener('change', render); // ANNOTATIONS
+  controls.addEventListener('change', render); // Aim the controls at the center of hte earth - it's the earth that has satellites around it.
 
+  controls.target.set(0, 0, -1000); // ANNOTATIONS
+  // What about moving the aim sphere onth escrene? That could be done with drag and drop?
+  // Or just use 3 sliders for x, y, and z, and one for radius? Then the camera will be able to move around independently. But then they need to know the size of the annotatable space. Maybe that's not so much a problem?
+  // Start positioning by where the camera is, and then adjust?
+  // Just place the item where it is, and then allows adjustments? So make the sphere as it is now, and then use a raycaster to see if the object should be selected, and allow the sphere to be moved in the current x-y plane?
+  // Simplest demo is to position via screen position, and use sliders, and then confirm? Maybe with a submit button in the UI. And no aiming sphere - a sphere should just appear when it's first added.
+
+  var annotations = [];
+
+  function addSphere(x, y, z, r) {
+    // The annotation size should be determined by the aiming sphere.
+    var annotationGlow = new Mesh(annotationSphereGeom.clone(), customMaterial.clone()); // THE POSITION SHOULD COME FROM THE MOUSE AND THE INTERSECT.
+
+    annotationGlow.position.set(x, y, z);
+    annotationGlow.scale.setScalar(r);
+    scene.add(annotationGlow);
+    annotations.push(annotationGlow);
+  } // addSphere
+
+
+  function removeSphere(s) {
+    scene.remove(s);
+    annotations.splice(annotations.indexOf(s), 1);
+  } // removeSphere
+
+
+  function returnFirstIntersection(candidates) {
+    raycaster.setFromCamera(pointer, camera);
+    intersects = raycaster.intersectObjects(candidates, false);
+    return intersects[0];
+  } // returnFirstIntersection
+
+
+  function mouseEventMovementDistanceSquared(origin, finish) {
+    return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
+  } // mouseEventMovementDistanceSquared
+  // Maybe add the sphere on mouseup - then if it's just a click the sphere can be added. 
+  // This approach means that the user cannot draw - they specifically add in individual spheres.
+
+
+  var selectedSphere;
+  var mouseDownEvent;
+  renderer.domElement.addEventListener("mousedown", function (e) {
+    mouseDownEvent = e;
+  }); // addEventListener
 
   renderer.domElement.addEventListener("mousedown", function (e) {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      console.log(e); // addSphere();
+    var p = returnFirstIntersection(annotations); // First uncolor all spheres.
+
+    annotations.forEach(function (a) {
+      a.material.uniforms.glowColor.value.setRGB(1, 1, 0);
+    }); // forEach
+    // Change that spheres color.
+
+    if (p) {
+      selectedSphere = p.object;
+      selectedSphere.material.uniforms.glowColor.value.setRGB(1, 0, 0);
+    } else {
+      selectedSphere = undefined;
     } // if
 
   }); // addEventListener
+
+  renderer.domElement.addEventListener("mouseup", function (e) {
+    // Has the mouse moved since mousedown?
+    if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
+      e.preventDefault();
+      var p = returnFirstIntersection(satellites);
+
+      if (p && !selectedSphere && !hud.aui.erase) {
+        // CALCULATE THE SPHERE SIZE BASED ON DISTANCE SOMEHOW
+        addSphere(p.point.x, p.point.y, p.point.z, 100);
+      } else if (selectedSphere && hud.aui.erase) {
+        // Remove this sphere.
+        removeSphere(selectedSphere);
+        selectedSphere = undefined;
+      } // if
+
+    } // if
+
+  }); // addEventListener
+  // Allow adjusting the sphere radius.
+
+  hud.aui.radiusInput.addEventListener("input", function (e) {
+    // Change the radius of the currently selected sphere.
+    if (selectedSphere) {
+      selectedSphere.scale.addScalar(hud.aui.radiusInput.value * 10);
+    } // if
+
+  }); // addEventListener
+
+  hud.aui.distanceInput.addEventListener("input", function (e) {
+    // Add a vector to the sphere. The vector should go from the camera point through the center of the sphere.
+    if (selectedSphere) {
+      // Get the direction of the camera.
+      var _x = selectedSphere.position.x + 0.01 * hud.aui.distanceInput.value * (selectedSphere.position.x - camera.position.x);
+
+      var _y = selectedSphere.position.y + 0.01 * hud.aui.distanceInput.value * (selectedSphere.position.y - camera.position.y);
+
+      var _z = selectedSphere.position.z + 0.01 * hud.aui.distanceInput.value * (selectedSphere.position.z - camera.position.z);
+
+      selectedSphere.position.set(_x, _y, _z);
+    } // if
+
+  }); // addEventListener
+  // Updating the pointer object.
 
   document.addEventListener('mousemove', onPointerMove);
 
   function onPointerMove(event) {
     pointer.x = event.clientX / window.innerWidth * 2 - 1;
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  } // Animation
+  } // onPointerMove
+
+
+  var viewAdjustVector = new Vector3();
+
+  function adjustGlowToView(sphere) {
+    sphere.material.uniforms.viewVector.value = viewAdjustVector.subVectors(camera.position, sphere.position);
+  } // adjustGlowToView
+
+
+  function highlightIntersectedSatellite() {
+    // Do the raycaster intersects. `intersected' is defined at the start.
+    // Handle the intersects
+    var p = returnFirstIntersection(satellites);
+
+    if (p) {
+      if (intersected != p.object) {
+        if (intersected) intersected.material.emissive.setHex(intersected.currentHex); // Refresh the currently intersected reference, store its current color, and set it a different emmisivity.
+
+        intersected = p.object;
+        intersected.currentHex = intersected.material.emissive.getHex();
+        intersected.material.emissive.setHex(0xff0000);
+        console.log("Intersection!");
+      } // if
+
+    } else {
+      // Set the emmisivity to the previous color, and clear the reference to the intersected object.
+      if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
+      intersected = null;
+    } // if
+
+  } // highlightIntersectedSatellite
+  // Animation
 
 
   function animation(time) {
@@ -32800,39 +32892,14 @@
   } // animation
 
 
-  var viewAdjustVector = new Vector3();
-
-  function adjustGlowToView(sphere) {
-    sphere.material.uniforms.viewVector.value = viewAdjustVector.subVectors(camera.position, sphere.position);
-  } // adjustGlowToView
-
-
   function render() {
-    // controls must be updated... why?
-    // controls.update();
-    // The glow annotations can be part of an array?
-    // adjustGlowToView(moonGlow);
-    // Move the aim sphere with the camera. The cameraViewVector is a unit vector, and I want th esphere to be
-    positionAimSphere();
-    adjustGlowToView(aimSphere); // Do the raycaster intersects.
+    // ADJUST THE ANNOTATION GLOW TO THE VIEW
+    annotations.forEach(function (a) {
+      adjustGlowToView(a);
+    }); // forEach
+    // Do the raycaster intersects. `intersected' is defined at the start.
 
-    raycaster.setFromCamera(pointer, camera);
-    intersects = raycaster.intersectObjects(satellites, false);
-
-    if (intersects.length > 0) {
-      if (intersected != intersects[0].object) {
-        if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-        intersected = intersects[0].object;
-        intersected.currentHex = intersected.material.emissive.getHex();
-        intersected.material.emissive.setHex(0xff0000);
-      } // if
-
-    } else {
-      if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-      intersected = null;
-    } // if
-
-
+    highlightIntersectedSatellite();
     renderer.render(scene, camera);
   } //render
 

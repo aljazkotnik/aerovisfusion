@@ -1,15 +1,29 @@
-AIMING: How should it work?
-The current setup makes it difficult to judge where the aim sphere actually is. Maybe if I add a slider to adjust it's size? Maybe the tool can also adjust the distance from the camera?
+OrbitControls (2axis rotation and zooming) are nice and intuitive, especially when the navigation should be compatible with the touchpad.
 
-Aiming can be done in world to avoid having another canvas on top. A problem occurs when the aim sphre is configured to be on the other side of the target.
-
-A svg module can be developed to control the HUD. 
-
-OrbitControls are nice and intuitive, especially when the navigation should be compatible with the touchpad.
+FirstPerson (3axis movement, 2axis view movement, zooming) controls are more intuituve at a keyboard.
 
 
 
+RENDERING:
+ - How to render animated streamlines? Can it be done for data of my size?
 
 
-FRAMERATE DISPLAYER: should make it work again.
 
+AIMING ISSUES:
+ - a crosshair overlay does not show depth, but spheres can be added at predefined depth - could be difficult if the spheres are added onhte other side of objects though.
+ - scales: maybe there is some relationship between the depth and size of the annotation sphere?
+ 
+ 
+ - first add the aiming aid to the scene
+ - use raytracing to find candidate depth
+ - if no candidate depth position at fixed depth
+ - use sliders to adjust
+ - modes need to exist to add/edit/remove spheres.
+ 
+ 
+ 
+ DECALS:
+ - first edit image in paint to create texture
+ - then load and apply decal
+ - finally work on interactively creating decal
+ 
