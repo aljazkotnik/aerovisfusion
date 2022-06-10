@@ -5,7 +5,7 @@ let template = `
 <div>
     
   <div style="float: right;">
-    <label style="color: white;">Range</label><input class="range" type="range" min="-1" max="1" value="0" step="0.05">
+    <label style="color: white;">Depth</label><input class="range" type="range" min="-1" max="1" value="0" step="0.05">
   </div>
     
   <br>

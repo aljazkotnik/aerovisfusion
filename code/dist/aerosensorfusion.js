@@ -29,7 +29,7 @@
 
     return template.content.firstChild;
   } // html2element
-   // svg2element
+   // diff
 
   var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -46,7 +46,7 @@
   b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
   });
 
-  var template$1 = "\n<div>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Range</label><input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Size</label><input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n\t\n  <div style=\"float: right;\">\n\t<button class=\"icon remove\">\uD83E\uDDFD</button>\n  </div>\n</div>\n"; //    <button class="icon add">🎯</button>
+  var template$1 = "\n<div>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Depth</label><input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n    \n  <div style=\"float: right;\">\n    <label style=\"color: white;\">Size</label><input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n  </div>\n    \n  <br>\n\t\n  <div style=\"float: right;\">\n\t<button class=\"icon remove\">\uD83E\uDDFD</button>\n  </div>\n</div>\n"; //    <button class="icon add">🎯</button>
   //	<button class="icon edit">🔧</button>
   // This should control the aimSphereDistance and aimSphereRadius variables.
 
