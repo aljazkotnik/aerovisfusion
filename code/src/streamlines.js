@@ -69,7 +69,7 @@ var streamlinegeometry, streamlinematerial;
 // So instead there should be a remainder that gets transformed.
 const t0 = performance.now();
 const IntegrationSpan = [-0.009302791000000, 0.014919188];
-const CycleDuration = 10*1e3; // [ms];
+const CycleDuration = 4*1e3; // [ms];
 
 // Let's say that it should span the integration domain in
 function CurrentIntegrationTime(){
@@ -319,7 +319,7 @@ function updateShaderLine(t){
 		
 		// Age will always be > 0. t e[0,1], tOffset e[0,1]
 		let revi = line.times.findIndex(function(v){return v <= tOffset});
-		let age = revi < 0 ? 0 : line.times.length-1-revi;
+		
 	    
 		/*
 		Model it as the end of the line moving and dragging the lines behind itself?
@@ -338,11 +338,13 @@ function updateShaderLine(t){
 		
 		// Implement the fadeout and fade in. fadeout is easy - just let the index go past the maximum. For fadeIn the 
 		
-		let start = age - L;
-		let count = age - L < 0 ? age : L;
 		
+		revi = revi < 0 ? 0 : line.times.length-1-revi;
+		let start = Math.max(0, revi - 5);
+		let count = revi-L < 0 ? start : (revi+5>line.times.length ? line.times.length-revi : 5 );
 		
-		line.geometry.setDrawRange(Math.max(0, start), count)
+				
+		line.geometry.setDrawRange( start, count)
 		
 		
 	})

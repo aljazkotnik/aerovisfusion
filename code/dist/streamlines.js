@@ -32699,7 +32699,7 @@
 
 	var t0 = performance.now();
 	var IntegrationSpan = [-0.009302791000000, 0.014919188];
-	var CycleDuration = 10 * 1e3; // [ms];
+	var CycleDuration = 4 * 1e3; // [ms];
 	// Let's say that it should span the integration domain in
 
 	function CurrentIntegrationTime() {
@@ -32877,7 +32877,6 @@
 	    var revi = line.times.findIndex(function (v) {
 	      return v <= tOffset;
 	    });
-	    var age = revi < 0 ? 0 : line.times.length - 1 - revi;
 	    /*
 	    Model it as the end of the line moving and dragging the lines behind itself?
 	    
@@ -32893,9 +32892,10 @@
 	    // Fade out: if age > maxAge, 
 	    // Implement the fadeout and fade in. fadeout is easy - just let the index go past the maximum. For fadeIn the 
 
-	    var start = age - L;
-	    var count = age - L < 0 ? age : L;
-	    line.geometry.setDrawRange(Math.max(0, start), count);
+	    revi = revi < 0 ? 0 : line.times.length - 1 - revi;
+	    var start = Math.max(0, revi - 5);
+	    var count = revi - L < 0 ? start : revi + 5 > line.times.length ? line.times.length - revi : 5;
+	    line.geometry.setDrawRange(start, count);
 	  });
 	} // updateShaderLine
 	// Make the colormap.
