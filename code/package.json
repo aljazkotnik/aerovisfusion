@@ -10,6 +10,7 @@
   "license": "MIT",
   "main": "dist/aerosensorfusion.js",
   "streamlines": "dist/streamlines.js",
+  "labels": "dist/labels.js",
   "dependencies": {
     "gl-matrix": "^3.3.0",
     "node": "^16.0.0",

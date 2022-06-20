@@ -59,7 +59,7 @@ var lineShaderStreamlines = [];
 var streamlinegeometry, streamlinematerial;
 
 var clock = new THREE.Clock();
-
+var lastdraw = performance.now()
 
 
 
@@ -270,7 +270,7 @@ function addShaderStreamlines(){
 	  .then(res=>res.text())
 	  .then(t=>csvStreamline2jsonStreamline( text2csv(t) ))
 	  .then(sa=>{
-		  [sa[0]].forEach((s,i)=>{
+		  sa.forEach((s,i)=>{
 			  // Interpolate using THREE.CatmullRomCurve3 to create more points?
 			  
 			// Limited to 5000 lines for performance.
@@ -415,7 +415,10 @@ function animate() {
 } // animate
 
 function render() {
-	// updateShaderLine()
+	if(performance.now() - lastdraw > 40){
+		updateShaderLine()
+		lastdraw = performance.now();
+	} // if
 	renderer.render( scene, camera );
 } // render
 
