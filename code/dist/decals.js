@@ -32986,7 +32986,9 @@
 	var intersects = []; // array that stores found intersects.
 
 	var textureLoader = new TextureLoader();
-	var decalDiffuse = textureLoader.load('assets/oil_flow.png'); // const decalNormal = textureLoader.load( 'textures/decal/decal-normal.jpg' );
+	var decalDiffuse = textureLoader.load('assets/oil_flow.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+
+	textureLoader.load('assets/decal-normal.jpg'); // normalMap: decalNormal,
 
 	var decalMaterial = new MeshPhongMaterial({
 	  specular: 0x444444,
@@ -33093,7 +33095,9 @@
 	  size.set(scale, scale, scale);
 	  var material = decalMaterial.clone();
 	  material.color.setHex(Math.random() * 0xffffff);
-	  var m = new Mesh(new DecalGeometry(mesh, position, orientation, size), material);
+	  var cutout = new DecalGeometry(mesh, position, orientation, size);
+	  cutout.computeVertexNormals();
+	  var m = new Mesh(cutout, material);
 	  decals.push(m);
 	  scene.add(m);
 	} // shoot
@@ -33220,4 +33224,4 @@
 	} // render
 
 }());
-//# sourceMappingURL=labels.js.map
+//# sourceMappingURL=decals.js.map

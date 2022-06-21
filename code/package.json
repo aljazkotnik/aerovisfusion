@@ -8,9 +8,9 @@
   },
   "author": "Aljaz Kotnik",
   "license": "MIT",
-  "main": "dist/aerosensorfusion.js",
+  "annotations": "dist/annotations.js",
   "streamlines": "dist/streamlines.js",
-  "labels": "dist/labels.js",
+  "decals": "dist/decals.js",
   "dependencies": {
     "gl-matrix": "^3.3.0",
     "node": "^16.0.0",

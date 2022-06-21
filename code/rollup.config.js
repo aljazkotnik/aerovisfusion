@@ -8,10 +8,10 @@ import babel from "@rollup/plugin-babel";
 export default [
 	// browser-friendly UMD build
 	{
-		input: 'src/main.js',
+		input: 'src/annotations.js',
 		output: {
-			name: 'aerosensorfusion',
-			file: pkg.main,
+			name: 'annotations',
+			file: pkg.annotations,
 			format: 'iife',
 			sourcemap: true
 		},
@@ -50,10 +50,10 @@ export default [
 	},
 	
 	{
-		input: 'src/labels.js',
+		input: 'src/decals.js',
 		output: {
-			name: 'streamlines',
-			file: pkg.labels,
+			name: 'decals',
+			file: pkg.decals,
 			format: 'iife',
 			sourcemap: true
 		},

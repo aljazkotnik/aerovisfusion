@@ -33,27 +33,31 @@ Another consideration is the framerate, which is not always consistent. Therefor
 
 Streamlines in ParaView were created using the sphere seed geometry: ParaView selects n random intitial streamline positions within the sphere, and starts moving down and upstream of these points to find the lines. Because the streamlines all start relatively close together the streamlets also start together, and move through the domain togehter. Although such a visualisation may be useful, to visualise the entire flow field with moving streamlines the streamlets need to be offset.
 
-Fade in, and fade out are controlled by controlling the indexing.
-
-
-
-FUTURE WORK
-One apparent aspect of ParaView animated streamlets is that they occupy the entire domain, and that the user cannot (is this true?) control the seeding. Streamlet seeding is a similar problem to sampling, e.g. selecting points for traverse measurements. GPR (Gaussian Process Regression) is a common statistical technique that can be applied to determine the locations with the highest/lowest uncertainties, which can help identifiy valuable sampling points. GPR can therefore be used to place streamlets in the most uncertain points of the velocity field, which are the domain points with the largest velocity changes. Maybe a good first approach is to create a model in Matlab and load the line selection in, as opposed to doing it on the fly.
-
-
-The application we are making can also be seen as the 3D small multiple rendering inset - much like the unsteady turbine example was a 2D inset. A large part of that work was data handling, and in this project we have the time to attempt to use compressed data that is uncompressed on the GPU. Thanassis already worked on extracting only subsets of relevant 3D data. In addition we could also attempt to perform data tiling. This section of the title could be framed as a challenge to find the largest CFD simulation possible to visualise in the browser. Again we can discuss the idea of 4GB per screen area.
+Fade in, and fade out are controlled by controlling the indexing, dynamically changing the number of vertices to draw from 0 at the beginning to n, and vice versa. An alternate approach is to just find the start/end index based on the timestamps. Then the finding of the correct times handles the fade in and out effects.
 
 
 
 
+DECALS
+- Why is there a dark triangle on hte other side?
+    Maybe pushDecalVertex needs to be updated? The idea is that the cutout of the mesh is too big, and it takes into account the other side of the airfoil also. To prevent the other surface being added we need to exclude the vertices with the normal in hte same general direction as the view vector.
+- How to control rotation and size?
+- How to draw a preview? Make an 'outline' decal geometry? How will that know the shape?
+- The decals should be adjustable after placement. Maybe clicking can do rough placement, and then sliders do fine placement? The sort of rocket controls that are used for annotation creation?
+- aiming line disappears when too close to the object??
 
 
 
-MISCELLANEOUS:
-Try to implement virtual smoke visualisation by seeding particles. The particles move along streamlines, but implicitly - their path is influenced at every step. By adjusting their weight, and subsequently inertia the impact of hte differences in fluid properties (smoke vs air) could be assessed.
 
-Ultimately the entry point for the user is the dbslice dash. The user filters out subsets, and observes high level data behavior. Then through the data levels they arrive to the detailed data. At the detailed data the actual flow insights are gathered.
+Decals are added into the scene as additional scene objects, specifically meshes comprised of a 'DecalGeometry' object, and a material object. DecalGeometry takes as the input the support mesh, a position, orinetation, and size. Based on the latter three parameters a cutout of the support mesh is extracted as the DecalGeometry, and the material is applied to it.
 
-A design, or concept exploration process is done step by step, and new data is generated every step. The web based dbslice available to users should have an option to upload new data on-the-go. Maybe the metadata can be stored in a background SQL database. An initial query can be made to retrieve all the tasks, at which point the crossfilter indexing is set up to support the interactions.
+For thin geometries the cutting of the support geometries can result in vertices from both sides being selected. Selecting a smaller z component of the size removed the additional decal on the opposing side.
 
-Datetime of the simulation should be a parameter in dbslice, that way new users can see the progression of the designs. Maybe as a time?
+On the pressure side the decals are always black, and on the suction side they are colorful. This holds true even if the decal is initially placed on hte PS. Is this a vertex normal problem? The aiming line gets it's normal from the point on the surface, so the normals should be ok?
+
+
+
+
+
+
+Decal placement: ideally there would be a preview when positioning hte decal, and afterwards the decal should be movable to allow adjustments to the positioning and size. In this approach the clicking positions the decal roughly, and incremental sliders position it finely. However, the decals are cutouts of the supporting geometry, and to move them the corresponding cutout needs to be provided. Will this be fast enough to be interactive?

@@ -74,8 +74,10 @@ const intersects = []; // array that stores found intersects.
 
 const textureLoader = new THREE.TextureLoader();
 const decalDiffuse = textureLoader.load( 'assets/oil_flow.png' );
-// const decalNormal = textureLoader.load( 'textures/decal/decal-normal.jpg' );
+// const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
 
+// normalMap: decalNormal,
 const decalMaterial = new THREE.MeshPhongMaterial( {
 	specular: 0x444444,
 	map: decalDiffuse,
@@ -219,7 +221,11 @@ function shoot() {
 	const material = decalMaterial.clone();
 	material.color.setHex( Math.random() * 0xffffff );
 
-	const m = new THREE.Mesh( new DecalGeometry( mesh, position, orientation, size ), material );
+	const cutout = new DecalGeometry( mesh, position, orientation, size );
+	cutout.computeVertexNormals();
+	
+
+	const m = new THREE.Mesh( cutout, material );
 
 	decals.push( m );
 	scene.add( m );
