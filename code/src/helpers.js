@@ -15,7 +15,7 @@ export function svg2element(svg){
 
 export function text2csv(t){
 	// Read a regular table and create json objects based on the rows.
-	let rows = t.split("\r\n");
+	let rows = t.split("\r\n"); // \r\n depending on hte csv file??
 	let header = rows.splice(0, 1)[0];
 	let properties = header.split(",").map(t=>t.replaceAll('"',''));
 	
