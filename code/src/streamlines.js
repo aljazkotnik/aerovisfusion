@@ -159,10 +159,10 @@ function addWingGeometry(){
 	wingmaterial.side = THREE.DoubleSide;
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
-	let verticesPromise = fetch("./data/wing/vertices.bin")
+	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Float32Array(ab)}); // float32
-	let indicesPromise = fetch("./data/wing/indices.bin")
+	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
 	
@@ -241,7 +241,7 @@ function addShaderStreamlines(){
 	
 	// streamlinematerial = new THREE.LineBasicMaterial( { color: 0xff0000, dashSize: 3, gapSize: 1 } );
 	
-	fetch("../data/streamlines/streamlines_suction_side.csv")
+	fetch("./assets/deltawing/streamlines/streamlines_suction_side_min.csv")
 	  .then(res=>res.text())
 	  .then(t=>csvStreamline2jsonStreamline( text2csv(t) ))
 	  .then(sa=>{
@@ -255,7 +255,7 @@ function addShaderStreamlines(){
 			} // if
 		  }) // forEach
 		  
-		  console.log(lineShaderStreamlines)
+		  // console.log(lineShaderStreamlines)
 	  }) // then
 } // addShaderStreamlines
 

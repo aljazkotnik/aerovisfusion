@@ -33195,13 +33195,13 @@
 	  });
 	  wingmaterial.side = DoubleSide; // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 
-	  var verticesPromise = fetch("./data/wing/vertices.bin").then(function (res) {
+	  var verticesPromise = fetch("./assets/deltawing/wing/vertices.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
 	    return new Float32Array(ab);
 	  }); // float32
 
-	  var indicesPromise = fetch("./data/wing/indices.bin").then(function (res) {
+	  var indicesPromise = fetch("./assets/deltawing/wing/indices.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
 	    return new Uint32Array(ab);

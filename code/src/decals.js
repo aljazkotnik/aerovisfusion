@@ -352,10 +352,10 @@ function addWingGeometry(){
 	wingmaterial.side = THREE.DoubleSide;
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
-	let verticesPromise = fetch("./data/wing/vertices.bin")
+	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Float32Array(ab)}); // float32
-	let indicesPromise = fetch("./data/wing/indices.bin")
+	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
 	

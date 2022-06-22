@@ -32761,13 +32761,13 @@
 	  });
 	  wingmaterial.side = DoubleSide; // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 
-	  var verticesPromise = fetch("./data/wing/vertices.bin").then(function (res) {
+	  var verticesPromise = fetch("./assets/deltawing/wing/vertices.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
 	    return new Float32Array(ab);
 	  }); // float32
 
-	  var indicesPromise = fetch("./data/wing/indices.bin").then(function (res) {
+	  var indicesPromise = fetch("./assets/deltawing/wing/indices.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
 	    return new Uint32Array(ab);
@@ -32811,7 +32811,7 @@
 	  // blending: THREE.AdditiveBlending,
 	  // streamlinematerial = new THREE.LineBasicMaterial( { color: 0xff0000, dashSize: 3, gapSize: 1 } );
 
-	  fetch("../data/streamlines/streamlines_suction_side.csv").then(function (res) {
+	  fetch("./assets/deltawing/streamlines/streamlines_suction_side_min.csv").then(function (res) {
 	    return res.text();
 	  }).then(function (t) {
 	    return csvStreamline2jsonStreamline(text2csv(t));
@@ -32825,8 +32825,7 @@
 	      } // if
 
 	    }); // forEach
-
-	    console.log(lineShaderStreamlines);
+	    // console.log(lineShaderStreamlines)
 	  }); // then
 	} // addShaderStreamlines
 
