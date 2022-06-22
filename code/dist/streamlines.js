@@ -32615,7 +32615,8 @@
 
 	function text2csv(t) {
 	  // Read a regular table and create json objects based on the rows.
-	  var rows = t.split("\r\n");
+	  var rows = t.split("\n"); // \r\n depending on hte csv file??
+
 	  var header = rows.splice(0, 1)[0];
 	  var properties = header.split(",").map(function (t) {
 	    return t.replaceAll('"', '');
