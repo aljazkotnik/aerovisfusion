@@ -138,7 +138,7 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
 	<p>Decals are added into the scene as additional scene objects, specifically meshes comprised of a 'DecalGeometry' object, and a material object. DecalGeometry takes as the input the support mesh, a position, orinetation, and size. Based on the latter three parameters a cutout of the support mesh is extracted as the DecalGeometry, and the material is applied to it.</p>
 	
 	
-	<p><b>Why is a dark triangle placed on the other side?</b> For thin geometries the cutting of the support geometries can result in vertices from both sides being selected. Selecting a smaller z component of the size removed the additional decal on the opposing side.</p>
+	<p><b>Why is a dark triangle placed on the other side?</b> For thin geometries the cutting of the support geometries can result in vertices from both sides being selected. Selecting a smaller z component of the size removed the additional decal on the opposing side. Remember the classis issues: decals appear black if there is no light shining on them!</p>
 	
 	<p>Maybe pushDecalVertex needs to be updated? The idea is that the cutout of the mesh is too big, and it takes into account the other side of the airfoil also. To prevent the other surface being added we need to exclude the vertices with the normal in hte same general direction as the view vector.</d>
 	

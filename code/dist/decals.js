@@ -29532,6 +29532,20 @@
 
 	DirectionalLight.prototype.isDirectionalLight = true;
 
+	class AmbientLight extends Light {
+
+		constructor( color, intensity ) {
+
+			super( color, intensity );
+
+			this.type = 'AmbientLight';
+
+		}
+
+	}
+
+	AmbientLight.prototype.isAmbientLight = true;
+
 	class LoaderUtils {
 
 		static decodeText( array ) {
@@ -32970,7 +32984,7 @@
 
 	}
 
-	var camera, scene, light, renderer, controls;
+	var camera, scene, renderer, controls;
 	var domainMidPoint = new Vector3(0.5, 100.5, 0); // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 
 	var mesh;
@@ -33036,12 +33050,7 @@
 
 	  addWingGeometry(); // RAYCASTER
 
-	  var geometry = new BufferGeometry();
-	  geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
-	  line = new Line(geometry, new LineBasicMaterial());
-	  scene.add(line);
-	  console.log(line);
-	  raycaster = new Raycaster(); // mouse helper helps orinetate the decal onto the suface.
+	  addAimingRay(); // mouse helper helps orinetate the decal onto the suface.
 
 	  decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
 	  decalOrientationHelper.visible = false;
@@ -33092,7 +33101,8 @@
 
 	  orientation.z = Math.random() * 2 * Math.PI;
 	  var scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
-	  size.set(scale, scale, scale);
+	  size.set(scale, scale, 0.1 * scale); // limit clipping box!!
+
 	  var material = decalMaterial.clone();
 	  material.color.setHex(Math.random() * 0xffffff);
 	  var cutout = new DecalGeometry(mesh, position, orientation, size);
@@ -33154,9 +33164,20 @@
 	  camera.position.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z - 1);
 	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
 
-	  light = new DirectionalLight(0xffffff, 1);
-	  light.position.set(1, 1, 1).normalize();
-	  scene.add(light); // SETUP THE ACTUAL LOOP
+	  /*
+	  	light = new THREE.DirectionalLight( 0xffffff, 1 );
+	  	light.position.set( 1, 1, 1 ).normalize();
+	  	scene.add( light );
+	  */
+	  // The lighting has a major impact on the decals!!
+
+	  scene.add(new AmbientLight(0xffffff));
+	  var dirLight1 = new DirectionalLight(0xffffff, 1);
+	  dirLight1.position.set(1, 0.75, 0.5);
+	  scene.add(dirLight1);
+	  var dirLight2 = new DirectionalLight(0xffffff, 1);
+	  dirLight2.position.set(-1, 0.75, -0.5);
+	  scene.add(dirLight2); // SETUP THE ACTUAL LOOP
 	  // renderer.domElement is created in renderer.
 
 	  renderer = new WebGLRenderer({
@@ -33195,6 +33216,15 @@
 	    scene.add(mesh);
 	  }); // Promise.all
 	} // addWingGeometry
+
+
+	function addAimingRay() {
+	  var geometry = new BufferGeometry();
+	  geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
+	  line = new Line(geometry, new LineBasicMaterial());
+	  scene.add(line);
+	  raycaster = new Raycaster();
+	} // addAimingRay
 	// CONTROLS
 
 

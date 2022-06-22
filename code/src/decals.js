@@ -142,15 +142,8 @@ function init() {
 	
 	
 	// RAYCASTER
+	addAimingRay();
 	
-	const geometry = new THREE.BufferGeometry();
-	geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), new THREE.Vector3(0.384, 100, 0.173) ] );
-
-	line = new THREE.Line( geometry, new THREE.LineBasicMaterial() );
-	scene.add( line );
-	console.log(line)
-	
-	raycaster = new THREE.Raycaster();
 
 	// mouse helper helps orinetate the decal onto the suface.
 	decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), new THREE.MeshNormalMaterial() );
@@ -216,7 +209,7 @@ function shoot() {
 	if ( params.rotate ) orientation.z = Math.random() * 2 * Math.PI;
 
 	const scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
-	size.set( scale, scale, scale );
+	size.set( scale, scale, 0.1*scale ); // limit clipping box!!
 
 	const material = decalMaterial.clone();
 	material.color.setHex( Math.random() * 0xffffff );
@@ -307,10 +300,37 @@ function setupScene(){
 	
 	scene = new THREE.Scene();
 
+
+
+
+
 	// With the normal material the light is not needed - but will be needed later.
+
+
+/*
 	light = new THREE.DirectionalLight( 0xffffff, 1 );
 	light.position.set( 1, 1, 1 ).normalize();
 	scene.add( light );
+*/
+	
+	
+	
+	// The lighting has a major impact on the decals!!
+	scene.add( new THREE.AmbientLight( 0xffffff ) );
+
+	const dirLight1 = new THREE.DirectionalLight( 0xffffff, 1 );
+	dirLight1.position.set( 1, 0.75, 0.5 );
+	scene.add( dirLight1 );
+
+	const dirLight2 = new THREE.DirectionalLight( 0xffffff, 1 );
+	dirLight2.position.set( - 1, 0.75, - 0.5 );
+	scene.add( dirLight2 );
+	
+	
+	
+	
+	
+	
 	
 	
 	// SETUP THE ACTUAL LOOP
@@ -363,6 +383,18 @@ function addWingGeometry(){
 
 
 
+function addAimingRay(){
+	
+	const geometry = new THREE.BufferGeometry();
+	geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), new THREE.Vector3(0.384, 100, 0.173) ] );
+
+	line = new THREE.Line( geometry, new THREE.LineBasicMaterial() );
+	scene.add( line );
+	
+	raycaster = new THREE.Raycaster();
+	
+} // addAimingRay
+
 
 
 
@@ -392,7 +424,6 @@ function animate() {
 function render() {	
 	renderer.render( scene, camera );
 } // render
-
 
 
 
