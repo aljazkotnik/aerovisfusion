@@ -32637,6 +32637,159 @@
 
 	}
 
+	function _classCallCheck(instance, Constructor) {
+	  if (!(instance instanceof Constructor)) {
+	    throw new TypeError("Cannot call a class as a function");
+	  }
+	}
+
+	function _defineProperties(target, props) {
+	  for (var i = 0; i < props.length; i++) {
+	    var descriptor = props[i];
+	    descriptor.enumerable = descriptor.enumerable || false;
+	    descriptor.configurable = true;
+	    if ("value" in descriptor) descriptor.writable = true;
+	    Object.defineProperty(target, descriptor.key, descriptor);
+	  }
+	}
+
+	function _createClass(Constructor, protoProps, staticProps) {
+	  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+	  if (staticProps) _defineProperties(Constructor, staticProps);
+	  return Constructor;
+	}
+
+	function html2element(html) {
+	  var template = document.createElement('template');
+	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
+
+	  return template.content.firstChild;
+	} // html2element
+	 // diff
+
+	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+	function createCommonjsModule(fn) {
+	  var module = { exports: {} };
+		return fn(module, module.exports), module.exports;
+	}
+
+	var stats_min = createCommonjsModule(function (module, exports) {
+	// stats.js - http://github.com/mrdoob/stats.js
+	(function(f,e){module.exports=e();})(commonjsGlobal,function(){var f=function(){function e(a){c.appendChild(a.dom);return a}function u(a){for(var d=0;d<c.children.length;d++)c.children[d].style.display=d===a?"block":"none";l=a;}var l=0,c=document.createElement("div");c.style.cssText="position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click",function(a){a.preventDefault();
+	u(++l%c.children.length);},!1);var k=(performance||Date).now(),g=k,a=0,r=e(new f.Panel("FPS","#0ff","#002")),h=e(new f.Panel("MS","#0f0","#020"));if(self.performance&&self.performance.memory)var t=e(new f.Panel("MB","#f08","#201"));u(0);return {REVISION:16,dom:c,addPanel:e,showPanel:u,begin:function(){k=(performance||Date).now();},end:function(){a++;var c=(performance||Date).now();h.update(c-k,200);if(c>g+1E3&&(r.update(1E3*a/(c-g),100),g=c,a=0,t)){var d=performance.memory;t.update(d.usedJSHeapSize/
+	1048576,d.jsHeapSizeLimit/1048576);}return c},update:function(){k=this.end();},domElement:c,setMode:u}};f.Panel=function(e,f,l){var c=Infinity,k=0,g=Math.round,a=g(window.devicePixelRatio||1),r=80*a,h=48*a,t=3*a,v=2*a,d=3*a,m=15*a,n=74*a,p=30*a,q=document.createElement("canvas");q.width=r;q.height=h;q.style.cssText="width:80px;height:48px";var b=q.getContext("2d");b.font="bold "+9*a+"px Helvetica,Arial,sans-serif";b.textBaseline="top";b.fillStyle=l;b.fillRect(0,0,r,h);b.fillStyle=f;b.fillText(e,t,v);
+	b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
+	});
+
+	/*
+	On input increments should be launched. But if the user wants repeated increments they have to wiggle the mouse. Is it possible to keep launching the event even if the user has the cursor stationary? Maybe based on the value, which should be 0 if the cursor has been released. And update every half a second or so? Or faster? Maybe 20 frames per second?
+
+
+
+	*/
+
+	var IncrementController = /*#__PURE__*/function () {
+	  function IncrementController(label) {
+	    _classCallCheck(this, IncrementController);
+
+	    this.a = -1;
+	    this.b = 1;
+	    var obj = this;
+	    obj.node = html2element("\n      <div style=\"float: right;\">\n        <label style=\"color: white;\">".concat(label, "</label>\n        <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n      </div>\n    "));
+	    var i = obj.node.querySelector("input"); // No need to recalculate the mean value - it's always 0. Only the value released to the user is recalculated.
+
+	    i.addEventListener("mouseout", function () {
+	      i.value = 0;
+	    });
+	    i.addEventListener("mouseup", function () {
+	      i.value = 0;
+	    });
+	  } // constructor
+
+
+	  _createClass(IncrementController, [{
+	    key: "value",
+	    get: function get() {
+	      var obj = this;
+	      return (Number(obj.node.querySelector("input").value) + 1) / 2 * (obj.b - obj.a) + obj.a;
+	    } // get value
+
+	  }]);
+
+	  return IncrementController;
+	}(); // IncrementController
+
+	var ToggleButton = function ToggleButton(unicodeemoji) {
+	  _classCallCheck(this, ToggleButton);
+
+	  this.on = false;
+	  var obj = this;
+	  var label = unicodeemoji ? unicodeemoji : "\uD83E\uDDFD";
+	  obj.node = html2element("\n      <div style=\"float: right;\">\n\t    <button class=\"icon\">".concat(label, "</button>\n      </div>\n    "));
+
+	  obj.node.onclick = function () {
+	    // Toggle the button, and change its appearance.
+	    obj.on = !obj.on;
+	    obj.node.querySelector("button").style.border = "2px solid ".concat(obj.on ? "gainsboro" : "black");
+	  }; // onclick
+
+	} // constructor
+	; // ToggleButton
+
+	//	<button class="icon edit">🔧</button>
+	// This template should be abstracted within the HUD class to allow dynamic creation, much like the GUI library. The GUI library is not used because I need some additional functionality, like hte incremenal controller. But for example the color picker from GUI is amazing.
+
+	var template = "\n<div style=\"position: fixed;\">\n  <div class=\"stats\"></div>\n  <div class=\"controls\" style=\"position: fixed; top: 10px; float: right; right: 10px;\"></div>\n</div>\n";
+	/*
+	The decals are roughly positioned by pointing and clicking. After that their (1) position, (2) orientation, and (3) size may need to be adjusted.
+
+	(1) Position:
+		The decal position is determined by the positioning of a 3D clipping box, which is itself positioned using an xyz triplet. The decal therefore itself is positioned using three dimensions. Then the user needs to keep track of the world orientation to use them correctly. If instead we want the user to orientate the decals based on the screen vertical and horizontal directions, the screen coordinate system needs to be transformed to the world corrdinate system, and the change in position applied there.
+		In practice when the user adjusts the increment, the on-screen coordinates of the raycaster used for placement need to be retrieved, the increment applied to them, and the decal geometry adjusted. 
+	(2) Orientation:
+	    Orientation is easier, as two angles are defined by the geometry, and only orientation on the geometry is really needed - we don't want to angle the image in other directions for now - although this could be used for images that were not taken head-on.
+	(3) Size:
+		Easiest - controlled by a single scalar.
+		
+		
+		
+
+	Perhaps it's easier if a whole new control is introduced for positioning? Like the `plus' controller. Or should they just be repositioned using click positioning? Perhaps a way to do it is to allow the user to place a reference point, and then use that to reposition the decal? Would also be a nice discreet operation. Okay, but then decal selection needs to be implemented. Maybe through a toggle button? Or should the aiming change color if a certain time passes and the cursor is stationary? But this won't work without a mouse. 
+	What about click and drag? This is similar to the additional reference point and then click to reposition.
+	Longclick on decal? And then delete when the button is pressed? So the button no longer needs to be a toggle button.
+		
+		
+	First the brute force approach - recompute the mesh
+	Alternately - pad the image to control the size and rotation of the decal?
+	*/
+
+	var InterfaceDecals = function InterfaceDecals() {
+	  _classCallCheck(this, InterfaceDecals);
+
+	  this.erase = false;
+	  var obj = this;
+	  obj.node = html2element(template); // Add the Stats object.
+
+	  obj.stats = new stats_min();
+	  obj.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+
+	  obj.node.querySelector("div.stats").appendChild(obj.stats.dom); // ABSTRACT AWAY!!
+
+	  var controlsdiv = obj.node.querySelector("div.controls"); // The inputs are used as controllers - -1 is negative and +1 is positive increment.
+
+	  obj.rotation = new IncrementController("Rotation");
+	  controlsdiv.appendChild(obj.rotation.node);
+	  controlsdiv.appendChild(document.createElement("br"));
+	  obj.size = new IncrementController("Size");
+	  controlsdiv.appendChild(obj.size.node);
+	  controlsdiv.appendChild(document.createElement("br")); // The buttons for handling annotation spheres.
+
+	  obj.eraser = new ToggleButton();
+	  controlsdiv.appendChild(obj.eraser.node);
+	} // constructor
+	; // InterfaceDecals
+
 	/**
 	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
 	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
@@ -32984,25 +33137,31 @@
 
 	}
 
+	var gui; // Scene items
+
 	var camera, scene, renderer, controls;
 	var domainMidPoint = new Vector3(0.5, 100.5, 0); // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 
 	var mesh;
 	var raycaster;
-	var line;
+	var line; // MOUSE INTERACTION HELPERS
+
 	var moved;
+	var selectedDecal;
 	var intersection = {
 	  intersects: false,
 	  point: new Vector3(),
 	  normal: new Vector3()
 	};
 	var mouse = new Vector2();
-	var intersects = []; // array that stores found intersects.
+	var intersects = []; // array that stores found intersects with mesh.
+	// Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
+	// Check first on-the-go interactions.
 
 	var textureLoader = new TextureLoader();
-	var decalDiffuse = textureLoader.load('assets/oil_flow.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-
-	textureLoader.load('assets/decal-normal.jpg'); // normalMap: decalNormal,
+	var decalDiffuse = textureLoader.load('assets/oil_flow_half.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+	// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
+	// normalMap: decalNormal,
 
 	var decalMaterial = new MeshPhongMaterial({
 	  specular: 0x444444,
@@ -33025,7 +33184,6 @@
 	var params = {
 	  minScale: 0.10,
 	  maxScale: 0.20,
-	  rotate: true,
 	  clear: function clear() {
 	    removeDecals();
 	  }
@@ -33054,82 +33212,73 @@
 
 	  decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
 	  decalOrientationHelper.visible = false;
-	  scene.add(decalOrientationHelper); // Create the raycaster.
-
-	  /*
-	  BEHAVIOR:
-	  - click and drag should support OrbitControls without pasting the decal.
-	  - so store moved as before, and only past on pointerup?
-	  */
-
-	  controls.addEventListener('change', function () {
-	    moved = true;
-	  }); // change
-
-	  window.addEventListener('pointerdown', function () {
-	    moved = false;
-	  }); // pointerdown
-
-	  window.addEventListener('pointerup', function (event) {
-	    // This registeres when the user clicked.
-	    if (moved === false) {
-	      checkIntersection(event.clientX, event.clientY);
-
-	      if (intersection.intersects) {
-	        shoot();
-	      }
-	    } // if
-
-	  }); // pointerup
-	  // For now just focus on adding the pointer helper.
-
-	  window.addEventListener('pointermove', function (event) {
-	    checkIntersection(event.clientX, event.clientY);
-	  }); // onPointerMove
-	  // Bringing this lookAt to the end fixed the camera misdirection initialisation.
+	  scene.add(decalOrientationHelper); // Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	  // With trackball controls lookAt no longer works.
 	  // console.log(scene, camera, object, viewvec)
 
 	  camera.lookAt(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z);
+	  console.log(camera);
 	  window.addEventListener('resize', onWindowResize);
+	  setupHUD();
 	} // init
+	// INTERACTIVITY
 
 
-	function shoot() {
+	function addDecal() {
+	  // Position, Orientation, and Scale
 	  position.copy(intersection.point);
 	  orientation.copy(decalOrientationHelper.rotation); // decalOrientationHelper!!!
 
 	  orientation.z = Math.random() * 2 * Math.PI;
 	  var scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
-	  size.set(scale, scale, 0.1 * scale); // limit clipping box!!
+	  size.set(scale, scale, scale); // limit clipping box, or adjust puchDecalVertex!!!!
+	  // Make the decal object.
 
+	  var cutout = new DecalGeometry(mesh, position, orientation, size);
 	  var material = decalMaterial.clone();
 	  material.color.setHex(Math.random() * 0xffffff);
-	  var cutout = new DecalGeometry(mesh, position, orientation, size);
-	  cutout.computeVertexNormals();
-	  var m = new Mesh(cutout, material);
-	  decals.push(m);
-	  scene.add(m);
-	} // shoot
+	  var decal = new Mesh(cutout, material); // Add additional information required within the userData.
+
+	  decal.userData = {
+	    position: position,
+	    orientation: orientation,
+	    scale: scale
+	  };
+	  decals.push(decal);
+	  scene.add(decal);
+	  console.log(decals);
+	} // addDecal
 
 
 	function removeDecals() {
 	  decals.forEach(function (d) {
 	    scene.remove(d);
-	  });
+	  }); // forEach
+
 	  decals.length = 0;
 	}
 
-	function checkIntersection(x, y) {
-	  if (mesh === undefined) return;
+	function transformDecal(decal) {
+	  // Ok - try recalculating the decal geometry: seems to be working decently for this demo.
+	  // The input is an object that contains the decal object, as well as the new position, orientation, and scale.
+	  size.set(decal.userData.scale, decal.userData.scale, decal.userData.scale);
+	  var cutout = new DecalGeometry(mesh, decal.userData.position, decal.userData.orientation, size);
+	  decal.geometry.copy(cutout);
+	} // transformDecal
+
+
+	function checkIntersection(x, y, candidates) {
+	  // This should be adjusted so that the array of items to check the intersect against can be specified.
+	  if (candidates.length < 1) return;
 	  mouse.x = x / window.innerWidth * 2 - 1;
 	  mouse.y = -(y / window.innerHeight) * 2 + 1;
 	  raycaster.setFromCamera(mouse, camera);
-	  raycaster.intersectObject(mesh, false, intersects);
+	  raycaster.intersectObjects(candidates, false, intersects);
 
 	  if (intersects.length > 0) {
 	    // Intersect point is the first point of the aimer line.
-	    var p = intersects[0].point; // The normal gets transformed into the second point here.
+	    var i = intersects[0];
+	    var p = i.point; // The normal gets transformed into the second point here.
 
 	    var n = intersects[0].face.normal.clone();
 	    n.multiplyScalar(0.1);
@@ -33138,21 +33287,23 @@
 	    var positions = line.geometry.attributes.position;
 	    positions.setXYZ(0, p.x, p.y, p.z);
 	    positions.setXYZ(1, n.x, n.y, n.z);
-	    positions.needsUpdate = true; // Why does `intersection' need to be updated?
+	    positions.needsUpdate = true; // Intersection stores the intersect information for easier use later on.
 
 	    intersection.point.copy(p);
 	    intersection.normal.copy(intersects[0].face.normal);
-	    intersection.intersects = true; // Intersects is the initialised array of intersects.
+	    intersection.intersects = true; // Clear the intersects array.
 
 	    intersects.length = 0; // Reposition hte helper.
 
 	    decalOrientationHelper.position.copy(p);
 	    decalOrientationHelper.lookAt(n);
+	    return i;
 	  } else {
 	    intersection.intersects = false;
 	  } // if
 
 	} // checkIntersection
+	// SCENE.
 
 
 	function setupScene() {
@@ -33161,13 +33312,14 @@
 	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
 	  */
 	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
-	  camera.position.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z - 1);
+	  camera.position.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z + 1); // camera.position.set( 0.16, 99, 0.95 );
+
 	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
 
 	  /*
-	  	light = new THREE.DirectionalLight( 0xffffff, 1 );
-	  	light.position.set( 1, 1, 1 ).normalize();
-	  	scene.add( light );
+	  light = new THREE.DirectionalLight( 0xffffff, 1 );
+	  light.position.set( 1, 1, 1 ).normalize();
+	  scene.add( light );
 	  */
 	  // The lighting has a major impact on the decals!!
 
@@ -33219,12 +33371,118 @@
 
 
 	function addAimingRay() {
+	  // Create the raycaster.
+
+	  /*
+	  BEHAVIOR:
+	  - click and drag should support OrbitControls without pasting the decal.
+	  - so store moved as before, and only past on pointerup?
+	  */
+	  // The line doesn't seem to work if it is not initialised near the surface. Why??
 	  var geometry = new BufferGeometry();
 	  geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
 	  line = new Line(geometry, new LineBasicMaterial());
-	  scene.add(line);
-	  raycaster = new Raycaster();
+	  scene.add(line); // The raycaster theat finds surface point.
+
+	  raycaster = new Raycaster(); // Behavior. Change on CONTROLS, pointerdown, pointerup on window!
+
+	  controls.addEventListener('change', function () {
+	    moved = true;
+	  }); // change
+	  // Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
+
+	  var pointerdownTime;
+	  var longPressTimer;
+	  window.addEventListener('pointerdown', function (event) {
+	    moved = false;
+	    pointerdownTime = performance.now();
+	    longPressTimer = window.setTimeout(function () {
+	      if (!moved) {
+	        // How do we deselect a decal? Another longpress, or when another decal is selected.
+	        var decalIntersection = checkIntersection(event.clientX, event.clientY, decals);
+
+	        if (decalIntersection) {
+	          highlightDecals(decalIntersection.object);
+	        }
+	      } // if	
+
+	    }, 1000);
+	  }); // pointerdown
+
+	  window.addEventListener('pointerup', function (event) {
+	    // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
+	    clearTimeout(longPressTimer);
+	    var clickTime = performance.now() - pointerdownTime; // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
+
+	    if (moved === false && clickTime < 200) {
+	      checkIntersection(event.clientX, event.clientY, mesh === undefined ? [] : [mesh]);
+
+	      if (intersection.intersects) {
+	        addDecal();
+	      }
+	    } // if
+
+	  }); // pointerup
+	  // For now just focus on adding the pointer helper.
+
+	  window.addEventListener('pointermove', function (event) {
+	    checkIntersection(event.clientX, event.clientY, mesh === undefined ? [] : [mesh]);
+	  }); // onPointerMove
+	  // Maybe we could highlight the wireframe instead of the emmissivity?
+
+	  function highlightDecals(d) {
+	    decals.forEach(function (decal) {
+	      decal.material.emissive.setHex(0x000000);
+	    }); // forEach
+
+	    var active = selectedDecal === d;
+	    d.material.emissive.setHex(active ? 0x000000 : 0xff0000);
+	    selectedDecal = active ? undefined : d;
+	  } // highlightDecals
+
 	} // addAimingRay
+
+
+	function setupHUD() {
+	  gui = new InterfaceDecals();
+	  document.body.appendChild(gui.node);
+	  /* What should the hud DO?
+	  	for now try to see how on-the-go interactions would work: seems to be adequate.
+	  	
+	  	how could I select a decal to be adjusted? For annotations I can just click on them. Do I want to be able to put decals on-top of decals?
+	  	
+	  	
+	  */
+
+	  gui.rotation.node.addEventListener("input", function (e) {
+	    if (selectedDecal) {
+	      selectedDecal.userData.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
+	      transformDecal(selectedDecal);
+	    } // if
+
+	  }); // rotation.addEventListener
+
+	  gui.size.node.addEventListener("input", function (e) {
+	    /*
+	    The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
+	    */
+	    if (selectedDecal) {
+	      selectedDecal.userData.scale += gui.size.value / 10;
+	      transformDecal(selectedDecal);
+	    } // if
+
+	  }); // rotation.addEventListener
+	  // The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
+
+	  gui.eraser.node.onclick = function () {
+	    if (selectedDecal) {
+	      scene.remove(selectedDecal);
+	      decals.splice(decals.indexOf(selectedDecal), 1);
+	    } // if
+
+	  }; // onclick
+
+	} // setupHUD
 	// CONTROLS
 
 
@@ -33245,6 +33503,7 @@
 	function animate() {
 	  requestAnimationFrame(animate);
 	  controls.update();
+	  gui.stats.update();
 	  render();
 	} // animate
 

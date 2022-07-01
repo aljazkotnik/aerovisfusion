@@ -27,3 +27,9 @@ AIMING ISSUES:
  - then load and apply decal
  - finally work on interactively creating decal
  
+ 
+ 
+ 
+ 
+TODO:
+ - generic coordinate system indicator

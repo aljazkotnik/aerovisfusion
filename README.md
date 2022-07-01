@@ -8,7 +8,7 @@ COMPONENTS:
 Components have independent demos for ease of development.
 
 INTERACTIVE TAGGING:
-The demo is set in space because the geometry creation was easy. The user can position yellow glowing annotation spheres on top of the box-satellites by clicking on them. Positioning of spheres in free space is not activated in this demo. By activating the sponge button the user can enter the mode in which clicking on hte box satellites removes the spheres.
+The demo is set in space because the geometry creation was easy. The user can position yellow glowing annotation spheres on top of the box-satellites by clicking on them. Positioning of spheres in free space is not activated in this demo. By activating the sponge button the user can enter the mode in which clicking on the box satellites removes the spheres.
 
 To adjust the depth/radius of individual spheres the user must first select the sphere to adjust. By clicking on a sphere its glow turns red indicating that it is selected. The sliders in the top right corner work as incremental controls - grabbing the handle and moving it left adds a negative increment to the relevant property for each change in the input state. This allows for coarse adjustments in the extreme position, and fine adjustments near the center. After letting go the controls re-center.
 
@@ -31,7 +31,7 @@ Controlling the animation speed. Using the debounced indexing approach the minim
 
 Another consideration is the framerate, which is not always consistent. Therefore to be able to track particles in real time the time prescription method is more applicable. As mentioned above this also controls the speed at which the streamlet advances through the domain. By prescribing two timesteps the start and finish of the streamlet can be defined, which can allow the length of the streamlet to be better controlled. Discretisation still plays a role, as it determines the resolution.
 
-Streamlines in ParaView were created using the sphere seed geometry: ParaView selects n random intitial streamline positions within the sphere, and starts moving down and upstream of these points to find the lines. Because the streamlines all start relatively close together the streamlets also start together, and move through the domain togehter. Although such a visualisation may be useful, to visualise the entire flow field with moving streamlines the streamlets need to be offset.
+Streamlines in ParaView were created using the sphere seed geometry: ParaView selects n random intitial streamline positions within the sphere, and starts moving down and upstream of these points to find the lines. Because the streamlines all start relatively close together the streamlets also start together, and move through the domain together. Although such a visualisation may be useful, to visualise the entire flow field with moving streamlines the streamlets need to be offset.
 
 Fade in, and fade out are controlled by controlling the indexing, dynamically changing the number of vertices to draw from 0 at the beginning to n, and vice versa. An alternate approach is to just find the start/end index based on the timestamps. Then the finding of the correct times handles the fade in and out effects.
 
@@ -39,8 +39,8 @@ Fade in, and fade out are controlled by controlling the indexing, dynamically ch
 
 
 DECALS
-- Why is there a dark triangle on hte other side?
-    Maybe pushDecalVertex needs to be updated? The idea is that the cutout of the mesh is too big, and it takes into account the other side of the airfoil also. To prevent the other surface being added we need to exclude the vertices with the normal in hte same general direction as the view vector.
+- Why is there a dark triangle on the other side?
+    Maybe pushDecalVertex needs to be updated? The idea is that the cutout of the mesh is too big, and it takes into account the other side of the airfoil also. To prevent the other surface being added we need to exclude the vertices with the normal in the same general direction as the view vector.
 - How to control rotation and size?
 - How to draw a preview? Make an 'outline' decal geometry? How will that know the shape?
 - The decals should be adjustable after placement. Maybe clicking can do rough placement, and then sliders do fine placement? The sort of rocket controls that are used for annotation creation?
@@ -53,11 +53,43 @@ Decals are added into the scene as additional scene objects, specifically meshes
 
 For thin geometries the cutting of the support geometries can result in vertices from both sides being selected. Selecting a smaller z component of the size removed the additional decal on the opposing side.
 
-On the pressure side the decals are always black, and on the suction side they are colorful. This holds true even if the decal is initially placed on hte PS. Is this a vertex normal problem? The aiming line gets it's normal from the point on the surface, so the normals should be ok?
+On the pressure side the decals are always black, and on the suction side they are colorful. This holds true even if the decal is initially placed on the PS. Is this a vertex normal problem? The aiming line gets it's normal from the point on the surface, so the normals should be ok?
+
+
+Previewing requires additional methods to project the image onto the item. A square can be assumed and it's shadow projected to give a preview, but this seems clumsy. Furthermore, the image is always square, even if the final look only shows a part of the image. Alternately the support mesh can be cut on the fly to provide a live preview of the decal.
+
+
+
+Decal placement: ideally there would be a preview when positioning the decal, and afterwards the decal should be movable to allow adjustments to the positioning and size. In this approach the clicking positions the decal roughly, and incremental sliders position it finely. However, the decals are cutouts of the supporting geometry, and to move them the corresponding cutout needs to be provided. Will this be fast enough to be interactive?
 
 
 
 
 
 
-Decal placement: ideally there would be a preview when positioning hte decal, and afterwards the decal should be movable to allow adjustments to the positioning and size. In this approach the clicking positions the decal roughly, and incremental sliders position it finely. However, the decals are cutouts of the supporting geometry, and to move them the corresponding cutout needs to be provided. Will this be fast enough to be interactive?
+
+
+
+
+IMAGE/VIDEO ADDITION
+
+- add smoke visualisation video to youtube
+- interactive addition, scaling, positioning of schlieren images
+- expand to allow video addition
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

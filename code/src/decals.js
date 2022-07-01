@@ -44,11 +44,13 @@ Other approach is the Octtree. this would be required for internal passages. No 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
-
+import InterfaceDecals from "./GUI/InterfaceDecals.js";
 
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 
+// The gui - statse need to be updated as animated.
+var gui;
 
 
 // Scene items
@@ -62,7 +64,11 @@ const domainMidPoint = new THREE.Vector3(0.5, 100.5, 0);
 let mesh;
 let raycaster;
 let line;
+
+
+// MOUSE INTERACTION HELPERS
 let moved;
+let selectedDecal;
 
 const intersection = {
 	intersects: false,
@@ -70,12 +76,19 @@ const intersection = {
 	normal: new THREE.Vector3()
 };
 const mouse = new THREE.Vector2();
-const intersects = []; // array that stores found intersects.
+const intersects = []; // array that stores found intersects with mesh.
+
+
+
+// Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
+
+// Check first on-the-go interactions.
+
 
 const textureLoader = new THREE.TextureLoader();
-const decalDiffuse = textureLoader.load( 'assets/oil_flow.png' );
+const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
 // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
+// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
 
 // normalMap: decalNormal,
 const decalMaterial = new THREE.MeshPhongMaterial( {
@@ -103,7 +116,6 @@ const size = new THREE.Vector3( 10, 10, 10 );
 const params = {
 	minScale: 0.10,
 	maxScale: 0.20,
-	rotate: true,
 	clear: function () {
 		removeDecals();
 	}
@@ -152,106 +164,98 @@ function init() {
 	
 	
 	
-	// Create the raycaster.
-	/*
-	BEHAVIOR:
-	- click and drag should support OrbitControls without pasting the decal.
-	- so store moved as before, and only past on pointerup?
-	*/
-	
-	controls.addEventListener( 'change', function (){
-	  moved = true;
-	}); // change
-
-	window.addEventListener( 'pointerdown', function (){
-	  moved = false;
-	}); // pointerdown
-
-	window.addEventListener( 'pointerup', function (event){
-	  // This registeres when the user clicked.
-	  if ( moved === false ) {
-		checkIntersection( event.clientX, event.clientY );
-		if ( intersection.intersects ){
-			shoot();
-		};
-	  } // if
-	}); // pointerup
-	
-
-	// For now just focus on adding the pointer helper.
-	window.addEventListener( 'pointermove', function (event){
-	  checkIntersection( event.clientX, event.clientY )
-	}); // onPointerMove
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	// Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	// With trackball controls lookAt no longer works.
 	// console.log(scene, camera, object, viewvec)
 	camera.lookAt( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-
+	console.log(camera)
 
 	window.addEventListener( 'resize', onWindowResize );
+	
+	
+	
+	setupHUD();
+	
+	
+
 } // init
 
 
-function shoot() {
+// INTERACTIVITY
 
+function addDecal() {
+
+	// Position, Orientation, and Scale
 	position.copy( intersection.point );
+	
 	orientation.copy( decalOrientationHelper.rotation ); // decalOrientationHelper!!!
-
-	if ( params.rotate ) orientation.z = Math.random() * 2 * Math.PI;
+	orientation.z = Math.random() * 2 * Math.PI;
 
 	const scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
-	size.set( scale, scale, 0.1*scale ); // limit clipping box!!
+	size.set( scale, scale, scale ); // limit clipping box, or adjust puchDecalVertex!!!!
+
+
+
+	// Make the decal object.
+	const cutout = new DecalGeometry( mesh, position, orientation, size );
 
 	const material = decalMaterial.clone();
 	material.color.setHex( Math.random() * 0xffffff );
-
-	const cutout = new DecalGeometry( mesh, position, orientation, size );
-	cutout.computeVertexNormals();
 	
+	const decal = new THREE.Mesh( cutout, material );
+	
+	
+	// Add additional information required within the userData.
+	decal.userData = {position, orientation, scale};
+	
+	decals.push( decal );
+	scene.add( decal );
+	
+	
+	console.log(decals)
 
-	const m = new THREE.Mesh( cutout, material );
+} // addDecal
 
-	decals.push( m );
-	scene.add( m );
-
-} // shoot
 
 function removeDecals() {
 
 	decals.forEach( function ( d ) {
-
 		scene.remove( d );
-
-	} );
+	}); // forEach
 
 	decals.length = 0;
 
 }; // removeDecals
 
+function transformDecal(decal){
+	// Ok - try recalculating the decal geometry: seems to be working decently for this demo.
+	// The input is an object that contains the decal object, as well as the new position, orientation, and scale.
+	size.set(decal.userData.scale, decal.userData.scale, decal.userData.scale);
+	
+	const cutout = new DecalGeometry( mesh, decal.userData.position, decal.userData.orientation, size );
+	decal.geometry.copy(cutout);
+} // transformDecal
 
-function checkIntersection( x, y ) {
 
-	if ( mesh === undefined ) return;
+
+
+function checkIntersection( x, y, candidates) {
+	// This should be adjusted so that the array of items to check the intersect against can be specified.
+
+	if ( candidates.length < 1 ) return;
 
 	mouse.x = ( x / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( y / window.innerHeight ) * 2 + 1;
 
 	raycaster.setFromCamera( mouse, camera );
-	raycaster.intersectObject( mesh, false, intersects );
+	raycaster.intersectObjects( candidates, false, intersects );
 
 	
 	if ( intersects.length > 0 ) {
 		// Intersect point is the first point of the aimer line.
-		const p = intersects[ 0 ].point;
+		const i = intersects[ 0 ];
+		const p = i.point;
 		
 		// The normal gets transformed into the second point here.
 		const n = intersects[ 0 ].face.normal.clone();
@@ -266,12 +270,12 @@ function checkIntersection( x, y ) {
 		positions.needsUpdate = true;
 
 
-		// Why does `intersection' need to be updated?
+		// Intersection stores the intersect information for easier use later on.
 		intersection.point.copy( p );
 		intersection.normal.copy( intersects[ 0 ].face.normal );
 		intersection.intersects = true;
 
-		// Intersects is the initialised array of intersects.
+		// Clear the intersects array.
 		intersects.length = 0;
 		
 		
@@ -279,15 +283,21 @@ function checkIntersection( x, y ) {
 		decalOrientationHelper.position.copy( p );
 		decalOrientationHelper.lookAt( n );
 		
-		
+		return i
 	} else {
 		intersection.intersects = false;
 	} // if
 } // checkIntersection
 
+function addBoundingBox(object){
+	// This is a world oriented bounding box.
+	const box = new THREE.BoxHelper(object, 0xffff00); 
+	scene.add( box );
+	
+} // addBoundingBox
 
 
-
+// SCENE.
 function setupScene(){
 	
 		/* SCENE, CAMERA, and LIGHT setup.
@@ -295,26 +305,17 @@ function setupScene(){
 	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
 	*/
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
-	camera.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z -1 );
-	
+	camera.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z +1 );
+	// camera.position.set( 0.16, 99, 0.95 );
 	
 	scene = new THREE.Scene();
 
-
-
-
-
 	// With the normal material the light is not needed - but will be needed later.
-
-
-/*
+	/*
 	light = new THREE.DirectionalLight( 0xffffff, 1 );
 	light.position.set( 1, 1, 1 ).normalize();
 	scene.add( light );
-*/
-	
-	
-	
+	*/
 	// The lighting has a major impact on the decals!!
 	scene.add( new THREE.AmbientLight( 0xffffff ) );
 
@@ -326,12 +327,7 @@ function setupScene(){
 	dirLight2.position.set( - 1, 0.75, - 0.5 );
 	scene.add( dirLight2 );
 	
-	
-	
-	
-	
-	
-	
+
 	
 	// SETUP THE ACTUAL LOOP
 	// renderer.domElement is created in renderer.
@@ -340,12 +336,7 @@ function setupScene(){
 	// renderer.setAnimationLoop( animation );
 	document.body.appendChild( renderer.domElement );
 	
-
-	
-	
-	
 } // setupScene
-
 
 function addWingGeometry(){
 	const wingmaterial = new THREE.MeshBasicMaterial( { color: 0x0FC3D6 } );
@@ -361,39 +352,172 @@ function addWingGeometry(){
 	
 	Promise.all([verticesPromise, indicesPromise]).then(a=>{
 		
-		
-		
-		
-		
 		const geometry = new THREE.BufferGeometry();
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
 		geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
 		geometry.computeVertexNormals();
 		
-		
-		
 		mesh = new THREE.Mesh( geometry, wingmaterial );
-		
 		
 		scene.add( mesh );
 	}) // Promise.all
-	
-	
 } // addWingGeometry
 
-
-
 function addAimingRay(){
+		
+	// Create the raycaster.
+	/*
+	BEHAVIOR:
+	- click and drag should support OrbitControls without pasting the decal.
+	- so store moved as before, and only past on pointerup?
+	*/
 	
+	// The line doesn't seem to work if it is not initialised near the surface. Why??
 	const geometry = new THREE.BufferGeometry();
 	geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), new THREE.Vector3(0.384, 100, 0.173) ] );
-
 	line = new THREE.Line( geometry, new THREE.LineBasicMaterial() );
 	scene.add( line );
 	
+	// The raycaster theat finds surface point.
 	raycaster = new THREE.Raycaster();
 	
+	
+	// Behavior. Change on CONTROLS, pointerdown, pointerup on window!
+	controls.addEventListener( 'change', function (){
+	  moved = true;
+	}); // change
+
+
+	// Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
+	let pointerdownTime;
+	let longPressTimer;
+	window.addEventListener( 'pointerdown', function (event){
+	  moved = false;
+	  
+	  pointerdownTime = performance.now();
+	  longPressTimer = window.setTimeout(function(){ 
+		if(!moved){
+				
+		  // How do we deselect a decal? Another longpress, or when another decal is selected.
+		  let decalIntersection = checkIntersection( event.clientX, event.clientY, decals );
+		  if ( decalIntersection ){
+			highlightDecals( decalIntersection.object )
+		  }; // if
+		} // if	
+	  },1000); 
+	}); // pointerdown
+
+	window.addEventListener( 'pointerup', function (event){
+	  
+	  // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
+	  
+	  clearTimeout(longPressTimer);
+	  
+	  let clickTime = performance.now() - pointerdownTime;
+	  // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
+	  if ( moved === false && clickTime < 200) {
+		checkIntersection( event.clientX, event.clientY, mesh === undefined ? [] : [mesh] );
+		if ( intersection.intersects ){
+			addDecal();
+		};
+	  } // if
+	}); // pointerup
+	
+
+	// For now just focus on adding the pointer helper.
+	window.addEventListener( 'pointermove', function (event){
+	  checkIntersection( event.clientX, event.clientY, mesh === undefined ? [] : [mesh] )
+	}); // onPointerMove
+	
+	
+	
+	// Maybe we could highlight the wireframe instead of the emmissivity?
+	function highlightDecals(d){
+	
+		
+		decals.forEach(decal=>{
+			decal.material.emissive.setHex(0x000000);
+		}) // forEach
+		
+		
+		let active = selectedDecal === d;
+		d.material.emissive.setHex( active ? 0x000000 : 0xff0000);
+		selectedDecal = active ? undefined : d;
+				
+		
+	} // highlightDecals
+	
+	
+	
+	
+	
 } // addAimingRay
+
+
+
+
+
+
+
+function setupHUD(){
+	
+	gui = new InterfaceDecals();
+	document.body.appendChild( gui.node );
+	
+	
+	/* What should the hud DO?
+		for now try to see how on-the-go interactions would work: seems to be adequate.
+		
+		how could I select a decal to be adjusted? For annotations I can just click on them. Do I want to be able to put decals on-top of decals?
+		
+		
+	*/
+	
+	
+	gui.rotation.node.addEventListener("input", function(e){
+	
+		if(selectedDecal){
+			selectedDecal.userData.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
+			transformDecal( selectedDecal );
+		} // if
+	
+	}) // rotation.addEventListener
+	
+	
+	
+	
+	gui.size.node.addEventListener("input", function(e){
+		/*
+		The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
+		*/
+		if(selectedDecal){			
+			selectedDecal.userData.scale += gui.size.value/10;
+			transformDecal( selectedDecal );
+		} // if
+	
+	}) // rotation.addEventListener
+	
+	
+	
+	// The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
+	gui.eraser.node.onclick = function(){
+		if(selectedDecal){
+			scene.remove(selectedDecal);
+			decals.splice( decals.indexOf(selectedDecal), 1);
+		} // if
+	} // onclick
+	
+	
+	
+} // setupHUD
+
+
+
+
+
+
+
+
 
 
 
@@ -418,6 +542,7 @@ function onWindowResize() {
 function animate() {
 	requestAnimationFrame( animate );
 	controls.update();
+	gui.stats.update();
 	render();
 } // animate
 
