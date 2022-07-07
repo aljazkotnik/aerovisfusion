@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: black;">
+	<head>
+		<title>Image Based Data</title>
+		<link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+		
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<link rel="stylesheet" href="./style/style.css">
+		
+		
+		<style>
+		
+			body {
+				background-color: #ffffff;
+				margin: 0;
+				overflow: hidden;
+			}
+
+			#css, #webgl {
+				width: 100%;
+				height: 100%;
+				position: absolute;
+				top: 0; left: 0;
+			}
+
+			#css {
+			  background: black;
+			}
+
+			#webgl {
+			  pointer-events: none;
+			}
+		</style>
+		
+	</head>
+	<body>
+	    
+		<div id="css"></div>
+		<div id="webgl"></div>
+		<script src="./code/dist/images.js"></script>
+
+	</body>
+</html>

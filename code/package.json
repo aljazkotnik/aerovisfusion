@@ -11,6 +11,7 @@
   "annotations": "dist/annotations.js",
   "streamlines": "dist/streamlines.js",
   "decals": "dist/decals.js",
+  "images": "dist/images.js",
   "dependencies": {
     "gl-matrix": "^3.3.0",
     "node": "^16.0.0",

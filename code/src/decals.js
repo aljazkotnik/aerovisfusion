@@ -217,7 +217,6 @@ function addDecal() {
 
 } // addDecal
 
-
 function removeDecals() {
 
 	decals.forEach( function ( d ) {
