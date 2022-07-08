@@ -31906,7 +31906,9 @@
 	  addWingGeometry(); // Add the video: video id, and world w, x, y, z, and radian rx, ry, rz
 	  // x=1 looks good, but for intersection x=0.4 can be used.
 
-	  addYoutubeVideo('JWOH6wC0uTU', 1, 0.4, 100, 0, 0, Math.PI / 2, Math.PI / 2);
+	  addYoutubeVideo('JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI / 2, Math.PI / 2); // Schlieren image.
+
+	  addStaticImage('./assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI / 2, 0, 0);
 	  console.log(camera, [sceneWebGL, sceneCSS]); // Make hte camera look at the center
 
 	  camera.lookAt(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z);
@@ -32000,6 +32002,29 @@
 	  sceneCSS.add(videoIframe);
 	  sceneWebGL.add(cssCutPlaneMesh);
 	} // addYoutubeVideo
+
+
+	function addStaticImage(id, w, x, y, z, rx, ry, rz) {
+	  // Add in the schlieren image as well. Use the loaded image width and height to size the plane hosting it.
+	  new TextureLoader().load(id, function (texture) {
+	    var geometry = new PlaneGeometry(texture.image.width, texture.image.height);
+	    var material = new MeshBasicMaterial({
+	      map: texture,
+	      side: DoubleSide
+	    });
+	    var webGLImage = new Mesh(geometry, material); // Calculate the scaing required to bring the image to the desired size. Size it so that the width reaches the specified 'w' value.
+
+	    var k = w / texture.image.width;
+	    webGLImage.position.set(x, y, z);
+	    webGLImage.rotation.set(rx, ry, rz);
+	    webGLImage.scale.set(k, k, k); // To seet opacity:
+	    // webGLImage.material.transparent = true;
+	    // webGLImage.material.opacity = 0.7;
+
+	    console.log("imageobj:", webGLImage);
+	    sceneWebGL.add(webGLImage);
+	  });
+	} // addStaticImage
 	// GEOMETRY
 
 
