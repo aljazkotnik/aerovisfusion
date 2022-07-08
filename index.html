@@ -160,14 +160,25 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
 	
 <h2><span>Pictures and Videos</span></h2>
 
+  <div>
   <div style="max-width: 900px;">
 	  <figure>
 	    <a href="./images.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_decals.JPG" alt="alt1"-->
+	      <img src="./assets/teaser_images.JPG" alt="alt1"-->
 	    </a>
 	  </figure>
   </div>
 
+
+  <p><b>Embedding videos:</b> We want to draw a video into a scene. The challenges are: hosting a video, drawing it as a texture, and implementing the necessary controls. YouTube already provides a hosting service, and YouTube and Video HTML tags provide some play controls. However, placing them into a WebGL rendered scene renders them as textures, and the interactivity with the video controls is lost.</p>
+  
+  <p>THREEjs provides a CSS3DRenderer that can render an iFrame into the 3D scene, while maintaining interactivity. However, this means that the CSS3DRenderer must work alongside the WebGLRenderer. To achieve this two scenes can be created, one holding hte WebGL rendered elements, and the other CSS elements. By using the same camera for both of them, the same view from both scenes can be overlapped. The CSS scene rendering canvas is overlaid on the WebGL canvas to keep the iFrame interactions, and the camera is controlled through the CSS canvas interactions. However, the elements of both scenes will not intersect. To achieve this effect a plane geometry of the same size as the embedded iFrame is introduced into the WebGL scene - now this plane provides the necessary cuts in the WebGL scene, and is subsequently overlaid withthe CSS iFrame.</p>
+
+  <p>WIP: Adding static images</p>
+
+  <p>CSS rendering allows interactive notes to be posted directly in the 3D environment.</p>
+
+  </div>
 
 
 <h2>Future Work Ideas</h2>
@@ -180,6 +191,8 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
 
 
 	<p>Try to implement virtual smoke visualisation by seeding particles. The particles move along streamlines, but implicitly - their path is influenced at every step. By adjusting their weight, and subsequently inertia the impact of the differences in fluid properties (smoke vs air) could be assessed. Similarly: by adding bounce-stick mechanics to the seeding particles could be allowed to deposit themselves on the surface. By associating a potential flow doublet of a specific strength with the particle could the flow-field velocity be adjusted for following particles without recalculating the base CFD? The potential flow approach could also allow particles to be modelled as something else than a sphere.</p>
+	
+	<p>It's possible to animate the camera to move in the 3D space - this could allow for interactive presentations with the 3D environment in the background. The images and videos could appear as needed!</p>
   </div>
 
 <h2><span>Authors</span></h2>

@@ -46,7 +46,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
 import InterfaceDecals from "./GUI/InterfaceDecals.js";
 
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 
 // The gui - statse need to be updated as animated.
