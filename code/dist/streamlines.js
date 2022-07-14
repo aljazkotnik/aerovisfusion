@@ -32615,7 +32615,7 @@
 
 	function text2csv(t) {
 	  // Read a regular table and create json objects based on the rows.
-	  var rows = t.split("\n"); // \r\n depending on hte csv file??
+	  var rows = t.split("\r\n"); // \r\n depending on hte csv file??
 
 	  var header = rows.splice(0, 1)[0];
 	  var properties = header.split(",").map(function (t) {
@@ -32713,25 +32713,7 @@
 	animate();
 
 	function init() {
-	  /* SCENE, CAMERA, and LIGHT setup.
-	  camera inputs: view angle, aspect ratio, near, far.
-	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	  */
-	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
-	  camera.position.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z - 1);
-	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
-
-	  light = new DirectionalLight(0xffffff, 1);
-	  light.position.set(1, 1, 1).normalize();
-	  scene.add(light); // SETUP THE ACTUAL LOOP
-	  // renderer.domElement is created in renderer.
-
-	  renderer = new WebGLRenderer({
-	    antialias: true
-	  });
-	  renderer.setSize(window.innerWidth, window.innerHeight); // renderer.setAnimationLoop( animation );
-
-	  document.body.appendChild(renderer.domElement); // Add the controls - change this to trackbal?
+	  setupScene(); // Add the controls - change this to trackbal?
 
 	  addOrbitControls(); // addTrackballControls();
 	  // Data domain viewframe.
@@ -32749,11 +32731,41 @@
 
 	  addShaderStreamlines(); // Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	  // With trackball controls lookAt no longer works.
-	  // console.log(scene, camera, object, viewvec)
 
-	  camera.lookAt(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z);
+	  adjustView([0.43, 99, 1.2]);
 	  window.addEventListener('resize', onWindowResize);
 	} // init
+
+
+	function setupScene() {
+	  /* SCENE, CAMERA, and LIGHT setup.
+	  camera inputs: view angle, aspect ratio, near, far.
+	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
+	  */
+	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
+	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
+
+	  light = new DirectionalLight(0xffffff, 1);
+	  light.position.set(1, 1, 1).normalize();
+	  scene.add(light); // SETUP THE ACTUAL LOOP
+	  // renderer.domElement is created in renderer.
+
+	  renderer = new WebGLRenderer({
+	    antialias: true
+	  });
+	  renderer.setSize(window.innerWidth, window.innerHeight); // renderer.setAnimationLoop( animation );
+
+	  document.body.appendChild(renderer.domElement);
+	} // setupScene
+
+
+	function adjustView(position) {
+	  // Is it the controls target that sets the view??
+	  controls.enabled = false;
+	  camera.position.set(position[0], position[1], position[2]);
+	  camera.lookAt(controls.target);
+	  controls.enabled = true;
+	} // adjustView
 
 
 	function addWingGeometry() {

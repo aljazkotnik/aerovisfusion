@@ -44,7 +44,9 @@ Other approach is the Octtree. this would be required for internal passages. No 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+
 import InterfaceDecals from "./GUI/InterfaceDecals.js";
+import ColorBar from "./GUI/ColorBar.js";
 
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 
@@ -56,8 +58,9 @@ var gui;
 var camera, scene, light, renderer, controls;
 var viewvec = new THREE.Vector3(0,0,-1);
 const domainMidPoint = new THREE.Vector3(0.5, 100.5, 0);
-
-
+const color = new THREE.Color();
+const colorbar = new ColorBar(0.14, 0.44);
+colorbar.setColormap("rainbow", 200);
 
 // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 let mesh;
@@ -166,9 +169,7 @@ function init() {
 	
 	// Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	// With trackball controls lookAt no longer works.
-	// console.log(scene, camera, object, viewvec)
-	camera.lookAt( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-	console.log(camera)
+	adjustView([0.43, 99, 1.2])
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -303,8 +304,6 @@ function setupScene(){
 	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
 	*/
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
-	camera.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z +1 );
-	// camera.position.set( 0.16, 99, 0.95 );
 	
 	scene = new THREE.Scene();
 
@@ -336,9 +335,22 @@ function setupScene(){
 	
 } // setupScene
 
+function adjustView(position){
+	// Is it the controls target that sets the view??
+	controls.enabled = false;
+
+	camera.position.set( position[0], position[1], position[2] );
+	camera.lookAt( controls.target );
+
+	controls.enabled = true;
+} // adjustView
+
 function addWingGeometry(){
-	const wingmaterial = new THREE.MeshBasicMaterial( { color: 0x0FC3D6 } );
-	wingmaterial.side = THREE.DoubleSide;
+	const wingmaterial = new THREE.MeshBasicMaterial( { 
+	    color: 0x0FC3D6,
+		vertexColors: true,
+		side: THREE.DoubleSide
+	} );
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
@@ -347,11 +359,26 @@ function addWingGeometry(){
 	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
+	let colorPromise = fetch("./assets/deltawing/wing/mach.bin")
+	  .then(res=>res.arrayBuffer())
+	  .then(ab=>{return new Float32Array(ab)}); // float32
 	
-	Promise.all([verticesPromise, indicesPromise]).then(a=>{
+	Promise.all([verticesPromise, indicesPromise, colorPromise]).then(a=>{
+		
+		// Convert the Mach numbers into colors to be used by the GPU. Maybe this can be extended later to perform the assignmend to color on the GPU?
+		let colors = [];
+		a[2].forEach((v,i)=>{
+			// Populate the colors. Maybe for now just create colors?
+			color.set( colorbar.getColor( v ) );
+			colors.push( color.r, color.g, color.b, 1 );
+		}) // forEach
+		
 		
 		const geometry = new THREE.BufferGeometry();
 		geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
+		
+		geometry.setAttribute( 'color', new THREE.Float32BufferAttribute(colors, 4, true) );
+		
 		geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
 		geometry.computeVertexNormals();
 		

@@ -92,28 +92,7 @@ function init() {
 
 	
 
-	/* SCENE, CAMERA, and LIGHT setup.
-	camera inputs: view angle, aspect ratio, near, far.
-	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	*/
-	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
-	camera.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z -1 );
-	
-	
-	scene = new THREE.Scene();
-
-	// With the normal material the light is not needed - but will be needed later.
-	light = new THREE.DirectionalLight( 0xffffff, 1 );
-	light.position.set( 1, 1, 1 ).normalize();
-	scene.add( light );
-	
-	
-	// SETUP THE ACTUAL LOOP
-	// renderer.domElement is created in renderer.
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	// renderer.setAnimationLoop( animation );
-	document.body.appendChild( renderer.domElement );
+	setupScene();
 	
 	
 	
@@ -121,7 +100,7 @@ function init() {
 	addOrbitControls();
 	// addTrackballControls();
 	
-	
+
 	// Data domain viewframe.
 	// The box is positioned by its centerpoint.
 	/*
@@ -145,14 +124,48 @@ function init() {
 	
 	// Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	// With trackball controls lookAt no longer works.
-	// console.log(scene, camera, object, viewvec)
-	camera.lookAt( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-
+	adjustView([0.43, 99, 1.2])
 
 	window.addEventListener( 'resize', onWindowResize );
 } // init
 
 
+
+function setupScene(){
+	
+	/* SCENE, CAMERA, and LIGHT setup.
+	camera inputs: view angle, aspect ratio, near, far.
+	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
+	*/
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
+	
+	scene = new THREE.Scene();
+
+	// With the normal material the light is not needed - but will be needed later.
+	light = new THREE.DirectionalLight( 0xffffff, 1 );
+	light.position.set( 1, 1, 1 ).normalize();
+	scene.add( light );
+	
+	
+	// SETUP THE ACTUAL LOOP
+	// renderer.domElement is created in renderer.
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	// renderer.setAnimationLoop( animation );
+	document.body.appendChild( renderer.domElement );
+	
+	
+} // setupScene
+
+function adjustView(position){
+	// Is it the controls target that sets the view??
+	controls.enabled = false;
+
+	camera.position.set( position[0], position[1], position[2] );
+	camera.lookAt( controls.target );
+
+	controls.enabled = true;
+} // adjustView
 
 function addWingGeometry(){
 	const wingmaterial = new THREE.MeshBasicMaterial( { color: 0x0FC3D6 } );

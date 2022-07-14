@@ -32790,6 +32790,80 @@
 	} // constructor
 	; // InterfaceDecals
 
+	var ColorBar = /*#__PURE__*/function () {
+	  function ColorBar(a, b) {
+	    _classCallCheck(this, ColorBar);
+
+	    this.minV = 0;
+	    this.maxV = 1;
+	    var obj = this;
+	    obj.minV = a ? a : obj.minV;
+	    obj.maxV = b ? b : obj.maxV;
+	    obj.setColormap("rainbow", 20);
+	  } // constructor
+
+
+	  _createClass(ColorBar, [{
+	    key: "getColor",
+	    value: function getColor(alpha) {
+	      // Convert alpha into a colormap index.
+	      var obj = this; // Make sure that alpha is in the available range.
+
+	      var a = alpha;
+	      a = a <= obj.minV ? obj.minV : a;
+	      a = a >= obj.maxV ? obj.maxV : a;
+	      var f = (a - obj.minV) / (obj.maxV - obj.minV);
+	      var colorPosition = Math.round(f * obj.lut.length);
+	      return obj.lut[colorPosition];
+	    } // getColor
+
+	  }, {
+	    key: "setColormap",
+	    value: function setColormap(colormap, ncolorbands) {
+	      // The colormap is an array that stores colors at given indices. The array is created hre by interpolating between values given for individual colorbars.
+	      var obj = this; // Select the predefined values for the selected colormap. The values are an array of [value e[0,1], hex string] elements.
+
+	      obj.map = ColorMapKeywords[colormap] || ColorMapKeywords.rainbow;
+	      obj.lut = []; // So what does this do?
+
+	      var step = 1.0 / ncolorbands; // sample at 0
+
+	      obj.lut.push(obj.map[0][1]); // sample at 1/n, ..., (n-1)/n
+
+	      for (var i = 1; i < ncolorbands; i++) {
+	        // Interpolate between the value-hex combinatons to create new colors. Alpha tells us where on the value domain [0,1] we are sampling.
+	        var alpha = i * step; // Now loop through the predefined colormap values and see where the alpha value sits.
+
+	        for (var j = 0; j < obj.map.length - 1; j++) {
+	          // Check if alpha is within this predefined color band.
+	          if (alpha > obj.map[j][0] && alpha <= obj.map[j + 1][0]) {
+	            var min = obj.map[j][0];
+	            var max = obj.map[j + 1][0];
+	            var minc = new Color(obj.map[j][1]);
+	            var maxc = new Color(obj.map[j + 1][1]); // Try to interpolate the colors as hex?
+
+	            var color = new Color().lerpColors(minc, maxc, (alpha - min) / (max - min));
+	            obj.lut.push(color);
+	          }
+	        }
+	      }
+	      // sample at 1
+
+	      obj.lut.push(obj.map[obj.map.length - 1][1]);
+	    } // setColormap
+
+	  }]);
+
+	  return ColorBar;
+	}(); // ColorBar
+	var ColorMapKeywords = {
+	  rainbow: [[0.0, 0x0000FF], [0.2, 0x00FFFF], [0.5, 0x00FF00], [0.8, 0xFFFF00], [1.0, 0xFF0000]],
+	  cooltowarm: [[0.0, 0x3C4EC2], [0.2, 0x9BBCFF], [0.5, 0xDCDCDC], [0.8, 0xF6A385], [1.0, 0xB40426]],
+	  blackbody: [[0.0, 0x000000], [0.2, 0x780000], [0.5, 0xE63200], [0.8, 0xFFFF00], [1.0, 0xFFFFFF]],
+	  grayscale: [[0.0, 0x000000], [0.2, 0x404040], [0.5, 0x7F7F80], [0.8, 0xBFBFBF], [1.0, 0xFFFFFF]],
+	  gist_earth: [[0.0, 0x000000], [0.2, 0x225e7c], [0.5, 0x5da04b], [0.8, 0xc4a46f], [1.0, 0xfdfbfb]]
+	};
+
 	/**
 	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
 	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
@@ -33140,7 +33214,10 @@
 	var gui; // Scene items
 
 	var camera, scene, renderer, controls;
-	var domainMidPoint = new Vector3(0.5, 100.5, 0); // SETUP THE GEOMETRY AND INTERSECT ITEMS.
+	var domainMidPoint = new Vector3(0.5, 100.5, 0);
+	var color = new Color();
+	var colorbar = new ColorBar(0.14, 0.44);
+	colorbar.setColormap("rainbow", 200); // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 
 	var mesh;
 	var raycaster;
@@ -33214,10 +33291,8 @@
 	  decalOrientationHelper.visible = false;
 	  scene.add(decalOrientationHelper); // Bringing this lookAt to the end fixed the camera misdirection initialisation.
 	  // With trackball controls lookAt no longer works.
-	  // console.log(scene, camera, object, viewvec)
 
-	  camera.lookAt(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z);
-	  console.log(camera);
+	  adjustView([0.43, 99, 1.2]);
 	  window.addEventListener('resize', onWindowResize);
 	  setupHUD();
 	} // init
@@ -33312,8 +33387,6 @@
 	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
 	  */
 	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
-	  camera.position.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z + 1); // camera.position.set( 0.16, 99, 0.95 );
-
 	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
 
 	  /*
@@ -33341,11 +33414,21 @@
 	} // setupScene
 
 
+	function adjustView(position) {
+	  // Is it the controls target that sets the view??
+	  controls.enabled = false;
+	  camera.position.set(position[0], position[1], position[2]);
+	  camera.lookAt(controls.target);
+	  controls.enabled = true;
+	} // adjustView
+
+
 	function addWingGeometry() {
 	  var wingmaterial = new MeshBasicMaterial({
-	    color: 0x0FC3D6
-	  });
-	  wingmaterial.side = DoubleSide; // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+	    color: 0x0FC3D6,
+	    vertexColors: true,
+	    side: DoubleSide
+	  }); // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 
 	  var verticesPromise = fetch("./assets/deltawing/wing/vertices.bin").then(function (res) {
 	    return res.arrayBuffer();
@@ -33359,9 +33442,24 @@
 	    return new Uint32Array(ab);
 	  }); // uint32
 
-	  Promise.all([verticesPromise, indicesPromise]).then(function (a) {
+	  var colorPromise = fetch("./assets/deltawing/wing/mach.bin").then(function (res) {
+	    return res.arrayBuffer();
+	  }).then(function (ab) {
+	    return new Float32Array(ab);
+	  }); // float32
+
+	  Promise.all([verticesPromise, indicesPromise, colorPromise]).then(function (a) {
+	    // Convert the Mach numbers into colors to be used by the GPU. Maybe this can be extended later to perform the assignmend to color on the GPU?
+	    var colors = [];
+	    a[2].forEach(function (v, i) {
+	      // Populate the colors. Maybe for now just create colors?
+	      color.set(colorbar.getColor(v));
+	      colors.push(color.r, color.g, color.b, 1);
+	    }); // forEach
+
 	    var geometry = new BufferGeometry();
 	    geometry.setAttribute('position', new BufferAttribute(a[0], 3));
+	    geometry.setAttribute('color', new Float32BufferAttribute(colors, 4, true));
 	    geometry.setIndex(new BufferAttribute(a[1], 1));
 	    geometry.computeVertexNormals();
 	    mesh = new Mesh(geometry, wingmaterial);
