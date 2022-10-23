@@ -68,11 +68,9 @@ colorbar.colormap = "d3Spectral";
 
 const domainMidPoint = new THREE.Vector3(0.4, 100.5, 0);
 const focusInitialPoint = new THREE.Vector3(0.345, 100.166, 0.127);
-// const cameraInitialPoint = new THREE.Vector3(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z + 1);
 const cameraInitialPoint = new THREE.Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1);
 
-const p = focusInitialPoint.clone();
-console.log(p)
+
 
 init();
 animate();
@@ -82,7 +80,7 @@ function init() {
 
 	setupScene();
 	
-	// Add the controls - change this to trackbal?
+	// Add the controls
 	addArcballControls();
 	
 	// Add in the wing.
@@ -113,35 +111,9 @@ function setupScene(){
 	sceneWebGL = new THREE.Scene();
 	
 	
-	// LIGHTS
-	/*
-	const dirLight1 = new THREE.DirectionalLight( 0xffffff, 1 );
-	dirLight1.position.set( 1, 0.75, 0.5 );
-	sceneWebGL.add( dirLight1 );
-
-	const dirLight2 = new THREE.DirectionalLight( 0xffffff, 1 );
-	dirLight2.position.set( - 1, 0.75, - 0.5 );
-	sceneWebGL.add( dirLight2 );
-	*/
+	// LIGHTS - ambient light seems to be sufficient.
 	var ambientLight = new THREE.AmbientLight( 0xaaaaaa );
 	sceneWebGL.add( ambientLight );
-
-	var lights = [];
-	lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-	lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-	lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-	lights[ 3 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-	lights[ 4 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-	lights[ 5 ] = new THREE.PointLight( 0xffffff, 1, 3 );
-
-	lights[ 0 ].position.set( 0, 2, 0 );
-	lights[ 1 ].position.set( 1, 2, 1 );
-	lights[ 2 ].position.set( - 1, - 2, -1 );
-	lights[ 3 ].position.set( 0, 0, 2 );
-	lights[ 4 ].position.set( 0, 0, -2 );
-	lights[ 5 ].position.set( 0, -2, 0 );
-
-	lights.forEach(function(light){sceneWebGL.add(light)});
 	
 	
 	// RENDERERS

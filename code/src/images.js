@@ -1,8 +1,20 @@
 import * as THREE from "three";
+import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+
+// Specifically for video rendering.
 import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
+
+// Components.
+import IframeVideo from "./components/IframeVideo.js";
+import StaticImage from "./components/StaticImage.js";
+import ContouredMesh from "./components/ContouredMesh.js";
+import ColorBar from "./GUI/ColorBar.js";
+
+// GUI builder
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+
 
 
 /*
@@ -13,19 +25,11 @@ A video hosting platform already exists: YouTube.
 Videos can be drawn to a canvas, which can then be drawn to a texture. Apparently the browser offers some controls anyway.
 
 CSS3DRenderer allows an iFrame to be rendered as a texture, which allows the use of native YouTube controls.
-
-
 */
 
 
 
 
-
-var camera, controls;
-// const domainMidPoint = new THREE.Vector3(0, 0, 0);
-// const cameraInitialPoint = new THREE.Vector3(500, 350, 750);
-const domainMidPoint = new THREE.Vector3(0.8, 100.1, 0);
-const cameraInitialPoint = new THREE.Vector3(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z +1);
 /*
 wing domain roughly = {
 	x = [0, 0.7]
@@ -33,9 +37,59 @@ wing domain roughly = {
 	z = [0, 0.3]
 }
 */
+const domainMidPoint = new THREE.Vector3(0.4, 100.5, 0);
+const focusInitialPoint = new THREE.Vector3(0.345, 100.166, 0.127);
+const cameraInitialPoint = new THREE.Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1);
 
+
+// Scene items
+var camera, arcballcontrols, transformcontrols;
 var sceneWebGL, rendererWebGL;
 var sceneCSS, rendererCSS;
+
+
+// Colorbar
+const color = new THREE.Color();
+const colorbar = new ColorBar(0.14, 0.44);
+colorbar.colormap = "d3Spectral";
+
+
+
+// Make the overall GUI for elements.
+const gui = new GUI();
+const elementsGUI = gui.addFolder("Elements");
+const addElementGUI = gui.addFolder("Add element");
+
+// The button should open a modal, or append a selection to the GUI to configure the element to be added.
+const addElementConfig = {
+	type: '',
+	name: 'type in asset address',
+	add: function(el){
+		// Evaluate the current config and clear it.
+		
+		switch( addElementConfig.type ){
+			case "Image":
+				addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+				break;
+			case "Video":
+				addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+				break;
+			default:
+		}; // switch
+	}
+}
+
+
+addElementGUI.add( addElementConfig, "type", ['','Image','Video'] ) // dropdown
+addElementGUI.add( addElementConfig, "name" ); 	// text field
+addElementGUI.add( addElementConfig, "add" ); 	// button
+
+
+
+
+var allTransformControllers = [];
+
+
 
 
 
@@ -44,44 +98,28 @@ var sceneCSS, rendererCSS;
 // Geometry is declared externally mostly because the decals need access to it.
 var mesh;
 
-
-
 init();
 animate();
 
 function init() {
 
-	
-	// FOUNDATIONS
 	setupScene();
-	// addOrbitControls();
-	addTrackballControls(); // scene originally off screen
 	
+	
+	addArcballControls();
+	addTransformControls();
+	console.log(transformcontrols)
 	
 	// Add hte geometry.
 	addWingGeometry();
 	
 	
-	// Add the video: video id, and world w, x, y, z, and radian rx, ry, rz
-	// x=1 looks good, but for intersection x=0.4 can be used.
+	// For development
+	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
 	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
 
-	
-	// Schlieren image.
-	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	
-	
-	console.log(camera, [sceneWebGL, sceneCSS])
-	
-	
-	// Make hte camera look at the center
-	camera.lookAt( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-	
-
 	window.addEventListener( 'resize', onWindowResize );
-
 	
-
 } // init
 
 
@@ -96,16 +134,20 @@ function setupScene(){
 	sceneWebGL = new THREE.Scene();
 	sceneCSS = new THREE.Scene();
 	
-	// ADD THE LIGHTS
+	sceneWebGL.name = "sceneWebGL";
+	sceneCSS.name = "sceneCSS";
 	
+	// LIGHTS - ambient light seems to be sufficient.
+	var ambientLight = new THREE.AmbientLight( 0xaaaaaa );
+	sceneWebGL.add( ambientLight );
+
 	
-	
-	
-	// RENDERERS
+	// RENDERERS - css for video, webgl for CFD geometry
 	rendererCSS = new CSS3DRenderer();
     rendererCSS.setSize( window.innerWidth, window.innerHeight );
     rendererCSS.domElement.style.position = 'absolute';
     rendererCSS.domElement.style.top = 0;
+	rendererCSS.name = "rendererCSS";
     
     rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     rendererWebGL.setClearColor( 0x000000, 0 );
@@ -113,7 +155,8 @@ function setupScene(){
     rendererWebGL.setSize( window.innerWidth, window.innerHeight );
     rendererWebGL.shadowMap.enabled = true;
     rendererWebGL.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-    
+    rendererWebGL.name = "rendererWebGL";
+	
 	
 	// APPEND RENDERES
 	document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
@@ -131,117 +174,86 @@ function setupScene(){
 // SCENE ELEMENTS:
 
 // VIDEO
-function makeCSS3DiFrame( id, w, x, y, z, rx, ry, rz ) {
-	
-	/*
-	SIZING
-	
-	The iFrame renders the video depending on the pixel width and height it is given - small pixel sizes will have less resolution, and fewer controls. Therefore 480px/360px are hardcoded as the width and height.
-	
-	By default the pixel distances are converted into world distances as 1-to-1, meaning that a 480px wide iFrame will occupy 480 world units by its width. The appropriate scaling can be done by scale.set() on the CSS3DObject.
-	*/
-	
-	// Assume from the start a wideo with a width of 480px and height of 360 px, but then rescale it.
-	// Will this affect the resolution?
-	let k = w/480;
-	let width = '480px';
-	let height = '360px';
-
-	const div = document.createElement( 'div' );
-	div.style.width = width;
-	div.style.height = height;
-	div.style.backgroundColor = '#000';
-	div.style.opacity = 1; // 0.5;
-
-	const iframe = document.createElement( 'iframe' );
-	iframe.style.width = width;
-	iframe.style.height = height;
-	iframe.style.border = '0px';
-	iframe.src = [ 'https://www.youtube.com/embed/', id, '?rel=0' ].join( '' );
-	div.appendChild( iframe );
-
-	const object = new CSS3DObject( div );
-	object.scale.set( k, k, k )
-	object.position.set( x, y, z );
-	object.rotation.set( rx, ry, rz );
-
-	return object;
-
-} // makeCSS3DiFrame
-
-
 function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 	// By default the video is oriented witth the width along the x axis and height along the y axis.
 	// Therefore it needs to first be rotated around the z axis by -90degrees, and then along the y axis for 90 degrees.
+
 	
+	let iv = new IframeVideo( id, w, x, y, z, rx, ry, rz );
 	
-	let videoIframe = makeCSS3DiFrame( id, w, x, y, z, rx, ry, rz );
+	sceneCSS.add( iv.cssItem );
+	sceneWebGL.add( iv.webGLItem );
 	
+	//Add the gui elements also.
+	// Add GUI controllers.
+	const imGUI = elementsGUI.addFolder( "Image: " + iv.config.name );
 	
+	imGUI.add( iv.config, "name" ); 	   // text field
+	imGUI.add( iv.config, "visible" ); 	   // boolean
+	let tc = imGUI.add( iv.config, "positioning" ); // boolean
+	allTransformControllers.push(tc);
 	
-	// Think maybe of organising htese planes in a group for clarity. Later on there will be many elements in the scene.
+	iv.config.remove = function(){
+		imGUI.destroy();
+		const index = allTransformControllers.indexOf(tc);
+		if (index > -1) { // only splice array when item is found
+		  allTransformControllers.splice(index, 1); // 2nd parameter means remove one item only
+		} // if
+		
+		sceneCSS.remove( iv.cssItem );
+		sceneWebGL.remove( iv.webGLItem );
+	} // remove
 	
+	imGUI.add( iv.config, "remove" );      // button
 	
-	// Also need to add in the corresponding cutting plane to the regular scene.
-	var cssCutPlaneMaterial = new THREE.MeshPhongMaterial({
-		opacity	: 0.2,
-		color	: new THREE.Color( Math.random() * 0xffffff ),
-		blending: THREE.NoBlending,
-		side	: THREE.DoubleSide,
+
+	tc.onChange(function(v){
+		// If the value is false, then nothing should happen.
+		switchTransformObject( v, tc, iv.cssItem, function(){ iv.ontransform() }) 
 	});
-	var cssCutPlaneGeometry = new THREE.PlaneGeometry( 480, 360 );
-	var cssCutPlaneMesh = new THREE.Mesh( cssCutPlaneGeometry, cssCutPlaneMaterial );
-	
-	cssCutPlaneMesh.position.copy( videoIframe.position );
-	cssCutPlaneMesh.rotation.copy( videoIframe.rotation );
-	cssCutPlaneMesh.scale.copy( videoIframe.scale );
-	
-	cssCutPlaneMesh.castShadow = false;
-	cssCutPlaneMesh.receiveShadow = true;
-	
-	
-	
-	sceneCSS.add( videoIframe );
-	sceneWebGL.add( cssCutPlaneMesh );
-	
+
 } // addYoutubeVideo
 
 
 function addStaticImage(id, w, x, y, z, rx, ry, rz){
 	
-
+	const im = new StaticImage( id, w, x, y, z, rx, ry, rz ); 
 	
-	// Add in the schlieren image as well. Use the loaded image width and height to size the plane hosting it.
-	new THREE.TextureLoader().load( id, function(texture){
-		
-		const geometry = new THREE.PlaneGeometry( texture.image.width, texture.image.height );
-		const material = new THREE.MeshBasicMaterial( { 
-			map: texture,
-			side: THREE.DoubleSide		
-		} );
-		const webGLImage = new THREE.Mesh( geometry, material );
-		
-		
-		// Calculate the scaing required to bring the image to the desired size. Size it so that the width reaches the specified 'w' value.
-		let k = w/texture.image.width;
-		
-		
-		webGLImage.position.set( x, y, z );
-		webGLImage.rotation.set( rx, ry, rz );
-		webGLImage.scale.set( k, k, k );
-		
-		
-		// To seet opacity:
-		// webGLImage.material.transparent = true;
-		// webGLImage.material.opacity = 0.7;
-		
-		
-		console.log("imageobj:",  webGLImage)
-		
+	// Add to scene
+	var item;
+	im.created.then( webGLImage=>{
+		item = webGLImage;
 		sceneWebGL.add( webGLImage );
-		
-	} );	
+	});
 	
+	
+	// Add GUI controllers.
+	const imGUI = elementsGUI.addFolder( "Image: " + im.config.name );
+	
+	imGUI.add( im.config, "name" ); 	   // text field
+	imGUI.add( im.config, "visible" ); 	   // boolean
+	let tc = imGUI.add( im.config, "positioning" ); // boolean
+	allTransformControllers.push(tc);
+	
+	im.config.remove = function(){
+		imGUI.destroy();
+		const index = allTransformControllers.indexOf(tc);
+		if (index > -1) { // only splice array when item is found
+		  allTransformControllers.splice(index, 1); // 2nd parameter means remove one item only
+		} // if
+		
+		im.created.then( webGLImage=>{
+			sceneWebGL.remove( webGLImage );
+		});
+	} // remove
+	
+	imGUI.add( im.config, "remove" );      // button
+	
+	
+	tc.onChange(function(v){
+		// If the value is false, then nothing should happen.
+		switchTransformObject( v, tc, item ) 
+	});
 	
 } // addStaticImage
 
@@ -251,8 +263,8 @@ function addStaticImage(id, w, x, y, z, rx, ry, rz){
 
 // GEOMETRY
 function addWingGeometry(){
-	const wingmaterial = new THREE.MeshBasicMaterial( { color: 0x0FC3D6 } );
-	wingmaterial.side = THREE.DoubleSide;
+	
+	
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
@@ -261,47 +273,154 @@ function addWingGeometry(){
 	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
+	let valuePromise = fetch("./assets/deltawing/wing/mach.bin")
+	  .then(res=>res.arrayBuffer())
+	  .then(ab=>{return new Float32Array(ab)}); // float32
+	  
+	  
+	const dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
+	  
+
+	const m = new ContouredMesh( dataPromise, colorbar.uniforms );
 	
-	Promise.all([verticesPromise, indicesPromise]).then(a=>{
-		
-		const geometry = new THREE.BufferGeometry();
-		geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
-		geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
-		geometry.computeVertexNormals();
-		
-		mesh = new THREE.Mesh( geometry, wingmaterial );
-		
+	m.created.then(mesh=>{
+		mesh.name = "Delta wing";
 		sceneWebGL.add( mesh );
-	}) // Promise.all
+		
+		// Subscribe the mesh material to the colorbar for future changes.
+		function updateMeshColorbarTexture(mesh){
+			/* Uniforms controlled by the colorbar GUI:
+			obj.uniforms = {
+				u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+				u_thresholds: {value: initialThresholds },
+				u_n_thresholds: {value: obj.n },
+				u_isolines_flag: {value: false },
+				u_contours_flag: {value: true }
+			};
+			*/
+			mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
+		} // updateMeshColorbarTexture
+		colorbar.subscribers.push([mesh, updateMeshColorbarTexture])
+	})
+	
+	
 } // addWingGeometry
 
 
 
 
-// CONTROLS
-function addOrbitControls(){
-	// Thecontrols are applied to the CSS element. The WebGL element should be in front, but cannot have pointers because the iFrame interactions need to come through. However, controls only update the camera, and the same camera is used for the CSS and WebGL scenes.
-	controls = new OrbitControls( camera, rendererCSS.domElement );
-	controls.addEventListener( 'change', render );
-	controls.target.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-} // addOrbitControls
+// CONTROLS - ADDED TO CSS RENDERER!!!!
+function addArcballControls(){
+	
+	arcballcontrols = new ArcballControls( camera, rendererCSS.domElement, sceneWebGL );
+	arcballcontrols.focus( focusInitialPoint, 1, 1 );
+	
+	
+	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
+	arcballcontrols.update();
+	
+	
+	
+	
+	
+} // addArcballControls
 
+function addTransformControls(){
+	// Attach and detach can be used to control the appearance of controls.
+	transformcontrols = new TransformControls( camera, rendererCSS.domElement );
+	transformcontrols.addEventListener( 'dragging-changed', function ( event ){
+		arcballcontrols.enabled = ! event.value;
+	});
+	sceneWebGL.add( transformcontrols );
+	
+	
+	// Add in the possibility to switch between control modes.
+	window.addEventListener( 'keydown', function ( event ) {
 
-function addTrackballControls(){
-	
-	controls = new TrackballControls(camera, rendererCSS.domElement);
-	
-	controls.panSpeed = 0.1;
-	controls.rotateSpeed = 1;
-	controls.zoomSpeed = 0.1;
-	
-	controls.target.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-	
-	console.log(controls)
-	
-} // addTrackballControls
+		switch ( event.keyCode ) {
 
+			case 81: // Q
+				transformcontrols.setSpace( transformcontrols.space === 'local' ? 'world' : 'local' );
+				break;
 
+			case 16: // Shift
+				transformcontrols.setTranslationSnap( 100 );
+				transformcontrols.setRotationSnap( THREE.MathUtils.degToRad( 15 ) );
+				transformcontrols.setScaleSnap( 0.25 );
+				break;
+
+			case 87: // W
+				transformcontrols.setMode( 'translate' );
+				break;
+
+			case 69: // E
+				transformcontrols.setMode( 'rotate' );
+				break;
+
+			case 82: // R
+				transformcontrols.setMode( 'scale' );
+				break;
+
+			case 187:
+			case 107: // +, =, num+
+				transformcontrols.setSize( transformcontrols.size + 0.1 );
+				break;
+
+			case 189:
+			case 109: // -, _, num-
+				transformcontrols.setSize( Math.max( transformcontrols.size - 0.1, 0.1 ) );
+				break;
+
+			case 88: // X
+				transformcontrols.showX = ! transformcontrols.showX;
+				break;
+
+			case 89: // Y
+				transformcontrols.showY = ! transformcontrols.showY;
+				break;
+
+			case 90: // Z
+				transformcontrols.showZ = ! transformcontrols.showZ;
+				break;
+
+			case 32: // Spacebar
+				transformcontrols.enabled = ! transformcontrols.enabled;
+				break;
+
+			case 27: // Esc
+				transformcontrols.reset();
+				break;
+
+		}
+
+	} );
+} // addTransformControls
+
+function switchTransformObject( v, controller, object, ontransform ){
+	// Only evaluates if controller is set to true. Therefore switch all others off - this shouldn't trigger another switch because of if statements in individual onChange funtions.
+	console.log("switch")
+	
+	// If the value is false, then nothing should happen, unless the same object is currently being used by the transform controls.
+	if(v){ 
+	
+		let switchOff = allTransformControllers.filter(tc=>tc!=controller)
+		switchOff.forEach(tc=>tc.setValue(false))
+		
+		
+		transformcontrols.attach( object );
+		if( ontransform ){ transformcontrols.addEventListener( 'change', ontransform ); } // if
+		
+	} else if( transformcontrols.object == object ){
+		// Check if the transform should be detached.
+		transformcontrols.detach();
+	} // if
+	
+	
+	// At the end check if ht informationshould bdisplayed.
+	
+	
+} // switchTransformObject
 
 
 
@@ -315,10 +434,7 @@ function onWindowResize() {
 } // onWindowResize
 
 function animate() {
-
 	requestAnimationFrame( animate );
-	controls.update();
-	
 	render();
 } // animate
 
