@@ -5,7 +5,6 @@ import { generateMeshVTK } from "./marching.js";
 export default class isoSurface{
 	
 	data
-	dataSize
 	thresholdInput
 	mesh
 	
@@ -25,10 +24,6 @@ export default class isoSurface{
 		obj.thresholdInput.value = 0;
 		
 		// How to load in actual data now. 
-		
-		// Also used to determine the distance at which the camera is located.
-		obj.dataSize = [15,15,15]
-		
 		
 		/* 
 		loadDataPromise expects to receive d = {
@@ -54,7 +49,7 @@ export default class isoSurface{
 			
 			const surface = generateMeshVTK( d, 0.3 );
 			
-			const material = new THREE.MeshBasicMaterial( { color: 0xff00ff } );
+			const material = new THREE.MeshBasicMaterial( { color: 0xDCDCDC } ); // gainsboro
 			material.side = THREE.DoubleSide;
 			
 			const geometry = new THREE.BufferGeometry();
@@ -96,30 +91,17 @@ export default class isoSurface{
 		// Update the mesh buffers. This generate mesh still works on i,j,k as the vertex coordinate values.
 		obj.data.then(function(d){
 			
+			
+			// Generate the surface using Thanassis code.
 			const surface = generateMeshVTK( d, obj.threshold );
 			
 			
-			// Try initialising there?
-			//At threshold=0.30545 n_vertices=165657
-			// console.log(`At threshold=${ obj.threshold } n_vertices=${mesh.verts.length}`)
 			
-			/*
-			const position = obj.mesh.geometry.attributes.position;
-			for(let i=0; i<surface.verts.length; i++){
-				position[i] = surface.verts[i];
-			}
-			position.needsUpdate = true;
 			
-			const indices = obj.mesh.geometry.index.array;
-			for(let j=0; j<surface.indices.length; j++){
-				indices[j] = surface.indices[j];
-			}
-			indices.needsUpdate = true;
+			
+			/* This update here is quite wasteful, and should definitely be improved somehow.
+			The issue is that the isosurface geometry will have a different number of triangles for different thresholds. This means that the buffer must in some cases be inreased after an interaction, but increasing buffers is not possible. Instead, a buffer large enough to store any size can be initiated, and updated, with the range of the buffer being used by the GPU limited.
 			*/
-			
-			
-			// This update here is quite wasteful, and should definitely be improved somehow.
-			
 			const geometry = new THREE.BufferGeometry();
 			
 			
