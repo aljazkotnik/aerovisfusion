@@ -28080,6 +28080,20 @@
 
 	PointsMaterial.prototype.isPointsMaterial = true;
 
+	class CanvasTexture extends Texture {
+
+		constructor( canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy ) {
+
+			super( canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy );
+
+			this.needsUpdate = true;
+
+		}
+
+	}
+
+	CanvasTexture.prototype.isCanvasTexture = true;
+
 	class ShadowMaterial extends Material {
 
 		constructor( parameters ) {
@@ -32791,77 +32805,211 @@
 	; // InterfaceDecals
 
 	var ColorBar = /*#__PURE__*/function () {
+	  // Some helper color objects.
 	  function ColorBar(a, b) {
 	    _classCallCheck(this, ColorBar);
 
 	    this.minV = 0;
 	    this.maxV = 1;
+	    this.colorMin = new Color();
+	    this.colorMax = new Color();
+	    this._colormap = ColorMapKeywords.rainbow;
+	    this._ncolorbands = 20;
+	    this.thresholds = new Float32Array(255);
+	    this.subscribers = [];
 	    var obj = this;
-	    obj.minV = a ? a : obj.minV;
-	    obj.maxV = b ? b : obj.maxV;
-	    obj.setColormap("rainbow", 20);
+	    var canvas = document.createElement('canvas');
+	    canvas.width = 10;
+	    canvas.height = 100;
+	    obj.canvas = canvas;
+	    obj.ctx = canvas.getContext('2d', {
+	      alpha: false
+	    }); // Setup the options.
+
+	    obj.uniforms = {
+	      u_colorbar: {
+	        type: "t",
+	        value: new CanvasTexture(canvas)
+	      },
+	      u_thresholds: {
+	        value: obj.thresholds
+	      },
+	      u_n_thresholds: {
+	        value: obj.ncolorbands
+	      },
+	      u_isolines_flag: {
+	        value: false
+	      },
+	      u_contours_flag: {
+	        value: true
+	      }
+	    }; // Set the range. This launches update in return.
+
+	    obj.range = [a, b];
 	  } // constructor
 
 
 	  _createClass(ColorBar, [{
-	    key: "getColor",
-	    value: function getColor(alpha) {
-	      // Convert alpha into a colormap index.
-	      var obj = this; // Make sure that alpha is in the available range.
+	    key: "update",
+	    value: function update() {
+	      // General update.
+	      var obj = this; // Update the actual canvas.
 
-	      var a = alpha;
-	      a = a <= obj.minV ? obj.minV : a;
-	      a = a >= obj.maxV ? obj.maxV : a;
-	      var f = (a - obj.minV) / (obj.maxV - obj.minV);
-	      var colorPosition = Math.round(f * obj.lut.length);
-	      return obj.lut[colorPosition];
-	    } // getColor
+	      obj.updateCanvas();
+	      obj.updateThresholds(); // Update teh uniforms set by the colorbar. 
+	      //The texture is updated automatically.
+	      // Thresholds also should be updated automatically no?
+
+	      obj.uniforms.u_n_thresholds.value = obj.ncolorbands;
+	      obj.uniforms.u_isolines_flag.value = false;
+	      obj.uniforms.u_contours_flag.value = true; // Update all subscribers with their provided functions.
+
+	      obj.subscribers.forEach(function (subscriber) {
+	        var m = subscriber[0];
+	        var f = subscriber[1];
+	        f(m);
+	      });
+	    } // update
 
 	  }, {
-	    key: "setColormap",
-	    value: function setColormap(colormap, ncolorbands) {
-	      // The colormap is an array that stores colors at given indices. The array is created hre by interpolating between values given for individual colorbars.
-	      var obj = this; // Select the predefined values for the selected colormap. The values are an array of [value e[0,1], hex string] elements.
+	    key: "updateThresholds",
+	    value: function updateThresholds() {
+	      // Only the n-values that will be accessed by the shader need to be updated.
+	      var obj = this;
 
-	      obj.map = ColorMapKeywords[colormap] || ColorMapKeywords.rainbow;
-	      obj.lut = []; // So what does this do?
-
-	      var step = 1.0 / ncolorbands; // sample at 0
-
-	      obj.lut.push(obj.map[0][1]); // sample at 1/n, ..., (n-1)/n
-
-	      for (var i = 1; i < ncolorbands; i++) {
-	        // Interpolate between the value-hex combinatons to create new colors. Alpha tells us where on the value domain [0,1] we are sampling.
-	        var alpha = i * step; // Now loop through the predefined colormap values and see where the alpha value sits.
-
-	        for (var j = 0; j < obj.map.length - 1; j++) {
-	          // Check if alpha is within this predefined color band.
-	          if (alpha > obj.map[j][0] && alpha <= obj.map[j + 1][0]) {
-	            var min = obj.map[j][0];
-	            var max = obj.map[j + 1][0];
-	            var minc = new Color(obj.map[j][1]);
-	            var maxc = new Color(obj.map[j + 1][1]); // Try to interpolate the colors as hex?
-
-	            var color = new Color().lerpColors(minc, maxc, (alpha - min) / (max - min));
-	            obj.lut.push(color);
-	          }
-	        }
+	      for (var i = 0; i < obj.ncolorbands; i++) {
+	        obj.thresholds[i] = obj.minV + i * (obj.maxV - obj.minV) / obj.ncolorbands;
 	      }
-	      // sample at 1
 
-	      obj.lut.push(obj.map[obj.map.length - 1][1]);
-	    } // setColormap
+	      obj.thresholds[253] = obj.minV;
+	      obj.thresholds[254] = obj.maxV;
+	    } // thresholds
+
+	  }, {
+	    key: "range",
+	    get: function get() {
+	      var obj = this;
+	      return [obj.minV, obj.maxV];
+	    },
+	    set: function set(r) {
+	      var obj = this;
+	      obj.minV = r[0];
+	      obj.maxV = r[1];
+	      obj.update();
+	    } // set range
+
+	  }, {
+	    key: "ncolorbands",
+	    get: function get() {
+	      var obj = this;
+	      return obj._ncolorbands;
+	    } // ncolorbands
+	    ,
+	    set: function set(n) {
+	      var obj = this; // Max n_colorbands imposed - thresholds is preallocated as a Float32Array(255), and last two elements are reserved as the min and max of the value mapping.
+
+	      obj._ncolorbands = n < 253 ? n : 253;
+	      obj.update();
+	    } // ncolorbands
+
+	  }, {
+	    key: "colormap",
+	    get: function get() {
+	      var obj = this;
+	      return obj._colormap;
+	    } // get colormap
+	    ,
+	    set: function set(colormap) {
+	      // The colormap is an array that stores colors at given indices. The array is created hre by interpolating between values given for individual colorbars.
+	      var obj = this; // Select the predefined values for the selected colormap. The values are an array of [value e[0,1], hex string] elements. Set how many colors from the colorbar should be sampled.
+
+	      obj._colormap = ColorMapKeywords[colormap] || ColorMapKeywords.rainbow;
+	      obj.update();
+	    } // set colormap
+
+	  }, {
+	    key: "interpolateAlpha",
+	    value: function interpolateAlpha(alpha) {
+	      // given some alpha value [0,1], return the color corresponding to it based on the currently selected colormap.
+	      var obj = this; // Now loop through the predefined colormap values and see where the alpha value sits.
+
+	      for (var j = 0; j < obj._colormap.map.length - 1; j++) {
+	        // Check if alpha is within this predefined color band.
+	        if (alpha > obj._colormap.map[j][0] && alpha <= obj._colormap.map[j + 1][0]) {
+	          var min = obj._colormap.map[j][0];
+	          var max = obj._colormap.map[j + 1][0];
+	          obj.colorMin.set(obj._colormap.map[j][1]);
+	          obj.colorMax.set(obj._colormap.map[j + 1][1]); // Try to interpolate the colors as hex?
+
+	          return new Color().lerpColors(obj.colorMin, obj.colorMax, (alpha - min) / (max - min));
+	        } // if
+
+	      } // for
+
+
+	      return "incorrect input";
+	    } // interpolateAlpha
+
+	  }, {
+	    key: "updateCanvas",
+	    value: function updateCanvas() {
+	      var obj = this; // Loop over the canvas height to change the colors.
+
+	      obj.ctx.clearRect(0, 0, obj.canvas.width, obj.canvas.height);
+
+	      for (var i = 1; i < obj.canvas.height; i++) {
+	        var color = obj.interpolateAlpha(i / obj.canvas.height);
+	        obj.ctx.fillStyle = "rgb(".concat(255 * color.r, ",").concat(255 * color.g, ",").concat(255 * color.b, ")");
+	        obj.ctx.fillRect(0, i, obj.canvas.width, 1);
+	      } // for
+
+	    } // updateCanvas
 
 	  }]);
 
 	  return ColorBar;
 	}(); // ColorBar
 	var ColorMapKeywords = {
-	  rainbow: [[0.0, 0x0000FF], [0.2, 0x00FFFF], [0.5, 0x00FF00], [0.8, 0xFFFF00], [1.0, 0xFF0000]],
-	  cooltowarm: [[0.0, 0x3C4EC2], [0.2, 0x9BBCFF], [0.5, 0xDCDCDC], [0.8, 0xF6A385], [1.0, 0xB40426]],
-	  blackbody: [[0.0, 0x000000], [0.2, 0x780000], [0.5, 0xE63200], [0.8, 0xFFFF00], [1.0, 0xFFFFFF]],
-	  grayscale: [[0.0, 0x000000], [0.2, 0x404040], [0.5, 0x7F7F80], [0.8, 0xBFBFBF], [1.0, 0xFFFFFF]],
-	  gist_earth: [[0.0, 0x000000], [0.2, 0x225e7c], [0.5, 0x5da04b], [0.8, 0xc4a46f], [1.0, 0xfdfbfb]]
+	  rainbow: {
+	    name: "rainbow",
+	    map: [[0.0, 0x0000FF], [0.2, 0x00FFFF], [0.5, 0x00FF00], [0.8, 0xFFFF00], [1.0, 0xFF0000]]
+	  },
+	  cooltowarm: {
+	    name: "cooltowarm",
+	    map: [[0.0, 0x3C4EC2], [0.2, 0x9BBCFF], [0.5, 0xDCDCDC], [0.8, 0xF6A385], [1.0, 0xB40426]]
+	  },
+	  blackbody: {
+	    name: "blackbody",
+	    map: [[0.0, 0x000000], [0.2, 0x780000], [0.5, 0xE63200], [0.8, 0xFFFF00], [1.0, 0xFFFFFF]]
+	  },
+	  grayscale: {
+	    name: "grayscale",
+	    map: [[0.0, 0x000000], [0.2, 0x404040], [0.5, 0x7F7F80], [0.8, 0xBFBFBF], [1.0, 0xFFFFFF]]
+	  },
+	  gist_earth: {
+	    name: "gist_earth",
+	    map: [[0.0, 0x000000], [0.2, 0x225e7c], [0.5, 0x5da04b], [0.8, 0xc4a46f], [1.0, 0xfdfbfb]]
+	  },
+	  gist_ncar: {
+	    name: "gist_ncar",
+	    map: [[0.0, 0x000080], [0.05263157894736842, 0x005c0d], [0.10526315789473684, 0x0001ec], [0.15789473684210525, 0x00baff], [0.21052631578947367, 0x00f9f4], [0.2631578947368421, 0x00fa9b], [0.3157894736842105, 0x0aff0f], [0.3684210526315789, 0x5fce00], [0.42105263157894735, 0x7efa05], [0.47368421052631576, 0xbaff3b], [0.5263157894736842, 0xf7fc07], [0.5789473684210527, 0xffdb00], [0.631578947368421, 0xffba0e], [0.6842105263157895, 0xff4c01], [0.7368421052631579, 0xff0a00], [0.7894736842105263, 0xff00ec], [0.8421052631578947, 0xa72cff], [0.8947368421052632, 0xe77bef], [0.9473684210526315, 0xf4baf6], [1.0, 0xfef8fe]]
+	  },
+	  YlOrBr: {
+	    name: "YlOrBr",
+	    map: [[0.0, 0xffffe5], [0.05263157894736842, 0xfffcd4], [0.10526315789473684, 0xfff8c2], [0.15789473684210525, 0xfff2b1], [0.21052631578947367, 0xfee99f], [0.2631578947368421, 0xfee08a], [0.3157894736842105, 0xfed36e], [0.3684210526315789, 0xfec652], [0.42105263157894735, 0xfeb441], [0.47368421052631576, 0xfea231], [0.5263157894736842, 0xfa9025], [0.5789473684210527, 0xf37f1c], [0.631578947368421, 0xea6e13], [0.6842105263157895, 0xdd5f0b], [0.7368421052631579, 0xcf5004], [0.7894736842105263, 0xbc4403], [0.8421052631578947, 0xa63a03], [0.8947368421052632, 0x913204], [0.9473684210526315, 0x7b2b05], [1.0, 0x662506]]
+	  },
+	  Spectral: {
+	    name: "Spectral",
+	    map: [[0.0, 0x9e0142], [0.05263157894736842, 0xbb2149], [0.10526315789473684, 0xd7404e], [0.15789473684210525, 0xe75948], [0.21052631578947367, 0xf57446], [0.2631578947368421, 0xfa9656], [0.3157894736842105, 0xfdb668], [0.3684210526315789, 0xfed07e], [0.42105263157894735, 0xfee796], [0.47368421052631576, 0xfff7b1], [0.5263157894736842, 0xf8fcb5], [0.5789473684210527, 0xebf7a0], [0.631578947368421, 0xd3ed9c], [0.6842105263157895, 0xb4e1a2], [0.7368421052631579, 0x92d3a4], [0.7894736842105263, 0x6dc5a5], [0.8421052631578947, 0x50aaaf], [0.8947368421052632, 0x358bbc], [0.9473684210526315, 0x476db0], [1.0, 0x5e4fa2]]
+	  },
+	  d3Spectral: {
+	    name: "d3Spectral",
+	    map: [[0, 0x5e4fa2], [0.25, 0x89cfa5], [0.5, 0xfbf8b0], [0.75, 0xf88e53], [1, 0x9e0142]]
+	  },
+	  d3CubehelixDefault: {
+	    name: "d3CubehelixDefault",
+	    map: [[0, 0x000000], [0.25, 0x16534c], [0.5, 0xa07949], [0.75, 0xc7b3ed], [1, 0xffffff]]
+	  }
 	};
 
 	/**
