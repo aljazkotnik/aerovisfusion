@@ -16,6 +16,8 @@ import ColorBar from "./GUI/ColorBar.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 
 
+// Convenience helpers
+import { trimStringToLength } from "./helpers.js";
 
 /*
 We want to draw a video into a scene. The challenges are: hosting a video, drawing it as a texture, and implementing hte necessary controls.
@@ -59,6 +61,7 @@ colorbar.colormap = "d3Spectral";
 const gui = new GUI();
 const elementsGUI = gui.addFolder("Elements");
 const addElementGUI = gui.addFolder("Add element");
+var allTransformControllers = [];
 
 // The button should open a modal, or append a selection to the GUI to configure the element to be added.
 const addElementConfig = {
@@ -74,20 +77,22 @@ const addElementConfig = {
 			case "Video":
 				addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
 				break;
+			case "Geometry":
+				addWingGeometry();
 			default:
 		}; // switch
 	}
 }
 
 
-addElementGUI.add( addElementConfig, "type", ['','Image','Video'] ) // dropdown
+addElementGUI.add( addElementConfig, "type", ['','Image','Video','Geometry'] ) // dropdown
 addElementGUI.add( addElementConfig, "name" ); 	// text field
 addElementGUI.add( addElementConfig, "add" ); 	// button
 
 
 
 
-var allTransformControllers = [];
+
 
 
 
@@ -110,13 +115,11 @@ function init() {
 	addTransformControls();
 	console.log(transformcontrols)
 	
-	// Add hte geometry.
-	addWingGeometry();
-	
-	
 	// For development
+	addWingGeometry();
 	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
 	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -147,6 +150,7 @@ function setupScene(){
     rendererCSS.setSize( window.innerWidth, window.innerHeight );
     rendererCSS.domElement.style.position = 'absolute';
     rendererCSS.domElement.style.top = 0;
+	rendererCSS.domElement.style.zIndex = 1;
 	rendererCSS.name = "rendererCSS";
     
     rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -155,6 +159,7 @@ function setupScene(){
     rendererWebGL.setSize( window.innerWidth, window.innerHeight );
     rendererWebGL.shadowMap.enabled = true;
     rendererWebGL.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+	rendererWebGL.domElement.style.zIndex = 0;
     rendererWebGL.name = "rendererWebGL";
 	
 	
@@ -186,15 +191,15 @@ function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 	
 	//Add the gui elements also.
 	// Add GUI controllers.
-	const imGUI = elementsGUI.addFolder( "Image: " + iv.config.name );
+	const guiconfig = iv.config;
+	const folder = elementsGUI.addFolder( "Video: " + trimStringToLength(guiconfig.name , 30) ); // 37char for name
 	
-	imGUI.add( iv.config, "name" ); 	   // text field
-	imGUI.add( iv.config, "visible" ); 	   // boolean
-	let tc = imGUI.add( iv.config, "positioning" ); // boolean
+	let oc = folder.add( guiconfig, "opacity", 0, 1); // slider
+	let tc = folder.add( guiconfig, "positioning" ); // boolean
 	allTransformControllers.push(tc);
 	
-	iv.config.remove = function(){
-		imGUI.destroy();
+	guiconfig.remove = function(){
+		folder.destroy();
 		const index = allTransformControllers.indexOf(tc);
 		if (index > -1) { // only splice array when item is found
 		  allTransformControllers.splice(index, 1); // 2nd parameter means remove one item only
@@ -204,13 +209,17 @@ function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 		sceneWebGL.remove( iv.webGLItem );
 	} // remove
 	
-	imGUI.add( iv.config, "remove" );      // button
+	folder.add( guiconfig, "remove" );      // button
 	
-
+	oc.onChange(function(v){
+		iv.setOpacity(v);
+	})
 	tc.onChange(function(v){
 		// If the value is false, then nothing should happen.
 		switchTransformObject( v, tc, iv.cssItem, function(){ iv.ontransform() }) 
 	});
+	
+	console.log(iv);
 
 } // addYoutubeVideo
 
@@ -228,15 +237,15 @@ function addStaticImage(id, w, x, y, z, rx, ry, rz){
 	
 	
 	// Add GUI controllers.
-	const imGUI = elementsGUI.addFolder( "Image: " + im.config.name );
+	const guiconfig = im.config;
+	const folder = elementsGUI.addFolder( "Image: " + trimStringToLength(guiconfig.name , 30) );
 	
-	imGUI.add( im.config, "name" ); 	   // text field
-	imGUI.add( im.config, "visible" ); 	   // boolean
-	let tc = imGUI.add( im.config, "positioning" ); // boolean
+	let oc = folder.add( guiconfig, "opacity", 0, 1); // slider
+	let tc = folder.add( guiconfig, "positioning" ); // boolean
 	allTransformControllers.push(tc);
 	
-	im.config.remove = function(){
-		imGUI.destroy();
+	guiconfig.remove = function(){
+		folder.destroy();
 		const index = allTransformControllers.indexOf(tc);
 		if (index > -1) { // only splice array when item is found
 		  allTransformControllers.splice(index, 1); // 2nd parameter means remove one item only
@@ -247,9 +256,12 @@ function addStaticImage(id, w, x, y, z, rx, ry, rz){
 		});
 	} // remove
 	
-	imGUI.add( im.config, "remove" );      // button
+	folder.add( guiconfig, "remove" );      // button
 	
 	
+	oc.onChange(function(v){
+		im.setOpacity(v);
+	})
 	tc.onChange(function(v){
 		// If the value is false, then nothing should happen.
 		switchTransformObject( v, tc, item ) 
@@ -281,7 +293,7 @@ function addWingGeometry(){
 	const dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
 	  
 
-	const m = new ContouredMesh( dataPromise, colorbar.uniforms );
+	const m = new ContouredMesh( "deltawing", dataPromise, colorbar.uniforms );
 	
 	m.created.then(mesh=>{
 		mesh.name = "Delta wing";
@@ -300,8 +312,26 @@ function addWingGeometry(){
 			*/
 			mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
 		} // updateMeshColorbarTexture
-		colorbar.subscribers.push([mesh, updateMeshColorbarTexture])
-	})
+		colorbar.subscribers.push([mesh, updateMeshColorbarTexture]);
+		
+		
+		
+		// Add GUI controllers.
+		const guiconfig = m.config;
+		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(guiconfig.name , 27) );
+		
+		folder.add( guiconfig, "visible" ); 	   // boolean
+		
+		
+		guiconfig.remove = function(){
+			folder.destroy();
+			sceneWebGL.remove( mesh );
+		} // remove
+		folder.add( guiconfig, "remove" );      // button
+		
+	
+		
+	}) // then
 	
 	
 } // addWingGeometry
@@ -399,7 +429,6 @@ function addTransformControls(){
 
 function switchTransformObject( v, controller, object, ontransform ){
 	// Only evaluates if controller is set to true. Therefore switch all others off - this shouldn't trigger another switch because of if statements in individual onChange funtions.
-	console.log("switch")
 	
 	// If the value is false, then nothing should happen, unless the same object is currently being used by the transform controls.
 	if(v){ 
@@ -417,7 +446,8 @@ function switchTransformObject( v, controller, object, ontransform ){
 	} // if
 	
 	
-	// At the end check if ht informationshould bdisplayed.
+	// At the end check if the informations hould be displayed.
+	document.getElementById("info").style.display = allTransformControllers.some(tc=>tc.getValue()) ? "block" : "none";
 	
 	
 } // switchTransformObject

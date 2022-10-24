@@ -5,11 +5,13 @@ export default class StaticImage{
 		let obj = this;
 		
 		obj.config = {
-			name: "..."+id.slice(-27),
-			visible: true,
+			name: id,
+			opacity: 1,
 			positioning: false,
 			remove: function(){}
 		}
+				
+		
 		// The static image GUI only needs to select the appropriate file, and it needs to allow the image to be toggled off/on, and switch to this element being repositioned. It should also be named. It needs to be deletable!!
 		
 		// The initial position should be picked automatically. At some distance in front of the camera?
@@ -38,8 +40,8 @@ export default class StaticImage{
 				
 				
 				// To seet opacity:
-				// webGLImage.material.transparent = true;
-				// webGLImage.material.opacity = 0.7;
+				webGLImage.material.transparent = true;
+				webGLImage.material.opacity = 1;
 				
 				resolve( webGLImage )
 			}); // load
@@ -48,5 +50,15 @@ export default class StaticImage{
 		
 		
 	} // constructor
+	
+	
+	
+	setOpacity(v){
+		let obj = this;
+		obj.created.then( webGLImage=>{
+			webGLImage.material.transparent = true;
+			webGLImage.material.opacity = v;
+		})
+	} // setOpacity
 	
 } // StaticImage

@@ -105,3 +105,10 @@ function deltas(A,accessor){
 	return d;
 	
 } // diff
+
+
+export function trimStringToLength(s, n){
+	// n has to be > 3.
+	return s.length > n ? "..." + s.slice(-(n-3)) : s;
+} // trimStringToLength
+

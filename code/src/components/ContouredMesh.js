@@ -153,8 +153,16 @@ const fragmentShader = `
 
 
 export default class ContouredMesh{
-	constructor(dataPromise, uniforms){
+	constructor(id, dataPromise, uniforms){
 		let obj = this;
+		
+		
+		obj.config = {
+			name: id,
+			visible: true,
+			remove: function(){}
+		}
+		
 		
 		
 		/*

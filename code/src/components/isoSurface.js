@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { generateMeshVTK } from "./marching.js";
 
 
-export default class isoSurface{
+export default class IsoSurface{
 	
 	data
 	thresholdInput

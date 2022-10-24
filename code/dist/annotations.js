@@ -29,7 +29,7 @@
 
     return template.content.firstChild;
   } // html2element
-   // diff
+   // trimStringToLength
 
   var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 

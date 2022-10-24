@@ -47,7 +47,7 @@ import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js"
 
 // Import some components.
 import ContouredMesh from "./components/ContouredMesh.js";
-import isoSurface from "./components/isoSurface.js";
+import IsoSurface from "./components/IsoSurface.js";
 import {text2csv, csvStreamline2jsonStreamline} from "./helpers.js";
 
 import ColorBar from "./GUI/ColorBar.js";
@@ -211,7 +211,7 @@ function addIsoSurface(){
 	
 	
 	// Iso Surface is different to the wing because the user can interact with it.
-	const isoobj = new isoSurface(loadDataPromise);
+	const isoobj = new IsoSurface(loadDataPromise);
 	
 	isoobj.data.then(function(d){
 		isoobj.mesh.name = "iso-surface";

@@ -35345,10 +35345,15 @@
 
 	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat minmach = u_thresholds[253];\n\t\tfloat maxmach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, minmach,maxmach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], minmach,maxmach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
 
-	var ContouredMesh = function ContouredMesh(dataPromise, uniforms) {
+	var ContouredMesh = function ContouredMesh(id, dataPromise, uniforms) {
 	  _classCallCheck(this, ContouredMesh);
 
 	  var obj = this;
+	  obj.config = {
+	    name: id,
+	    visible: true,
+	    remove: function remove() {}
+	  };
 	  /*
 	  The data promises should each return an array containing only hte relevant data. 
 	  dataPromise.then(a=>{
@@ -35536,9 +35541,9 @@
 	  return coords;
 	};
 
-	var isoSurface = /*#__PURE__*/function () {
-	  function isoSurface(loadDataPromise) {
-	    _classCallCheck(this, isoSurface);
+	var IsoSurface = /*#__PURE__*/function () {
+	  function IsoSurface(loadDataPromise) {
+	    _classCallCheck(this, IsoSurface);
 
 	    this.data = void 0;
 	    this.thresholdInput = void 0;
@@ -35594,7 +35599,7 @@
 	  } // constructor
 
 
-	  _createClass(isoSurface, [{
+	  _createClass(IsoSurface, [{
 	    key: "threshold",
 	    get: function get() {
 	      // Default value is 0.
@@ -35629,7 +35634,7 @@
 
 	  }]);
 
-	  return isoSurface;
+	  return IsoSurface;
 	}(); // isoSurface
 
 	var ColorBar = /*#__PURE__*/function () {
@@ -35961,7 +35966,7 @@
 	  }); // Promise.all
 	  // Iso Surface is different to the wing because the user can interact with it.
 
-	  var isoobj = new isoSurface(loadDataPromise);
+	  var isoobj = new IsoSurface(loadDataPromise);
 	  isoobj.data.then(function (d) {
 	    isoobj.mesh.name = "iso-surface";
 	    sceneWebGL.add(isoobj.mesh);
