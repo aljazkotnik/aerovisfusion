@@ -47,7 +47,7 @@ export default class IframeVideo{
 		
 		obj.config = {
 			name: id,
-			opacity: 1,
+			transparent: false,
 			positioning: false,
 			remove: function(){}
 		}
@@ -57,11 +57,12 @@ export default class IframeVideo{
 		videoIframe.name = id + "CSS";
 		
 		// Also need to add in the corresponding cutting plane to the regular scene.
-		var webGLPlaneMaterial = new THREE.MeshNormalMaterial({
+		var webGLPlaneMaterial = new THREE.MeshBasicMaterial({
 			transparent: true,
 			opacity	: 0.2,
 			color	: new THREE.Color( 0x000000 ),
 			side	: THREE.DoubleSide,
+			blending: THREE.NoBlending
 		});
 		var webGLCutPlaneGeometry = new THREE.PlaneGeometry( 480, 360 );
 		var webGLCutPlaneMesh = new THREE.Mesh( webGLCutPlaneGeometry, webGLPlaneMaterial );
@@ -88,11 +89,5 @@ export default class IframeVideo{
 		obj.webGLItem.scale.copy( obj.cssItem.scale );
 		
 	} // ontransform
-	
-	setOpacity(v){
-		let obj = this;
-		obj.cssItem.element.style.opacity = v;
-		obj.webGLItem.material.opacity = v/2;
-	}
 	
 } // IframeVideo

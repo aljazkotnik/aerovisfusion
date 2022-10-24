@@ -37991,18 +37991,19 @@
 	    var obj = this;
 	    obj.config = {
 	      name: id,
-	      opacity: 1,
+	      transparent: false,
 	      positioning: false,
 	      remove: function remove() {}
 	    };
 	    var videoIframe = makeCSS3DiFrame(id, w, x, y, z, rx, ry, rz);
 	    videoIframe.name = id + "CSS"; // Also need to add in the corresponding cutting plane to the regular scene.
 
-	    var webGLPlaneMaterial = new MeshNormalMaterial({
+	    var webGLPlaneMaterial = new MeshBasicMaterial({
 	      transparent: true,
 	      opacity: 0.2,
 	      color: new Color(0x000000),
-	      side: DoubleSide
+	      side: DoubleSide,
+	      blending: NoBlending
 	    });
 	    var webGLCutPlaneGeometry = new PlaneGeometry(480, 360);
 	    var webGLCutPlaneMesh = new Mesh(webGLCutPlaneGeometry, webGLPlaneMaterial);
@@ -38027,13 +38028,6 @@
 	      obj.webGLItem.scale.copy(obj.cssItem.scale);
 	    } // ontransform
 
-	  }, {
-	    key: "setOpacity",
-	    value: function setOpacity(v) {
-	      var obj = this;
-	      obj.cssItem.element.style.opacity = v;
-	      obj.webGLItem.material.opacity = v / 2;
-	    }
 	  }]);
 
 	  return IframeVideo;
@@ -38445,7 +38439,7 @@
 	  rendererCSS.setSize(window.innerWidth, window.innerHeight);
 	  rendererCSS.domElement.style.position = 'absolute';
 	  rendererCSS.domElement.style.top = 0;
-	  rendererCSS.domElement.style.zIndex = 1;
+	  rendererCSS.domElement.style.zIndex = 0;
 	  rendererCSS.name = "rendererCSS";
 	  rendererWebGL = new WebGLRenderer({
 	    alpha: true,
@@ -38457,7 +38451,7 @@
 	  rendererWebGL.shadowMap.enabled = true;
 	  rendererWebGL.shadowMap.type = PCFSoftShadowMap; // default THREE.PCFShadowMap
 
-	  rendererWebGL.domElement.style.zIndex = 0;
+	  rendererWebGL.domElement.style.zIndex = 1;
 	  rendererWebGL.name = "rendererWebGL"; // APPEND RENDERES
 
 	  document.getElementById('css').appendChild(rendererCSS.domElement);
@@ -38478,7 +38472,7 @@
 	  var guiconfig = iv.config;
 	  var folder = elementsGUI.addFolder("Video: " + trimStringToLength(guiconfig.name, 30)); // 37char for name
 
-	  var oc = folder.add(guiconfig, "opacity", 0, 1); // slider
+	  var oc = folder.add(guiconfig, "transparent"); // slider
 
 	  var tc = folder.add(guiconfig, "positioning"); // boolean
 
@@ -38502,7 +38496,7 @@
 	  folder.add(guiconfig, "remove"); // button
 
 	  oc.onChange(function (v) {
-	    iv.setOpacity(v);
+	    iv.webGLItem.material.blending = v ? NormalBlending : NoBlending;
 	  });
 	  tc.onChange(function (v) {
 	    // If the value is false, then nothing should happen.

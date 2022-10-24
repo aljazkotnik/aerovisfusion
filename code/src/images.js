@@ -150,7 +150,7 @@ function setupScene(){
     rendererCSS.setSize( window.innerWidth, window.innerHeight );
     rendererCSS.domElement.style.position = 'absolute';
     rendererCSS.domElement.style.top = 0;
-	rendererCSS.domElement.style.zIndex = 1;
+	rendererCSS.domElement.style.zIndex = 0;
 	rendererCSS.name = "rendererCSS";
     
     rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -159,7 +159,7 @@ function setupScene(){
     rendererWebGL.setSize( window.innerWidth, window.innerHeight );
     rendererWebGL.shadowMap.enabled = true;
     rendererWebGL.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-	rendererWebGL.domElement.style.zIndex = 0;
+	rendererWebGL.domElement.style.zIndex = 1;
     rendererWebGL.name = "rendererWebGL";
 	
 	
@@ -194,7 +194,7 @@ function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 	const guiconfig = iv.config;
 	const folder = elementsGUI.addFolder( "Video: " + trimStringToLength(guiconfig.name , 30) ); // 37char for name
 	
-	let oc = folder.add( guiconfig, "opacity", 0, 1); // slider
+	let oc = folder.add( guiconfig, "transparent"); // slider
 	let tc = folder.add( guiconfig, "positioning" ); // boolean
 	allTransformControllers.push(tc);
 	
@@ -212,7 +212,7 @@ function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 	folder.add( guiconfig, "remove" );      // button
 	
 	oc.onChange(function(v){
-		iv.setOpacity(v);
+		iv.webGLItem.material.blending = v ? THREE.NormalBlending : THREE.NoBlending;
 	})
 	tc.onChange(function(v){
 		// If the value is false, then nothing should happen.
