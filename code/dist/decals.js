@@ -35499,6 +35499,85 @@
 	  return Constructor;
 	}
 
+	function _inherits(subClass, superClass) {
+	  if (typeof superClass !== "function" && superClass !== null) {
+	    throw new TypeError("Super expression must either be null or a function");
+	  }
+
+	  subClass.prototype = Object.create(superClass && superClass.prototype, {
+	    constructor: {
+	      value: subClass,
+	      writable: true,
+	      configurable: true
+	    }
+	  });
+	  if (superClass) _setPrototypeOf(subClass, superClass);
+	}
+
+	function _getPrototypeOf(o) {
+	  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+	    return o.__proto__ || Object.getPrototypeOf(o);
+	  };
+	  return _getPrototypeOf(o);
+	}
+
+	function _setPrototypeOf(o, p) {
+	  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+	    o.__proto__ = p;
+	    return o;
+	  };
+
+	  return _setPrototypeOf(o, p);
+	}
+
+	function _isNativeReflectConstruct() {
+	  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+	  if (Reflect.construct.sham) return false;
+	  if (typeof Proxy === "function") return true;
+
+	  try {
+	    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+	    return true;
+	  } catch (e) {
+	    return false;
+	  }
+	}
+
+	function _assertThisInitialized(self) {
+	  if (self === void 0) {
+	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+	  }
+
+	  return self;
+	}
+
+	function _possibleConstructorReturn(self, call) {
+	  if (call && (typeof call === "object" || typeof call === "function")) {
+	    return call;
+	  }
+
+	  return _assertThisInitialized(self);
+	}
+
+	function _createSuper(Derived) {
+	  var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+	  return function _createSuperInternal() {
+	    var Super = _getPrototypeOf(Derived),
+	        result;
+
+	    if (hasNativeReflectConstruct) {
+	      var NewTarget = _getPrototypeOf(this).constructor;
+
+	      result = Reflect.construct(Super, arguments, NewTarget);
+	    } else {
+	      result = Super.apply(this, arguments);
+	    }
+
+	    return _possibleConstructorReturn(this, result);
+	  };
+	}
+
 	function html2element(html) {
 	  var template = document.createElement('template');
 	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
@@ -36033,337 +36112,275 @@
 	 *
 	 */
 
-	class DecalGeometry extends BufferGeometry {
-
-		constructor( mesh, position, orientation, size ) {
-
-			super();
-
-			// buffers
-
-			const vertices = [];
-			const normals = [];
-			const uvs = [];
-
-			// helpers
-
-			const plane = new Vector3();
-
-			// this matrix represents the transformation of the decal projector
-
-			const projectorMatrix = new Matrix4();
-			projectorMatrix.makeRotationFromEuler( orientation );
-			projectorMatrix.setPosition( position );
-
-			const projectorMatrixInverse = new Matrix4();
-			projectorMatrixInverse.copy( projectorMatrix ).invert();
-
-			// generate buffers
-
-			generate();
-
-			// build geometry
-
-			this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-			this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
-			this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
-
-			function generate() {
-
-				let decalVertices = [];
-
-				const vertex = new Vector3();
-				const normal = new Vector3();
-
-				// handle different geometry types
-
-				if ( mesh.geometry.isGeometry === true ) {
-
-					console.error( 'THREE.DecalGeometry no longer supports THREE.Geometry. Use BufferGeometry instead.' );
-					return;
-
-				}
-
-				const geometry = mesh.geometry;
-
-				const positionAttribute = geometry.attributes.position;
-				const normalAttribute = geometry.attributes.normal;
-
-				// first, create an array of 'DecalVertex' objects
-				// three consecutive 'DecalVertex' objects represent a single face
-				//
-				// this data structure will be later used to perform the clipping
-
-				if ( geometry.index !== null ) {
-
-					// indexed BufferGeometry
-
-					const index = geometry.index;
-
-					for ( let i = 0; i < index.count; i ++ ) {
-
-						vertex.fromBufferAttribute( positionAttribute, index.getX( i ) );
-						normal.fromBufferAttribute( normalAttribute, index.getX( i ) );
-
-						pushDecalVertex( decalVertices, vertex, normal );
-
-					}
-
-				} else {
-
-					// non-indexed BufferGeometry
-
-					for ( let i = 0; i < positionAttribute.count; i ++ ) {
-
-						vertex.fromBufferAttribute( positionAttribute, i );
-						normal.fromBufferAttribute( normalAttribute, i );
-
-						pushDecalVertex( decalVertices, vertex, normal );
-
-					}
-
-				}
-
-				// second, clip the geometry so that it doesn't extend out from the projector
-
-				decalVertices = clipGeometry( decalVertices, plane.set( 1, 0, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( - 1, 0, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 1, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, - 1, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 0, 1 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 0, - 1 ) );
-
-				// third, generate final vertices, normals and uvs
-
-				for ( let i = 0; i < decalVertices.length; i ++ ) {
-
-					const decalVertex = decalVertices[ i ];
-
-					// create texture coordinates (we are still in projector space)
-
-					uvs.push(
-						0.5 + ( decalVertex.position.x / size.x ),
-						0.5 + ( decalVertex.position.y / size.y )
-					);
-
-					// transform the vertex back to world space
-
-					decalVertex.position.applyMatrix4( projectorMatrix );
-
-					// now create vertex and normal buffer data
-
-					vertices.push( decalVertex.position.x, decalVertex.position.y, decalVertex.position.z );
-					normals.push( decalVertex.normal.x, decalVertex.normal.y, decalVertex.normal.z );
-
-				}
-
-			}
-
-			function pushDecalVertex( decalVertices, vertex, normal ) {
-
-				// transform the vertex to world space, then to projector space
-
-				vertex.applyMatrix4( mesh.matrixWorld );
-				vertex.applyMatrix4( projectorMatrixInverse );
-
-				normal.transformDirection( mesh.matrixWorld );
-
-				decalVertices.push( new DecalVertex( vertex.clone(), normal.clone() ) );
-
-			}
-
-			function clipGeometry( inVertices, plane ) {
-
-				const outVertices = [];
-
-				const s = 0.5 * Math.abs( size.dot( plane ) );
-
-				// a single iteration clips one face,
-				// which consists of three consecutive 'DecalVertex' objects
-
-				for ( let i = 0; i < inVertices.length; i += 3 ) {
-
-					let total = 0;
-					let nV1;
-					let nV2;
-					let nV3;
-					let nV4;
-
-					const d1 = inVertices[ i + 0 ].position.dot( plane ) - s;
-					const d2 = inVertices[ i + 1 ].position.dot( plane ) - s;
-					const d3 = inVertices[ i + 2 ].position.dot( plane ) - s;
-
-					const v1Out = d1 > 0;
-					const v2Out = d2 > 0;
-					const v3Out = d3 > 0;
-
-					// calculate, how many vertices of the face lie outside of the clipping plane
-
-					total = ( v1Out ? 1 : 0 ) + ( v2Out ? 1 : 0 ) + ( v3Out ? 1 : 0 );
-
-					switch ( total ) {
-
-						case 0: {
-
-							// the entire face lies inside of the plane, no clipping needed
-
-							outVertices.push( inVertices[ i ] );
-							outVertices.push( inVertices[ i + 1 ] );
-							outVertices.push( inVertices[ i + 2 ] );
-							break;
-
-						}
-
-						case 1: {
-
-							// one vertex lies outside of the plane, perform clipping
-
-							if ( v1Out ) {
-
-								nV1 = inVertices[ i + 1 ];
-								nV2 = inVertices[ i + 2 ];
-								nV3 = clip( inVertices[ i ], nV1, plane, s );
-								nV4 = clip( inVertices[ i ], nV2, plane, s );
-
-							}
-
-							if ( v2Out ) {
-
-								nV1 = inVertices[ i ];
-								nV2 = inVertices[ i + 2 ];
-								nV3 = clip( inVertices[ i + 1 ], nV1, plane, s );
-								nV4 = clip( inVertices[ i + 1 ], nV2, plane, s );
-
-								outVertices.push( nV3 );
-								outVertices.push( nV2.clone() );
-								outVertices.push( nV1.clone() );
-
-								outVertices.push( nV2.clone() );
-								outVertices.push( nV3.clone() );
-								outVertices.push( nV4 );
-								break;
-
-							}
-
-							if ( v3Out ) {
-
-								nV1 = inVertices[ i ];
-								nV2 = inVertices[ i + 1 ];
-								nV3 = clip( inVertices[ i + 2 ], nV1, plane, s );
-								nV4 = clip( inVertices[ i + 2 ], nV2, plane, s );
-
-							}
-
-							outVertices.push( nV1.clone() );
-							outVertices.push( nV2.clone() );
-							outVertices.push( nV3 );
-
-							outVertices.push( nV4 );
-							outVertices.push( nV3.clone() );
-							outVertices.push( nV2.clone() );
-
-							break;
-
-						}
-
-						case 2: {
-
-							// two vertices lies outside of the plane, perform clipping
-
-							if ( ! v1Out ) {
-
-								nV1 = inVertices[ i ].clone();
-								nV2 = clip( nV1, inVertices[ i + 1 ], plane, s );
-								nV3 = clip( nV1, inVertices[ i + 2 ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							if ( ! v2Out ) {
-
-								nV1 = inVertices[ i + 1 ].clone();
-								nV2 = clip( nV1, inVertices[ i + 2 ], plane, s );
-								nV3 = clip( nV1, inVertices[ i ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							if ( ! v3Out ) {
-
-								nV1 = inVertices[ i + 2 ].clone();
-								nV2 = clip( nV1, inVertices[ i ], plane, s );
-								nV3 = clip( nV1, inVertices[ i + 1 ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							break;
-
-						}
-
-					}
-
-				}
-
-				return outVertices;
-
-			}
-
-			function clip( v0, v1, p, s ) {
-
-				const d0 = v0.position.dot( p ) - s;
-				const d1 = v1.position.dot( p ) - s;
-
-				const s0 = d0 / ( d0 - d1 );
-
-				const v = new DecalVertex(
-					new Vector3(
-						v0.position.x + s0 * ( v1.position.x - v0.position.x ),
-						v0.position.y + s0 * ( v1.position.y - v0.position.y ),
-						v0.position.z + s0 * ( v1.position.z - v0.position.z )
-					),
-					new Vector3(
-						v0.normal.x + s0 * ( v1.normal.x - v0.normal.x ),
-						v0.normal.y + s0 * ( v1.normal.y - v0.normal.y ),
-						v0.normal.z + s0 * ( v1.normal.z - v0.normal.z )
-					)
-				);
-
-				// need to clip more values (texture coordinates)? do it this way:
-				// intersectpoint.value = a.value + s * ( b.value - a.value );
-
-				return v;
-
-			}
-
-		}
-
-	}
-
-	// helper
-
-	class DecalVertex {
-
-		constructor( position, normal ) {
-
-			this.position = position;
-			this.normal = normal;
-
-		}
-
-		clone() {
-
-			return new this.constructor( this.position.clone(), this.normal.clone() );
-
-		}
-
-	}
+	var CustomDecalGeometry = /*#__PURE__*/function (_BufferGeometry) {
+	  _inherits(CustomDecalGeometry, _BufferGeometry);
+
+	  var _super = _createSuper(CustomDecalGeometry);
+
+	  function CustomDecalGeometry(mesh, position, orientation, size) {
+	    var _this;
+
+	    _classCallCheck(this, CustomDecalGeometry);
+
+	    _this = _super.call(this); // Now it does work correctly, just need to figure out hte angles.
+
+	    var triangleNormal = new Vector3(0, 0, 0);
+	    var viewDirection = new Vector3(0, 0, 1);
+	    viewDirection.applyEuler(orientation);
+	    viewDirection.transformDirection(mesh.matrixWorld); // buffers
+
+	    var vertices = [];
+	    var normals = [];
+	    var uvs = []; // helpers
+
+	    var plane = new Vector3(); // this matrix represents the transformation of the decal projector
+
+	    var projectorMatrix = new Matrix4();
+	    projectorMatrix.makeRotationFromEuler(orientation);
+	    projectorMatrix.setPosition(position);
+	    var projectorMatrixInverse = new Matrix4();
+	    projectorMatrixInverse.copy(projectorMatrix).invert(); // generate buffers
+
+	    generate(); // build geometry
+
+	    _this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+
+	    _this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+
+	    _this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+	    function generate() {
+	      var decalVertices = [];
+	      var vertex = new Vector3();
+	      var normal = new Vector3(); // handle different geometry types
+
+	      if (mesh.geometry.isGeometry === true) {
+	        console.error('THREE.DecalGeometry no longer supports THREE.Geometry. Use BufferGeometry instead.');
+	        return;
+	      }
+
+	      var geometry = mesh.geometry;
+	      var positionAttribute = geometry.attributes.position;
+	      var normalAttribute = geometry.attributes.normal; // first, create an array of 'DecalVertex' objects
+	      // three consecutive 'DecalVertex' objects represent a single face
+	      //
+	      // this data structure will be later used to perform the clipping
+
+	      if (geometry.index !== null) {
+	        // indexed BufferGeometry
+	        var index = geometry.index;
+
+	        for (var i = 0; i < index.count; i++) {
+	          vertex.fromBufferAttribute(positionAttribute, index.getX(i));
+	          normal.fromBufferAttribute(normalAttribute, index.getX(i));
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } else {
+	        // non-indexed BufferGeometry
+	        for (var _i = 0; _i < positionAttribute.count; _i++) {
+	          vertex.fromBufferAttribute(positionAttribute, _i);
+	          normal.fromBufferAttribute(normalAttribute, _i);
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } ///////////////////////////////////////
+
+
+	      var decalVerticesOneSided = [];
+
+	      for (var _i2 = 0; _i2 < decalVertices.length; _i2 += 3) {
+	        // Check if the triangle is oriented correctly.
+	        // So for a triangle p1, p2, p3, if the vector A = p2 - p1 and the vector B = p3 - p1 then the normal N = A x B and can be calculated by:
+	        // Nx = Ay * Bz - Az * By
+	        // Ny = Az * Bx - Ax * Bz
+	        // Nz = Ax * By - Ay * Bx
+	        // Just calculate the average of hte triangle normals.
+	        triangleNormal.set(0, 0, 0);
+	        triangleNormal.add(decalVertices[_i2 + 0].normal);
+	        triangleNormal.add(decalVertices[_i2 + 1].normal);
+	        triangleNormal.add(decalVertices[_i2 + 2].normal);
+
+	        if (triangleNormal.dot(viewDirection) >= -0.4) {
+	          decalVerticesOneSided.push(decalVertices[_i2 + 0]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 1]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 2]);
+	        }
+	      } // for
+	      // decalVertices = decalVerticesOneSided;
+	      // console.log(`N one sided: ${decalVerticesOneSided.length/3}`)
+	      // console.log(`N two sided: ${decalVertices.length/3}`)
+
+
+	      decalVertices = decalVerticesOneSided; ////////////////////////////////////////////
+	      // second, clip the geometry so that it doesn't extend out from the projector
+
+	      decalVertices = clipGeometry(decalVertices, plane.set(1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(-1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, -1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, 1));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, -1)); // third, generate final vertices, normals and uvs
+
+	      for (var _i3 = 0; _i3 < decalVertices.length; _i3++) {
+	        var decalVertex = decalVertices[_i3]; // create texture coordinates (we are still in projector space)
+
+	        uvs.push(0.5 + decalVertex.position.x / size.x, 0.5 + decalVertex.position.y / size.y); // transform the vertex back to world space
+
+	        decalVertex.position.applyMatrix4(projectorMatrix); // now create vertex and normal buffer data
+
+	        vertices.push(decalVertex.position.x, decalVertex.position.y, decalVertex.position.z);
+	        normals.push(decalVertex.normal.x, decalVertex.normal.y, decalVertex.normal.z);
+	      }
+	    }
+
+	    function pushDecalVertex(decalVertices, vertex, normal) {
+	      // transform the vertex to world space, then to projector space
+	      vertex.applyMatrix4(mesh.matrixWorld);
+	      vertex.applyMatrix4(projectorMatrixInverse);
+	      normal.transformDirection(mesh.matrixWorld);
+	      decalVertices.push(new DecalVertex(vertex.clone(), normal.clone()));
+	    }
+
+	    function clipGeometry(inVertices, plane) {
+	      var outVertices = [];
+	      var s = 0.5 * Math.abs(size.dot(plane)); // a single iteration clips one face,
+	      // which consists of three consecutive 'DecalVertex' objects
+
+	      for (var i = 0; i < inVertices.length; i += 3) {
+	        var total = 0;
+	        var nV1 = void 0;
+	        var nV2 = void 0;
+	        var nV3 = void 0;
+	        var nV4 = void 0;
+	        var d1 = inVertices[i + 0].position.dot(plane) - s;
+	        var d2 = inVertices[i + 1].position.dot(plane) - s;
+	        var d3 = inVertices[i + 2].position.dot(plane) - s;
+	        var v1Out = d1 > 0;
+	        var v2Out = d2 > 0;
+	        var v3Out = d3 > 0; // calculate, how many vertices of the face lie outside of the clipping plane
+
+	        total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+
+	        switch (total) {
+	          case 0:
+	            {
+	              // the entire face lies inside of the plane, no clipping needed
+	              outVertices.push(inVertices[i]);
+	              outVertices.push(inVertices[i + 1]);
+	              outVertices.push(inVertices[i + 2]);
+	              break;
+	            }
+
+	          case 1:
+	            {
+	              // one vertex lies outside of the plane, perform clipping
+	              if (v1Out) {
+	                nV1 = inVertices[i + 1];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i], nV1, plane, s);
+	                nV4 = clip(inVertices[i], nV2, plane, s);
+	              }
+
+	              if (v2Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i + 1], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 1], nV2, plane, s);
+	                outVertices.push(nV3);
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV1.clone());
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV3.clone());
+	                outVertices.push(nV4);
+	                break;
+	              }
+
+	              if (v3Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 1];
+	                nV3 = clip(inVertices[i + 2], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 2], nV2, plane, s);
+	              }
+
+	              outVertices.push(nV1.clone());
+	              outVertices.push(nV2.clone());
+	              outVertices.push(nV3);
+	              outVertices.push(nV4);
+	              outVertices.push(nV3.clone());
+	              outVertices.push(nV2.clone());
+	              break;
+	            }
+
+	          case 2:
+	            {
+	              // two vertices lies outside of the plane, perform clipping
+	              if (!v1Out) {
+	                nV1 = inVertices[i].clone();
+	                nV2 = clip(nV1, inVertices[i + 1], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 2], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v2Out) {
+	                nV1 = inVertices[i + 1].clone();
+	                nV2 = clip(nV1, inVertices[i + 2], plane, s);
+	                nV3 = clip(nV1, inVertices[i], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v3Out) {
+	                nV1 = inVertices[i + 2].clone();
+	                nV2 = clip(nV1, inVertices[i], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 1], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              break;
+	            }
+	        }
+	      }
+
+	      return outVertices;
+	    }
+
+	    function clip(v0, v1, p, s) {
+	      var d0 = v0.position.dot(p) - s;
+	      var d1 = v1.position.dot(p) - s;
+	      var s0 = d0 / (d0 - d1);
+	      var v = new DecalVertex(new Vector3(v0.position.x + s0 * (v1.position.x - v0.position.x), v0.position.y + s0 * (v1.position.y - v0.position.y), v0.position.z + s0 * (v1.position.z - v0.position.z)), new Vector3(v0.normal.x + s0 * (v1.normal.x - v0.normal.x), v0.normal.y + s0 * (v1.normal.y - v0.normal.y), v0.normal.z + s0 * (v1.normal.z - v0.normal.z))); // need to clip more values (texture coordinates)? do it this way:
+	      // intersectpoint.value = a.value + s * ( b.value - a.value );
+
+	      return v;
+	    }
+
+	    return _this;
+	  }
+
+	  return CustomDecalGeometry;
+	}(BufferGeometry); // helper
+
+	var DecalVertex = /*#__PURE__*/function () {
+	  function DecalVertex(position, normal) {
+	    _classCallCheck(this, DecalVertex);
+
+	    this.position = position;
+	    this.normal = normal;
+	  }
+
+	  _createClass(DecalVertex, [{
+	    key: "clone",
+	    value: function clone() {
+	      return new this.constructor(this.position.clone(), this.normal.clone());
+	    }
+	  }]);
+
+	  return DecalVertex;
+	}();
 
 	var textureLoader = new TextureLoader(); // Parameters from the UI - repackage into class?
 
@@ -36411,7 +36428,7 @@
 
 	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
 
-	      var cutout = new DecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	      var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
 	      obj.mesh.geometry.copy(cutout);
 	    } // transform
 
@@ -36431,6 +36448,8 @@
 	var gui; // Scene items
 
 	var camera, scene, renderer, controls;
+	var viewvec = new Vector3();
+	console.log(viewvec);
 	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
 	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
 
@@ -36475,6 +36494,7 @@
 	  scene.add(decalOrientationHelper); // Add the decal mesh to the scene.
 
 	  scene.add(oilFlowDecal.mesh);
+	  console.log(oilFlowDecal);
 	  window.addEventListener('resize', onWindowResize);
 	  setupHUD();
 	} // init
@@ -36484,8 +36504,8 @@
 	function positionDecal(target) {
 	  // Reposition the orientation helper. Or maybe this can be done in addDecal?
 	  decalOrientationHelper.position.copy(raypointer.getLinePoint(0));
-	  decalOrientationHelper.lookAt(raypointer.getLinePoint(1));
-	  decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+	  decalOrientationHelper.lookAt(raypointer.getLinePoint(1)); // decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+
 	  oilFlowDecal.support = target.object;
 	  oilFlowDecal.position.copy(decalOrientationHelper.position);
 	  oilFlowDecal.orientation.copy(decalOrientationHelper.rotation);
@@ -36655,6 +36675,9 @@
 	    } // remove
 	    folder.add( guiconfig, "remove" );      // button
 	    */
+	    // var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
+	    // scene.add( vnh );
+	    // console.log(mesh)
 	  }); // then
 	} // addWingGeometry
 

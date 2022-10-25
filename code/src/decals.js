@@ -53,13 +53,20 @@ import PointerRay from "./components/PointerRay.js";
 import Decal from "./components/Decal.js";
 
 
+import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper.js";
+
+
 // The gui - statse need to be updated as animated.
 var gui;
 
 
 // Scene items
 var camera, scene, light, renderer, controls;
-var viewvec = new THREE.Vector3(0,0,-1);
+
+
+var viewvec = new THREE.Vector3();
+console.log(viewvec);
+
 
 
 /*
@@ -87,7 +94,7 @@ var raypointer;
 
 // DECAL HELPERS
 const decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), 
-                                               new THREE.MeshNormalMaterial() );
+new THREE.MeshNormalMaterial() );
 decalOrientationHelper.visible = false;
 	
 const decals = []; // different Decal instances
@@ -147,8 +154,7 @@ function init() {
 	
 	// Add the decal mesh to the scene.
 	scene.add( oilFlowDecal.mesh );
-	
-	
+	console.log( oilFlowDecal );
 	
 
 	window.addEventListener( 'resize', onWindowResize );
@@ -169,7 +175,7 @@ function positionDecal(target) {
 	decalOrientationHelper.position.copy( raypointer.getLinePoint(0) );
 	decalOrientationHelper.lookAt( raypointer.getLinePoint(1) );
 	
-	decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+	// decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
 	
 	oilFlowDecal.support = target.object;
 	oilFlowDecal.position.copy( decalOrientationHelper.position )
@@ -177,7 +183,6 @@ function positionDecal(target) {
 	oilFlowDecal.scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
 	
 	oilFlowDecal.transform()
-	
 	
 	
 	/*
@@ -380,7 +385,10 @@ function addWingGeometry(){
 		folder.add( guiconfig, "remove" );      // button
 		*/
 	
-		
+	
+		// var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
+		// scene.add( vnh );
+		// console.log(mesh)
 	}) // then
 	
 	

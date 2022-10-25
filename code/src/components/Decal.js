@@ -14,7 +14,7 @@ Get decal color from the original geometry.
 */
 
 import * as THREE from "three";
-import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
+import CustomDecalGeometry from "./CustomDecalGeometry.js";
 const textureLoader = new THREE.TextureLoader();
 
 
@@ -29,6 +29,10 @@ const params = {
 		removeDecals();
 	}
 };
+
+
+
+var viewDirection = new THREE.Vector3();
 
 
 
@@ -74,8 +78,7 @@ export default class Decal{
 		
 		obj.mesh = new THREE.Mesh( placeholderGeometry, decalMaterial );
 		
-		
-		
+
 	} // constructor
 	
 	
@@ -87,11 +90,13 @@ export default class Decal{
 		obj.size.set( obj.scale, obj.scale, obj.scale );
 
 		// Make the decal object.
-		const cutout = new DecalGeometry( obj.support, obj.position, obj.orientation, obj.size );		
+		const cutout = new CustomDecalGeometry( obj.support, obj.position, obj.orientation, obj.size );		
 		obj.mesh.geometry.copy(cutout);
 		
 	} // transform
 	
+	
+
 	
 	
 	
