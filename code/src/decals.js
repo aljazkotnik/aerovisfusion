@@ -42,13 +42,16 @@ Other approach is the Octtree. this would be required for internal passages. No 
 
 
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
+
 
 import InterfaceDecals from "./GUI/InterfaceDecals.js";
 import ColorBar from "./GUI/ColorBar.js";
+import ContouredMesh from "./components/ContouredMesh.js";
+import PointerRay from "./components/PointerRay.js";
+import Decal from "./components/Decal.js";
 
-import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 
 // The gui - statse need to be updated as animated.
 var gui;
@@ -57,28 +60,39 @@ var gui;
 // Scene items
 var camera, scene, light, renderer, controls;
 var viewvec = new THREE.Vector3(0,0,-1);
-const domainMidPoint = new THREE.Vector3(0.5, 100.5, 0);
+
+
+/*
+wing domain roughly = {
+	x = [0, 0.7]
+	y = [100.1, 100.4]
+	z = [0, 0.3]
+}
+*/
+const domainMidPoint = new THREE.Vector3(0.4, 100.5, 0);
+const focusInitialPoint = new THREE.Vector3(0.345, 100.166, 0.127);
+const cameraInitialPoint = new THREE.Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1);
+
+
+
+// Colorbar
 const color = new THREE.Color();
 const colorbar = new ColorBar(0.14, 0.44);
-colorbar.setColormap("rainbow", 200);
+colorbar.colormap = "d3Spectral";
+
 
 // SETUP THE GEOMETRY AND INTERSECT ITEMS.
-let mesh;
-let raycaster;
-let line;
+var raypointer;
 
 
-// MOUSE INTERACTION HELPERS
-let moved;
+// DECAL HELPERS
+const decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), 
+                                               new THREE.MeshNormalMaterial() );
+decalOrientationHelper.visible = false;
+	
+const decals = []; // different Decal instances
+const decalGeometries = []; // Geometries that can have a decal added on them.
 let selectedDecal;
-
-const intersection = {
-	intersects: false,
-	point: new THREE.Vector3(),
-	normal: new THREE.Vector3()
-};
-const mouse = new THREE.Vector2();
-const intersects = []; // array that stores found intersects with mesh.
 
 
 
@@ -86,32 +100,6 @@ const intersects = []; // array that stores found intersects with mesh.
 
 // Check first on-the-go interactions.
 
-
-const textureLoader = new THREE.TextureLoader();
-const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
-// const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
-
-// normalMap: decalNormal,
-const decalMaterial = new THREE.MeshPhongMaterial( {
-	specular: 0x444444,
-	map: decalDiffuse,
-	normalScale: new THREE.Vector2( 1, 1 ),
-	shininess: 30,
-	transparent: true,
-	depthTest: true,
-	depthWrite: false,
-	polygonOffset: true,
-	polygonOffsetFactor: - 4,
-	wireframe: false
-} );
-
-
-const decals = [];
-let decalOrientationHelper;
-const position = new THREE.Vector3();
-const orientation = new THREE.Euler();
-const size = new THREE.Vector3( 10, 10, 10 );
 
 
 // Parameters from the UI - repackage into class?
@@ -126,6 +114,9 @@ const params = {
 
 
 
+// Decal is added through the GUI.
+const oilFlowDecal = new Decal();
+decals.push( oilFlowDecal )
 
 
 init();
@@ -137,18 +128,10 @@ function init() {
 
 	// FOUNDATIONS
 	setupScene();
-	addOrbitControls();
+	addArcballControls();
 	
 	
-	// GEOMETRY
-	// Data domain viewframe.
-	// The box is positioned by its centerpoint.
-	/*
-	const box = new THREE.BoxGeometry( 1.4, 1, 2 );
-	const object = new THREE.Mesh( box, new THREE.MeshBasicMaterial( { color: 0x0FC3D6, wireframe: true } ) );
-	object.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-	scene.add( object );
-	*/
+	
 	
 	// Add in the wing.
 	addWingGeometry()
@@ -160,16 +143,13 @@ function init() {
 	
 
 	// mouse helper helps orinetate the decal onto the suface.
-	decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), new THREE.MeshNormalMaterial() );
-	decalOrientationHelper.visible = false;
 	scene.add( decalOrientationHelper );
 	
+	// Add the decal mesh to the scene.
+	scene.add( oilFlowDecal.mesh );
 	
 	
 	
-	// Bringing this lookAt to the end fixed the camera misdirection initialisation.
-	// With trackball controls lookAt no longer works.
-	adjustView([0.43, 99, 1.2])
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -183,110 +163,107 @@ function init() {
 
 
 // INTERACTIVITY
-
-function addDecal() {
-
-	// Position, Orientation, and Scale
-	position.copy( intersection.point );
+function positionDecal(target) {
 	
-	orientation.copy( decalOrientationHelper.rotation ); // decalOrientationHelper!!!
-	orientation.z = Math.random() * 2 * Math.PI;
-
-	const scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
-	size.set( scale, scale, scale ); // limit clipping box, or adjust puchDecalVertex!!!!
-
-
-
-	// Make the decal object.
-	const cutout = new DecalGeometry( mesh, position, orientation, size );
-
-	const material = decalMaterial.clone();
-	material.color.setHex( Math.random() * 0xffffff );
+	// Reposition the orientation helper. Or maybe this can be done in addDecal?
+	decalOrientationHelper.position.copy( raypointer.getLinePoint(0) );
+	decalOrientationHelper.lookAt( raypointer.getLinePoint(1) );
 	
-	const decal = new THREE.Mesh( cutout, material );
+	decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+	
+	oilFlowDecal.support = target.object;
+	oilFlowDecal.position.copy( decalOrientationHelper.position )
+	oilFlowDecal.orientation.copy( decalOrientationHelper.rotation )
+	oilFlowDecal.scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
+	
+	oilFlowDecal.transform()
 	
 	
-	// Add additional information required within the userData.
-	decal.userData = {position, orientation, scale};
 	
-	decals.push( decal );
-	scene.add( decal );
+	/*
+	// The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
 	
-	
-	console.log(decals)
+	for(let i=0; i<decals.length; i++){
+		if(decals[i].active){
+			decals[i].pasteOn(target);
+		} // if
+	} // for
+	*/
 
-} // addDecal
+} // positionDecal
 
 function removeDecals() {
 
 	decals.forEach( function ( d ) {
-		scene.remove( d );
+		scene.remove( d.mesh );
 	}); // forEach
 
 	decals.length = 0;
 
 }; // removeDecals
 
-function transformDecal(decal){
-	// Ok - try recalculating the decal geometry: seems to be working decently for this demo.
-	// The input is an object that contains the decal object, as well as the new position, orientation, and scale.
-	size.set(decal.userData.scale, decal.userData.scale, decal.userData.scale);
+
+
+
+function addAimingRay(){
+		
+	// Create the raycaster.
+	/*
+	BEHAVIOR:
+	- click and drag should support OrbitControls without pasting the decal.
+	- so store moved as before, and only past on pointerup?
+	*/
 	
-	const cutout = new DecalGeometry( mesh, decal.userData.position, decal.userData.orientation, size );
-	decal.geometry.copy(cutout);
-} // transformDecal
-
-
-
-
-function checkIntersection( x, y, candidates) {
-	// This should be adjusted so that the array of items to check the intersect against can be specified.
-
-	if ( candidates.length < 1 ) return;
-
-	mouse.x = ( x / window.innerWidth ) * 2 - 1;
-	mouse.y = - ( y / window.innerHeight ) * 2 + 1;
-
-	raycaster.setFromCamera( mouse, camera );
-	raycaster.intersectObjects( candidates, false, intersects );
-
+	raypointer = new PointerRay( camera );
+	scene.add( raypointer.line )
 	
-	if ( intersects.length > 0 ) {
-		// Intersect point is the first point of the aimer line.
-		const i = intersects[ 0 ];
-		const p = i.point;
+	// Disable the pointer long press events if the user is navigating the domain.
+	controls.addEventListener( 'change', function (){
+	   raypointer.enabled = false;
+	}); // change
+	
+	console.log(raypointer)
+	
+	raypointer.pointerdown = function(event){
+		// How do we deselect a decal? Another longpress, or when another decal is selected.
+		let decalMeshes = decals.map(d=>d.mesh);
+		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalMeshes );
+		let targetDecal = decals[decalMeshes.indexOf(target.object)];
 		
-		// The normal gets transformed into the second point here.
-		const n = intersects[ 0 ].face.normal.clone();
-		n.multiplyScalar( 0.1 );
-		n.add( intersects[ 0 ].point );
-		
-		
-		// Set the aiming line vertices.
-		const positions = line.geometry.attributes.position;
-		positions.setXYZ( 0, p.x, p.y, p.z );
-		positions.setXYZ( 1, n.x, n.y, n.z );
-		positions.needsUpdate = true;
+		if ( target ){
+			decals.forEach(decal=>{
+				decal.mesh.material.color.setHex(0xffffff);
+			}) // forEach
+			
+			// If target object is the current selected decal, then it should be turned off.
+			let active = selectedDecal ? selectedDecal.mesh === target.object : false;
+			target.object.material.color.setHex( active ? 0xffffff : 0xff00ff);
+			selectedDecal = active ? undefined : targetDecal;
+		}; // if
+	} // pointerdown
+	
+	raypointer.pointerup = function(event){
+		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
+		if ( target ){
+			positionDecal( target );
+		}; // if
+	} // pointerup
+	
+	raypointer.pointermove = function(event){
+		raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
+	} // pointermove
+	
+	
+} // addAimingRay
 
 
-		// Intersection stores the intersect information for easier use later on.
-		intersection.point.copy( p );
-		intersection.normal.copy( intersects[ 0 ].face.normal );
-		intersection.intersects = true;
 
-		// Clear the intersects array.
-		intersects.length = 0;
-		
-		
-		// Reposition hte helper.
-		decalOrientationHelper.position.copy( p );
-		decalOrientationHelper.lookAt( n );
-		
-		return i
-	} else {
-		intersection.intersects = false;
-	} // if
-} // checkIntersection
+
+
+
+
+
+
 
 function addBoundingBox(object){
 	// This is a world oriented bounding box.
@@ -345,12 +322,10 @@ function adjustView(position){
 	controls.enabled = true;
 } // adjustView
 
+
 function addWingGeometry(){
-	const wingmaterial = new THREE.MeshBasicMaterial( { 
-	    color: 0x0FC3D6,
-		vertexColors: true,
-		side: THREE.DoubleSide
-	} );
+	
+	
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
@@ -359,124 +334,61 @@ function addWingGeometry(){
 	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
-	let colorPromise = fetch("./assets/deltawing/wing/mach.bin")
+	let valuePromise = fetch("./assets/deltawing/wing/mach.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Float32Array(ab)}); // float32
+	  
+	  
+	const dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
+	  
+
+	const m = new ContouredMesh( "deltawing", dataPromise, colorbar.uniforms );
 	
-	Promise.all([verticesPromise, indicesPromise, colorPromise]).then(a=>{
-		
-		// Convert the Mach numbers into colors to be used by the GPU. Maybe this can be extended later to perform the assignmend to color on the GPU?
-		let colors = [];
-		a[2].forEach((v,i)=>{
-			// Populate the colors. Maybe for now just create colors?
-			color.set( colorbar.getColor( v ) );
-			colors.push( color.r, color.g, color.b, 1 );
-		}) // forEach
-		
-		
-		const geometry = new THREE.BufferGeometry();
-		geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
-		
-		geometry.setAttribute( 'color', new THREE.Float32BufferAttribute(colors, 4, true) );
-		
-		geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
-		geometry.computeVertexNormals();
-		
-		mesh = new THREE.Mesh( geometry, wingmaterial );
-		
+	m.created.then(mesh=>{
+		mesh.name = "Delta wing";
 		scene.add( mesh );
-	}) // Promise.all
+		decalGeometries.push( mesh );
+		
+		// Subscribe the mesh material to the colorbar for future changes.
+		function updateMeshColorbarTexture(mesh){
+			/* Uniforms controlled by the colorbar GUI:
+			obj.uniforms = {
+				u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+				u_thresholds: {value: initialThresholds },
+				u_n_thresholds: {value: obj.n },
+				u_isolines_flag: {value: false },
+				u_contours_flag: {value: true }
+			};
+			*/
+			mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
+		} // updateMeshColorbarTexture
+		colorbar.subscribers.push([mesh, updateMeshColorbarTexture]);
+		
+		
+		/*
+		// Add GUI controllers.
+		const guiconfig = m.config;
+		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(guiconfig.name , 27) );
+		
+		folder.add( guiconfig, "visible" ); 	   // boolean
+		
+		
+		guiconfig.remove = function(){
+			folder.destroy();
+			sceneWebGL.remove( mesh );
+		} // remove
+		folder.add( guiconfig, "remove" );      // button
+		*/
+	
+		
+	}) // then
+	
+	
 } // addWingGeometry
 
-function addAimingRay(){
-		
-	// Create the raycaster.
-	/*
-	BEHAVIOR:
-	- click and drag should support OrbitControls without pasting the decal.
-	- so store moved as before, and only past on pointerup?
-	*/
-	
-	// The line doesn't seem to work if it is not initialised near the surface. Why??
-	const geometry = new THREE.BufferGeometry();
-	geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), new THREE.Vector3(0.384, 100, 0.173) ] );
-	line = new THREE.Line( geometry, new THREE.LineBasicMaterial() );
-	scene.add( line );
-	
-	// The raycaster theat finds surface point.
-	raycaster = new THREE.Raycaster();
-	
-	
-	// Behavior. Change on CONTROLS, pointerdown, pointerup on window!
-	controls.addEventListener( 'change', function (){
-	  moved = true;
-	}); // change
 
 
-	// Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
-	let pointerdownTime;
-	let longPressTimer;
-	window.addEventListener( 'pointerdown', function (event){
-	  moved = false;
-	  
-	  pointerdownTime = performance.now();
-	  longPressTimer = window.setTimeout(function(){ 
-		if(!moved){
-				
-		  // How do we deselect a decal? Another longpress, or when another decal is selected.
-		  let decalIntersection = checkIntersection( event.clientX, event.clientY, decals );
-		  if ( decalIntersection ){
-			highlightDecals( decalIntersection.object )
-		  }; // if
-		} // if	
-	  },1000); 
-	}); // pointerdown
 
-	window.addEventListener( 'pointerup', function (event){
-	  
-	  // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
-	  
-	  clearTimeout(longPressTimer);
-	  
-	  let clickTime = performance.now() - pointerdownTime;
-	  // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
-	  if ( moved === false && clickTime < 200) {
-		checkIntersection( event.clientX, event.clientY, mesh === undefined ? [] : [mesh] );
-		if ( intersection.intersects ){
-			addDecal();
-		};
-	  } // if
-	}); // pointerup
-	
-
-	// For now just focus on adding the pointer helper.
-	window.addEventListener( 'pointermove', function (event){
-	  checkIntersection( event.clientX, event.clientY, mesh === undefined ? [] : [mesh] )
-	}); // onPointerMove
-	
-	
-	
-	// Maybe we could highlight the wireframe instead of the emmissivity?
-	function highlightDecals(d){
-	
-		
-		decals.forEach(decal=>{
-			decal.material.emissive.setHex(0x000000);
-		}) // forEach
-		
-		
-		let active = selectedDecal === d;
-		d.material.emissive.setHex( active ? 0x000000 : 0xff0000);
-		selectedDecal = active ? undefined : d;
-				
-		
-	} // highlightDecals
-	
-	
-	
-	
-	
-} // addAimingRay
 
 
 
@@ -502,8 +414,8 @@ function setupHUD(){
 	gui.rotation.node.addEventListener("input", function(e){
 	
 		if(selectedDecal){
-			selectedDecal.userData.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-			transformDecal( selectedDecal );
+			selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
+			selectedDecal.transform();
 		} // if
 	
 	}) // rotation.addEventListener
@@ -516,8 +428,8 @@ function setupHUD(){
 		The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
 		*/
 		if(selectedDecal){			
-			selectedDecal.userData.scale += gui.size.value/10;
-			transformDecal( selectedDecal );
+			selectedDecal.scale += gui.size.value/10;
+			selectedDecal.transform();
 		} // if
 	
 	}) // rotation.addEventListener
@@ -527,7 +439,7 @@ function setupHUD(){
 	// The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
 	gui.eraser.node.onclick = function(){
 		if(selectedDecal){
-			scene.remove(selectedDecal);
+			scene.remove(selectedDecal.mesh);
 			decals.splice( decals.indexOf(selectedDecal), 1);
 		} // if
 	} // onclick
@@ -548,12 +460,21 @@ function setupHUD(){
 
 
 // CONTROLS
-function addOrbitControls(){
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.addEventListener( 'change', render );
-	controls.target.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-} // addOrbitControls
-
+function addArcballControls(){
+	
+	controls = new ArcballControls( camera, renderer.domElement, scene );
+	controls.focus( focusInitialPoint, 1, 1 );
+	
+	
+	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
+	controls.update();
+	
+	
+	
+	
+	
+} // addArcballControls
 
 
 function onWindowResize() {

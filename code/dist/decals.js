@@ -7,8 +7,6 @@
 	 * SPDX-License-Identifier: MIT
 	 */
 	const REVISION = '139';
-	const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
-	const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
 	const CullFaceNone = 0;
 	const CullFaceBack = 1;
 	const CullFaceFront = 2;
@@ -235,6 +233,8 @@
 
 	}
 
+	let _seed = 1234567;
+
 
 	const DEG2RAD = Math.PI / 180;
 	const RAD2DEG = 180 / Math.PI;
@@ -270,10 +270,119 @@
 
 	}
 
+	// Linear mapping from range <a1, a2> to range <b1, b2>
+	function mapLinear( x, a1, a2, b1, b2 ) {
+
+		return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+
+	}
+
+	// https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/inverse-lerp-a-super-useful-yet-often-overlooked-function-r5230/
+	function inverseLerp( x, y, value ) {
+
+		if ( x !== y ) {
+
+			return ( value - x ) / ( y - x );
+
+		} else {
+
+			return 0;
+
+		}
+
+	}
+
 	// https://en.wikipedia.org/wiki/Linear_interpolation
 	function lerp( x, y, t ) {
 
 		return ( 1 - t ) * x + t * y;
+
+	}
+
+	// http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
+	function damp( x, y, lambda, dt ) {
+
+		return lerp( x, y, 1 - Math.exp( - lambda * dt ) );
+
+	}
+
+	// https://www.desmos.com/calculator/vcsjnyz7x4
+	function pingpong( x, length = 1 ) {
+
+		return length - Math.abs( euclideanModulo( x, length * 2 ) - length );
+
+	}
+
+	// http://en.wikipedia.org/wiki/Smoothstep
+	function smoothstep( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * ( 3 - 2 * x );
+
+	}
+
+	function smootherstep( x, min, max ) {
+
+		if ( x <= min ) return 0;
+		if ( x >= max ) return 1;
+
+		x = ( x - min ) / ( max - min );
+
+		return x * x * x * ( x * ( x * 6 - 15 ) + 10 );
+
+	}
+
+	// Random integer from <low, high> interval
+	function randInt( low, high ) {
+
+		return low + Math.floor( Math.random() * ( high - low + 1 ) );
+
+	}
+
+	// Random float from <low, high> interval
+	function randFloat( low, high ) {
+
+		return low + Math.random() * ( high - low );
+
+	}
+
+	// Random float from <-range/2, range/2> interval
+	function randFloatSpread( range ) {
+
+		return range * ( 0.5 - Math.random() );
+
+	}
+
+	// Deterministic pseudo-random float in the interval [ 0, 1 ]
+	function seededRandom( s ) {
+
+		if ( s !== undefined ) _seed = s;
+
+		// Mulberry32 generator
+
+		let t = _seed += 0x6D2B79F5;
+
+		t = Math.imul( t ^ t >>> 15, t | 1 );
+
+		t ^= t + Math.imul( t ^ t >>> 7, t | 61 );
+
+		return ( ( t ^ t >>> 14 ) >>> 0 ) / 4294967296;
+
+	}
+
+	function degToRad( degrees ) {
+
+		return degrees * DEG2RAD;
+
+	}
+
+	function radToDeg( radians ) {
+
+		return radians * RAD2DEG;
 
 	}
 
@@ -283,11 +392,165 @@
 
 	}
 
+	function ceilPowerOfTwo( value ) {
+
+		return Math.pow( 2, Math.ceil( Math.log( value ) / Math.LN2 ) );
+
+	}
+
 	function floorPowerOfTwo( value ) {
 
 		return Math.pow( 2, Math.floor( Math.log( value ) / Math.LN2 ) );
 
 	}
+
+	function setQuaternionFromProperEuler( q, a, b, c, order ) {
+
+		// Intrinsic Proper Euler Angles - see https://en.wikipedia.org/wiki/Euler_angles
+
+		// rotations are applied to the axes in the order specified by 'order'
+		// rotation by angle 'a' is applied first, then by angle 'b', then by angle 'c'
+		// angles are in radians
+
+		const cos = Math.cos;
+		const sin = Math.sin;
+
+		const c2 = cos( b / 2 );
+		const s2 = sin( b / 2 );
+
+		const c13 = cos( ( a + c ) / 2 );
+		const s13 = sin( ( a + c ) / 2 );
+
+		const c1_3 = cos( ( a - c ) / 2 );
+		const s1_3 = sin( ( a - c ) / 2 );
+
+		const c3_1 = cos( ( c - a ) / 2 );
+		const s3_1 = sin( ( c - a ) / 2 );
+
+		switch ( order ) {
+
+			case 'XYX':
+				q.set( c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13 );
+				break;
+
+			case 'YZY':
+				q.set( s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13 );
+				break;
+
+			case 'ZXZ':
+				q.set( s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13 );
+				break;
+
+			case 'XZX':
+				q.set( c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13 );
+				break;
+
+			case 'YXY':
+				q.set( s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13 );
+				break;
+
+			case 'ZYZ':
+				q.set( s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13 );
+				break;
+
+			default:
+				console.warn( 'THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: ' + order );
+
+		}
+
+	}
+
+	function denormalize$1( value, array ) {
+
+		switch ( array.constructor ) {
+
+			case Float32Array:
+
+				return value;
+
+			case Uint16Array:
+
+				return value / 65535.0;
+
+			case Uint8Array:
+
+				return value / 255.0;
+
+			case Int16Array:
+
+				return Math.max( value / 32767.0, - 1.0 );
+
+			case Int8Array:
+
+				return Math.max( value / 127.0, - 1.0 );
+
+			default:
+
+				throw new Error( 'Invalid component type.' );
+
+		}
+
+	}
+
+	function normalize( value, array ) {
+
+		switch ( array.constructor ) {
+
+			case Float32Array:
+
+				return value;
+
+			case Uint16Array:
+
+				return Math.round( value * 65535.0 );
+
+			case Uint8Array:
+
+				return Math.round( value * 255.0 );
+
+			case Int16Array:
+
+				return Math.round( value * 32767.0 );
+
+			case Int8Array:
+
+				return Math.round( value * 127.0 );
+
+			default:
+
+				throw new Error( 'Invalid component type.' );
+
+		}
+
+	}
+
+	var MathUtils = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		DEG2RAD: DEG2RAD,
+		RAD2DEG: RAD2DEG,
+		generateUUID: generateUUID,
+		clamp: clamp,
+		euclideanModulo: euclideanModulo,
+		mapLinear: mapLinear,
+		inverseLerp: inverseLerp,
+		lerp: lerp,
+		damp: damp,
+		pingpong: pingpong,
+		smoothstep: smoothstep,
+		smootherstep: smootherstep,
+		randInt: randInt,
+		randFloat: randFloat,
+		randFloatSpread: randFloatSpread,
+		seededRandom: seededRandom,
+		degToRad: degToRad,
+		radToDeg: radToDeg,
+		isPowerOfTwo: isPowerOfTwo,
+		ceilPowerOfTwo: ceilPowerOfTwo,
+		floorPowerOfTwo: floorPowerOfTwo,
+		setQuaternionFromProperEuler: setQuaternionFromProperEuler,
+		normalize: normalize,
+		denormalize: denormalize$1
+	});
 
 	class Vector2 {
 
@@ -4936,13 +5199,13 @@
 			}
 
 			// compute box center and extents
-			this.getCenter( _center );
-			_extents.subVectors( this.max, _center );
+			this.getCenter( _center$1 );
+			_extents.subVectors( this.max, _center$1 );
 
 			// translate triangle to aabb origin
-			_v0$2.subVectors( triangle.a, _center );
-			_v1$7.subVectors( triangle.b, _center );
-			_v2$3.subVectors( triangle.c, _center );
+			_v0$2.subVectors( triangle.a, _center$1 );
+			_v1$7.subVectors( triangle.b, _center$1 );
+			_v2$3.subVectors( triangle.c, _center$1 );
 
 			// compute edge vectors for triangle
 			_f0.subVectors( _v1$7, _v0$2 );
@@ -5092,7 +5355,7 @@
 	const _f1 = /*@__PURE__*/ new Vector3();
 	const _f2 = /*@__PURE__*/ new Vector3();
 
-	const _center = /*@__PURE__*/ new Vector3();
+	const _center$1 = /*@__PURE__*/ new Vector3();
 	const _extents = /*@__PURE__*/ new Vector3();
 	const _triangleNormal = /*@__PURE__*/ new Vector3();
 	const _testAxis = /*@__PURE__*/ new Vector3();
@@ -9289,7 +9552,7 @@
 
 	const _m1 = /*@__PURE__*/ new Matrix4();
 	const _obj = /*@__PURE__*/ new Object3D();
-	const _offset = /*@__PURE__*/ new Vector3();
+	const _offset$1 = /*@__PURE__*/ new Vector3();
 	const _box$1 = /*@__PURE__*/ new Box3();
 	const _boxMorphTargets = /*@__PURE__*/ new Box3();
 	const _vector$8 = /*@__PURE__*/ new Vector3();
@@ -9535,9 +9798,9 @@
 
 			this.computeBoundingBox();
 
-			this.boundingBox.getCenter( _offset ).negate();
+			this.boundingBox.getCenter( _offset$1 ).negate();
 
-			this.translate( _offset.x, _offset.y, _offset.z );
+			this.translate( _offset$1.x, _offset$1.y, _offset$1.z );
 
 			return this;
 
@@ -9717,8 +9980,8 @@
 
 							if ( morphTargetsRelative ) {
 
-								_offset.fromBufferAttribute( position, j );
-								_vector$8.add( _offset );
+								_offset$1.fromBufferAttribute( position, j );
+								_vector$8.add( _offset$1 );
 
 							}
 
@@ -10681,7 +10944,7 @@
 
 	Mesh.prototype.isMesh = true;
 
-	function checkIntersection$1( object, material, raycaster, ray, pA, pB, pC, point ) {
+	function checkIntersection( object, material, raycaster, ray, pA, pB, pC, point ) {
 
 		let intersect;
 
@@ -10767,7 +11030,7 @@
 
 		}
 
-		const intersection = checkIntersection$1( object, material, raycaster, ray, _vA$1, _vB$1, _vC$1, _intersectionPoint );
+		const intersection = checkIntersection( object, material, raycaster, ray, _vA$1, _vB$1, _vC$1, _intersectionPoint );
 
 		if ( intersection ) {
 
@@ -28038,6 +28301,64 @@
 
 	Line.prototype.isLine = true;
 
+	const _start = /*@__PURE__*/ new Vector3();
+	const _end = /*@__PURE__*/ new Vector3();
+
+	class LineSegments extends Line {
+
+		constructor( geometry, material ) {
+
+			super( geometry, material );
+
+			this.type = 'LineSegments';
+
+		}
+
+		computeLineDistances() {
+
+			const geometry = this.geometry;
+
+			if ( geometry.isBufferGeometry ) {
+
+				// we assume non-indexed geometry
+
+				if ( geometry.index === null ) {
+
+					const positionAttribute = geometry.attributes.position;
+					const lineDistances = [];
+
+					for ( let i = 0, l = positionAttribute.count; i < l; i += 2 ) {
+
+						_start.fromBufferAttribute( positionAttribute, i );
+						_end.fromBufferAttribute( positionAttribute, i + 1 );
+
+						lineDistances[ i ] = ( i === 0 ) ? 0 : lineDistances[ i - 1 ];
+						lineDistances[ i + 1 ] = lineDistances[ i ] + _start.distanceTo( _end );
+
+					}
+
+					geometry.setAttribute( 'lineDistance', new Float32BufferAttribute( lineDistances, 1 ) );
+
+				} else {
+
+					console.warn( 'THREE.LineSegments.computeLineDistances(): Computation only possible with non-indexed BufferGeometry.' );
+
+				}
+
+			} else if ( geometry.isGeometry ) {
+
+				console.error( 'THREE.LineSegments.computeLineDistances() no longer supports THREE.Geometry. Use THREE.BufferGeometry instead.' );
+
+			}
+
+			return this;
+
+		}
+
+	}
+
+	LineSegments.prototype.isLineSegments = true;
+
 	class PointsMaterial extends Material {
 
 		constructor( parameters ) {
@@ -28093,6 +28414,567 @@
 	}
 
 	CanvasTexture.prototype.isCanvasTexture = true;
+
+	/**
+	 * Extensible curve object.
+	 *
+	 * Some common of curve methods:
+	 * .getPoint( t, optionalTarget ), .getTangent( t, optionalTarget )
+	 * .getPointAt( u, optionalTarget ), .getTangentAt( u, optionalTarget )
+	 * .getPoints(), .getSpacedPoints()
+	 * .getLength()
+	 * .updateArcLengths()
+	 *
+	 * This following curves inherit from THREE.Curve:
+	 *
+	 * -- 2D curves --
+	 * THREE.ArcCurve
+	 * THREE.CubicBezierCurve
+	 * THREE.EllipseCurve
+	 * THREE.LineCurve
+	 * THREE.QuadraticBezierCurve
+	 * THREE.SplineCurve
+	 *
+	 * -- 3D curves --
+	 * THREE.CatmullRomCurve3
+	 * THREE.CubicBezierCurve3
+	 * THREE.LineCurve3
+	 * THREE.QuadraticBezierCurve3
+	 *
+	 * A series of curves can be represented as a THREE.CurvePath.
+	 *
+	 **/
+
+	class Curve {
+
+		constructor() {
+
+			this.type = 'Curve';
+
+			this.arcLengthDivisions = 200;
+
+		}
+
+		// Virtual base class method to overwrite and implement in subclasses
+		//	- t [0 .. 1]
+
+		getPoint( /* t, optionalTarget */ ) {
+
+			console.warn( 'THREE.Curve: .getPoint() not implemented.' );
+			return null;
+
+		}
+
+		// Get point at relative position in curve according to arc length
+		// - u [0 .. 1]
+
+		getPointAt( u, optionalTarget ) {
+
+			const t = this.getUtoTmapping( u );
+			return this.getPoint( t, optionalTarget );
+
+		}
+
+		// Get sequence of points using getPoint( t )
+
+		getPoints( divisions = 5 ) {
+
+			const points = [];
+
+			for ( let d = 0; d <= divisions; d ++ ) {
+
+				points.push( this.getPoint( d / divisions ) );
+
+			}
+
+			return points;
+
+		}
+
+		// Get sequence of points using getPointAt( u )
+
+		getSpacedPoints( divisions = 5 ) {
+
+			const points = [];
+
+			for ( let d = 0; d <= divisions; d ++ ) {
+
+				points.push( this.getPointAt( d / divisions ) );
+
+			}
+
+			return points;
+
+		}
+
+		// Get total curve arc length
+
+		getLength() {
+
+			const lengths = this.getLengths();
+			return lengths[ lengths.length - 1 ];
+
+		}
+
+		// Get list of cumulative segment lengths
+
+		getLengths( divisions = this.arcLengthDivisions ) {
+
+			if ( this.cacheArcLengths &&
+				( this.cacheArcLengths.length === divisions + 1 ) &&
+				! this.needsUpdate ) {
+
+				return this.cacheArcLengths;
+
+			}
+
+			this.needsUpdate = false;
+
+			const cache = [];
+			let current, last = this.getPoint( 0 );
+			let sum = 0;
+
+			cache.push( 0 );
+
+			for ( let p = 1; p <= divisions; p ++ ) {
+
+				current = this.getPoint( p / divisions );
+				sum += current.distanceTo( last );
+				cache.push( sum );
+				last = current;
+
+			}
+
+			this.cacheArcLengths = cache;
+
+			return cache; // { sums: cache, sum: sum }; Sum is in the last element.
+
+		}
+
+		updateArcLengths() {
+
+			this.needsUpdate = true;
+			this.getLengths();
+
+		}
+
+		// Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
+
+		getUtoTmapping( u, distance ) {
+
+			const arcLengths = this.getLengths();
+
+			let i = 0;
+			const il = arcLengths.length;
+
+			let targetArcLength; // The targeted u distance value to get
+
+			if ( distance ) {
+
+				targetArcLength = distance;
+
+			} else {
+
+				targetArcLength = u * arcLengths[ il - 1 ];
+
+			}
+
+			// binary search for the index with largest value smaller than target u distance
+
+			let low = 0, high = il - 1, comparison;
+
+			while ( low <= high ) {
+
+				i = Math.floor( low + ( high - low ) / 2 ); // less likely to overflow, though probably not issue here, JS doesn't really have integers, all numbers are floats
+
+				comparison = arcLengths[ i ] - targetArcLength;
+
+				if ( comparison < 0 ) {
+
+					low = i + 1;
+
+				} else if ( comparison > 0 ) {
+
+					high = i - 1;
+
+				} else {
+
+					high = i;
+					break;
+
+					// DONE
+
+				}
+
+			}
+
+			i = high;
+
+			if ( arcLengths[ i ] === targetArcLength ) {
+
+				return i / ( il - 1 );
+
+			}
+
+			// we could get finer grain at lengths, or use simple interpolation between two points
+
+			const lengthBefore = arcLengths[ i ];
+			const lengthAfter = arcLengths[ i + 1 ];
+
+			const segmentLength = lengthAfter - lengthBefore;
+
+			// determine where we are between the 'before' and 'after' points
+
+			const segmentFraction = ( targetArcLength - lengthBefore ) / segmentLength;
+
+			// add that fractional amount to t
+
+			const t = ( i + segmentFraction ) / ( il - 1 );
+
+			return t;
+
+		}
+
+		// Returns a unit vector tangent at t
+		// In case any sub curve does not implement its tangent derivation,
+		// 2 points a small delta apart will be used to find its gradient
+		// which seems to give a reasonable approximation
+
+		getTangent( t, optionalTarget ) {
+
+			const delta = 0.0001;
+			let t1 = t - delta;
+			let t2 = t + delta;
+
+			// Capping in case of danger
+
+			if ( t1 < 0 ) t1 = 0;
+			if ( t2 > 1 ) t2 = 1;
+
+			const pt1 = this.getPoint( t1 );
+			const pt2 = this.getPoint( t2 );
+
+			const tangent = optionalTarget || ( ( pt1.isVector2 ) ? new Vector2() : new Vector3() );
+
+			tangent.copy( pt2 ).sub( pt1 ).normalize();
+
+			return tangent;
+
+		}
+
+		getTangentAt( u, optionalTarget ) {
+
+			const t = this.getUtoTmapping( u );
+			return this.getTangent( t, optionalTarget );
+
+		}
+
+		computeFrenetFrames( segments, closed ) {
+
+			// see http://www.cs.indiana.edu/pub/techreports/TR425.pdf
+
+			const normal = new Vector3();
+
+			const tangents = [];
+			const normals = [];
+			const binormals = [];
+
+			const vec = new Vector3();
+			const mat = new Matrix4();
+
+			// compute the tangent vectors for each segment on the curve
+
+			for ( let i = 0; i <= segments; i ++ ) {
+
+				const u = i / segments;
+
+				tangents[ i ] = this.getTangentAt( u, new Vector3() );
+
+			}
+
+			// select an initial normal vector perpendicular to the first tangent vector,
+			// and in the direction of the minimum tangent xyz component
+
+			normals[ 0 ] = new Vector3();
+			binormals[ 0 ] = new Vector3();
+			let min = Number.MAX_VALUE;
+			const tx = Math.abs( tangents[ 0 ].x );
+			const ty = Math.abs( tangents[ 0 ].y );
+			const tz = Math.abs( tangents[ 0 ].z );
+
+			if ( tx <= min ) {
+
+				min = tx;
+				normal.set( 1, 0, 0 );
+
+			}
+
+			if ( ty <= min ) {
+
+				min = ty;
+				normal.set( 0, 1, 0 );
+
+			}
+
+			if ( tz <= min ) {
+
+				normal.set( 0, 0, 1 );
+
+			}
+
+			vec.crossVectors( tangents[ 0 ], normal ).normalize();
+
+			normals[ 0 ].crossVectors( tangents[ 0 ], vec );
+			binormals[ 0 ].crossVectors( tangents[ 0 ], normals[ 0 ] );
+
+
+			// compute the slowly-varying normal and binormal vectors for each segment on the curve
+
+			for ( let i = 1; i <= segments; i ++ ) {
+
+				normals[ i ] = normals[ i - 1 ].clone();
+
+				binormals[ i ] = binormals[ i - 1 ].clone();
+
+				vec.crossVectors( tangents[ i - 1 ], tangents[ i ] );
+
+				if ( vec.length() > Number.EPSILON ) {
+
+					vec.normalize();
+
+					const theta = Math.acos( clamp( tangents[ i - 1 ].dot( tangents[ i ] ), - 1, 1 ) ); // clamp for floating pt errors
+
+					normals[ i ].applyMatrix4( mat.makeRotationAxis( vec, theta ) );
+
+				}
+
+				binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
+
+			}
+
+			// if the curve is closed, postprocess the vectors so the first and last normal vectors are the same
+
+			if ( closed === true ) {
+
+				let theta = Math.acos( clamp( normals[ 0 ].dot( normals[ segments ] ), - 1, 1 ) );
+				theta /= segments;
+
+				if ( tangents[ 0 ].dot( vec.crossVectors( normals[ 0 ], normals[ segments ] ) ) > 0 ) {
+
+					theta = - theta;
+
+				}
+
+				for ( let i = 1; i <= segments; i ++ ) {
+
+					// twist a little...
+					normals[ i ].applyMatrix4( mat.makeRotationAxis( tangents[ i ], theta * i ) );
+					binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
+
+				}
+
+			}
+
+			return {
+				tangents: tangents,
+				normals: normals,
+				binormals: binormals
+			};
+
+		}
+
+		clone() {
+
+			return new this.constructor().copy( this );
+
+		}
+
+		copy( source ) {
+
+			this.arcLengthDivisions = source.arcLengthDivisions;
+
+			return this;
+
+		}
+
+		toJSON() {
+
+			const data = {
+				metadata: {
+					version: 4.5,
+					type: 'Curve',
+					generator: 'Curve.toJSON'
+				}
+			};
+
+			data.arcLengthDivisions = this.arcLengthDivisions;
+			data.type = this.type;
+
+			return data;
+
+		}
+
+		fromJSON( json ) {
+
+			this.arcLengthDivisions = json.arcLengthDivisions;
+
+			return this;
+
+		}
+
+	}
+
+	class EllipseCurve extends Curve {
+
+		constructor( aX = 0, aY = 0, xRadius = 1, yRadius = 1, aStartAngle = 0, aEndAngle = Math.PI * 2, aClockwise = false, aRotation = 0 ) {
+
+			super();
+
+			this.type = 'EllipseCurve';
+
+			this.aX = aX;
+			this.aY = aY;
+
+			this.xRadius = xRadius;
+			this.yRadius = yRadius;
+
+			this.aStartAngle = aStartAngle;
+			this.aEndAngle = aEndAngle;
+
+			this.aClockwise = aClockwise;
+
+			this.aRotation = aRotation;
+
+		}
+
+		getPoint( t, optionalTarget ) {
+
+			const point = optionalTarget || new Vector2();
+
+			const twoPi = Math.PI * 2;
+			let deltaAngle = this.aEndAngle - this.aStartAngle;
+			const samePoints = Math.abs( deltaAngle ) < Number.EPSILON;
+
+			// ensures that deltaAngle is 0 .. 2 PI
+			while ( deltaAngle < 0 ) deltaAngle += twoPi;
+			while ( deltaAngle > twoPi ) deltaAngle -= twoPi;
+
+			if ( deltaAngle < Number.EPSILON ) {
+
+				if ( samePoints ) {
+
+					deltaAngle = 0;
+
+				} else {
+
+					deltaAngle = twoPi;
+
+				}
+
+			}
+
+			if ( this.aClockwise === true && ! samePoints ) {
+
+				if ( deltaAngle === twoPi ) {
+
+					deltaAngle = - twoPi;
+
+				} else {
+
+					deltaAngle = deltaAngle - twoPi;
+
+				}
+
+			}
+
+			const angle = this.aStartAngle + t * deltaAngle;
+			let x = this.aX + this.xRadius * Math.cos( angle );
+			let y = this.aY + this.yRadius * Math.sin( angle );
+
+			if ( this.aRotation !== 0 ) {
+
+				const cos = Math.cos( this.aRotation );
+				const sin = Math.sin( this.aRotation );
+
+				const tx = x - this.aX;
+				const ty = y - this.aY;
+
+				// Rotate the point about the center of the ellipse.
+				x = tx * cos - ty * sin + this.aX;
+				y = tx * sin + ty * cos + this.aY;
+
+			}
+
+			return point.set( x, y );
+
+		}
+
+		copy( source ) {
+
+			super.copy( source );
+
+			this.aX = source.aX;
+			this.aY = source.aY;
+
+			this.xRadius = source.xRadius;
+			this.yRadius = source.yRadius;
+
+			this.aStartAngle = source.aStartAngle;
+			this.aEndAngle = source.aEndAngle;
+
+			this.aClockwise = source.aClockwise;
+
+			this.aRotation = source.aRotation;
+
+			return this;
+
+		}
+
+		toJSON() {
+
+			const data = super.toJSON();
+
+			data.aX = this.aX;
+			data.aY = this.aY;
+
+			data.xRadius = this.xRadius;
+			data.yRadius = this.yRadius;
+
+			data.aStartAngle = this.aStartAngle;
+			data.aEndAngle = this.aEndAngle;
+
+			data.aClockwise = this.aClockwise;
+
+			data.aRotation = this.aRotation;
+
+			return data;
+
+		}
+
+		fromJSON( json ) {
+
+			super.fromJSON( json );
+
+			this.aX = json.aX;
+			this.aY = json.aY;
+
+			this.xRadius = json.xRadius;
+			this.yRadius = json.yRadius;
+
+			this.aStartAngle = json.aStartAngle;
+			this.aEndAngle = json.aEndAngle;
+
+			this.aClockwise = json.aClockwise;
+
+			this.aRotation = json.aRotation;
+
+			return this;
+
+		}
+
+	}
+
+	EllipseCurve.prototype.isEllipseCurve = true;
 
 	class ShadowMaterial extends Material {
 
@@ -29764,84 +30646,42 @@
 
 	}
 
-	/**
-	 * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
-	 *
-	 * The polar angle (phi) is measured from the positive y-axis. The positive y-axis is up.
-	 * The azimuthal angle (theta) is measured from the positive z-axis.
-	 */
+	class GridHelper extends LineSegments {
 
-	class Spherical {
+		constructor( size = 10, divisions = 10, color1 = 0x444444, color2 = 0x888888 ) {
 
-		constructor( radius = 1, phi = 0, theta = 0 ) {
+			color1 = new Color( color1 );
+			color2 = new Color( color2 );
 
-			this.radius = radius;
-			this.phi = phi; // polar angle
-			this.theta = theta; // azimuthal angle
+			const center = divisions / 2;
+			const step = size / divisions;
+			const halfSize = size / 2;
 
-			return this;
+			const vertices = [], colors = [];
 
-		}
+			for ( let i = 0, j = 0, k = - halfSize; i <= divisions; i ++, k += step ) {
 
-		set( radius, phi, theta ) {
+				vertices.push( - halfSize, 0, k, halfSize, 0, k );
+				vertices.push( k, 0, - halfSize, k, 0, halfSize );
 
-			this.radius = radius;
-			this.phi = phi;
-			this.theta = theta;
+				const color = i === center ? color1 : color2;
 
-			return this;
-
-		}
-
-		copy( other ) {
-
-			this.radius = other.radius;
-			this.phi = other.phi;
-			this.theta = other.theta;
-
-			return this;
-
-		}
-
-		// restrict phi to be between EPS and PI-EPS
-		makeSafe() {
-
-			const EPS = 0.000001;
-			this.phi = Math.max( EPS, Math.min( Math.PI - EPS, this.phi ) );
-
-			return this;
-
-		}
-
-		setFromVector3( v ) {
-
-			return this.setFromCartesianCoords( v.x, v.y, v.z );
-
-		}
-
-		setFromCartesianCoords( x, y, z ) {
-
-			this.radius = Math.sqrt( x * x + y * y + z * z );
-
-			if ( this.radius === 0 ) {
-
-				this.theta = 0;
-				this.phi = 0;
-
-			} else {
-
-				this.theta = Math.atan2( x, z );
-				this.phi = Math.acos( clamp( y / this.radius, - 1, 1 ) );
+				color.toArray( colors, j ); j += 3;
+				color.toArray( colors, j ); j += 3;
+				color.toArray( colors, j ); j += 3;
+				color.toArray( colors, j ); j += 3;
 
 			}
 
-			return this;
+			const geometry = new BufferGeometry();
+			geometry.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+			geometry.setAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
 
-		}
+			const material = new LineBasicMaterial( { vertexColors: true, toneMapped: false } );
 
-		clone() {
+			super( geometry, material );
 
-			return new this.constructor().copy( this );
+			this.type = 'GridHelper';
 
 		}
 
@@ -29960,6 +30800,26 @@
 		}
 
 	}
+
+	//
+
+	Curve.create = function ( construct, getPoint ) {
+
+		console.log( 'THREE.Curve.create() has been deprecated' );
+
+		construct.prototype = Object.create( Curve.prototype );
+		construct.prototype.constructor = construct;
+		construct.prototype.getPoint = getPoint;
+
+		return construct;
+
+	};
+
+	GridHelper.prototype.setColors = function () {
+
+		console.error( 'THREE.GridHelper: setColors() has been deprecated, pass them in the constructor instead.' );
+
+	};
 
 	//
 
@@ -31437,1174 +32297,1723 @@
 
 	}
 
-	// This set of controls performs orbiting, dollying (zooming), and panning.
-	// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
-	//
-	//    Orbit - left mouse / touch: one-finger move
-	//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
-	//    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
+	//trackball state
+	const STATE = {
 
+		IDLE: Symbol(),
+		ROTATE: Symbol(),
+		PAN: Symbol(),
+		SCALE: Symbol(),
+		FOV: Symbol(),
+		FOCUS: Symbol(),
+		ZROTATE: Symbol(),
+		TOUCH_MULTI: Symbol(),
+		ANIMATION_FOCUS: Symbol(),
+		ANIMATION_ROTATE: Symbol()
+
+	};
+
+	const INPUT = {
+
+		NONE: Symbol(),
+		ONE_FINGER: Symbol(),
+		ONE_FINGER_SWITCHED: Symbol(),
+		TWO_FINGER: Symbol(),
+		MULT_FINGER: Symbol(),
+		CURSOR: Symbol()
+
+	};
+
+	//cursor center coordinates
+	const _center = {
+
+		x: 0,
+		y: 0
+
+	};
+
+	//transformation matrices for gizmos and camera
+	const _transformation = {
+
+		camera: new Matrix4(),
+		gizmos: new Matrix4()
+
+	};
+
+	//events
 	const _changeEvent = { type: 'change' };
 	const _startEvent = { type: 'start' };
 	const _endEvent = { type: 'end' };
 
-	class OrbitControls extends EventDispatcher {
+	const _raycaster = new Raycaster();
+	const _offset = new Vector3();
 
-		constructor( object, domElement ) {
+	const _gizmoMatrixStateTemp = new Matrix4();
+	const _cameraMatrixStateTemp = new Matrix4();
+	const _scalePointTemp = new Vector3();
+	/**
+	 *
+	 * @param {Camera} camera Virtual camera used in the scene
+	 * @param {HTMLElement} domElement Renderer's dom element
+	 * @param {Scene} scene The scene to be rendered
+	 */
+	class ArcballControls extends EventDispatcher {
+
+		constructor( camera, domElement, scene = null ) {
 
 			super();
-
-			if ( domElement === undefined ) console.warn( 'THREE.OrbitControls: The second parameter "domElement" is now mandatory.' );
-			if ( domElement === document ) console.error( 'THREE.OrbitControls: "document" should not be used as the target "domElement". Please use "renderer.domElement" instead.' );
-
-			this.object = object;
+			this.camera = null;
 			this.domElement = domElement;
-			this.domElement.style.touchAction = 'none'; // disable touch scroll
-
-			// Set to false to disable this control
-			this.enabled = true;
-
-			// "target" sets the location of focus, where the object orbits around
+			this.scene = scene;
 			this.target = new Vector3();
+			this._currentTarget = new Vector3();
+			this.radiusFactor = 0.67;
 
-			// How far you can dolly in and out ( PerspectiveCamera only )
+			this.mouseActions = [];
+			this._mouseOp = null;
+
+
+			//global vectors and matrices that are used in some operations to avoid creating new objects every time (e.g. every time cursor moves)
+			this._v2_1 = new Vector2();
+			this._v3_1 = new Vector3();
+			this._v3_2 = new Vector3();
+
+			this._m4_1 = new Matrix4();
+			this._m4_2 = new Matrix4();
+
+			this._quat = new Quaternion();
+
+			//transformation matrices
+			this._translationMatrix = new Matrix4(); //matrix for translation operation
+			this._rotationMatrix = new Matrix4(); //matrix for rotation operation
+			this._scaleMatrix = new Matrix4(); //matrix for scaling operation
+
+			this._rotationAxis = new Vector3(); //axis for rotate operation
+
+
+			//camera state
+			this._cameraMatrixState = new Matrix4();
+			this._cameraProjectionState = new Matrix4();
+
+			this._fovState = 1;
+			this._upState = new Vector3();
+			this._zoomState = 1;
+			this._nearPos = 0;
+			this._farPos = 0;
+
+			this._gizmoMatrixState = new Matrix4();
+
+			//initial values
+			this._up0 = new Vector3();
+			this._zoom0 = 1;
+			this._fov0 = 0;
+			this._initialNear = 0;
+			this._nearPos0 = 0;
+			this._initialFar = 0;
+			this._farPos0 = 0;
+			this._cameraMatrixState0 = new Matrix4();
+			this._gizmoMatrixState0 = new Matrix4();
+
+			//pointers array
+			this._button = - 1;
+			this._touchStart = [];
+			this._touchCurrent = [];
+			this._input = INPUT.NONE;
+
+			//two fingers touch interaction
+			this._switchSensibility = 32;	//minimum movement to be performed to fire single pan start after the second finger has been released
+			this._startFingerDistance = 0; //distance between two fingers
+			this._currentFingerDistance = 0;
+			this._startFingerRotation = 0; //amount of rotation performed with two fingers
+			this._currentFingerRotation = 0;
+
+			//double tap
+			this._devPxRatio = 0;
+			this._downValid = true;
+			this._nclicks = 0;
+			this._downEvents = [];
+			this._downStart = 0;	//pointerDown time
+			this._clickStart = 0;	//first click time
+			this._maxDownTime = 250;
+			this._maxInterval = 300;
+			this._posThreshold = 24;
+			this._movementThreshold = 24;
+
+			//cursor positions
+			this._currentCursorPosition = new Vector3();
+			this._startCursorPosition = new Vector3();
+
+			//grid
+			this._grid = null; //grid to be visualized during pan operation
+			this._gridPosition = new Vector3();
+
+			//gizmos
+			this._gizmos = new Group();
+			this._curvePts = 128;
+
+
+			//animations
+			this._timeStart = - 1; //initial time
+			this._animationId = - 1;
+
+			//focus animation
+			this.focusAnimationTime = 500; //duration of focus animation in ms
+
+			//rotate animation
+			this._timePrev = 0; //time at which previous rotate operation has been detected
+			this._timeCurrent = 0; //time at which current rotate operation has been detected
+			this._anglePrev = 0; //angle of previous rotation
+			this._angleCurrent = 0; //angle of current rotation
+			this._cursorPosPrev = new Vector3();	//cursor position when previous rotate operation has been detected
+			this._cursorPosCurr = new Vector3();//cursor position when current rotate operation has been detected
+			this._wPrev = 0; //angular velocity of the previous rotate operation
+			this._wCurr = 0; //angular velocity of the current rotate operation
+
+
+			//parameters
+			this.adjustNearFar = false;
+			this.scaleFactor = 1.1;	//zoom/distance multiplier
+			this.dampingFactor = 25;
+			this.wMax = 20;	//maximum angular velocity allowed
+			this.enableAnimations = true; //if animations should be performed
+			this.enableGrid = false; //if grid should be showed during pan operation
+			this.cursorZoom = false;	//if wheel zoom should be cursor centered
+			this.minFov = 5;
+			this.maxFov = 90;
+
+			this.enabled = true;
+			this.enablePan = true;
+			this.enableRotate = true;
+			this.enableZoom = true;
+			this.enableGizmos = true;
+
 			this.minDistance = 0;
 			this.maxDistance = Infinity;
-
-			// How far you can zoom in and out ( OrthographicCamera only )
 			this.minZoom = 0;
 			this.maxZoom = Infinity;
 
-			// How far you can orbit vertically, upper and lower limits.
-			// Range is 0 to Math.PI radians.
-			this.minPolarAngle = 0; // radians
-			this.maxPolarAngle = Math.PI; // radians
+			//trackball parameters
+			this._tbRadius = 1;
 
-			// How far you can orbit horizontally, upper and lower limits.
-			// If set, the interval [ min, max ] must be a sub-interval of [ - 2 PI, 2 PI ], with ( max - min < 2 PI )
-			this.minAzimuthAngle = - Infinity; // radians
-			this.maxAzimuthAngle = Infinity; // radians
+			//FSA
+			this._state = STATE.IDLE;
 
-			// Set to true to enable damping (inertia)
-			// If damping is enabled, you must call controls.update() in your animation loop
-			this.enableDamping = false;
-			this.dampingFactor = 0.05;
+			this.setCamera( camera );
 
-			// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
-			// Set to false to disable zooming
-			this.enableZoom = true;
-			this.zoomSpeed = 1.0;
+			if ( this.scene != null ) {
 
-			// Set to false to disable rotating
-			this.enableRotate = true;
-			this.rotateSpeed = 1.0;
-
-			// Set to false to disable panning
-			this.enablePan = true;
-			this.panSpeed = 1.0;
-			this.screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
-			this.keyPanSpeed = 7.0;	// pixels moved per arrow key push
-
-			// Set to true to automatically rotate around the target
-			// If auto-rotate is enabled, you must call controls.update() in your animation loop
-			this.autoRotate = false;
-			this.autoRotateSpeed = 2.0; // 30 seconds per orbit when fps is 60
-
-			// The four arrow keys
-			this.keys = { LEFT: 'ArrowLeft', UP: 'ArrowUp', RIGHT: 'ArrowRight', BOTTOM: 'ArrowDown' };
-
-			// Mouse buttons
-			this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-
-			// Touch fingers
-			this.touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
-
-			// for reset
-			this.target0 = this.target.clone();
-			this.position0 = this.object.position.clone();
-			this.zoom0 = this.object.zoom;
-
-			// the target DOM element for key events
-			this._domElementKeyEvents = null;
-
-			//
-			// public methods
-			//
-
-			this.getPolarAngle = function () {
-
-				return spherical.phi;
-
-			};
-
-			this.getAzimuthalAngle = function () {
-
-				return spherical.theta;
-
-			};
-
-			this.getDistance = function () {
-
-				return this.object.position.distanceTo( this.target );
-
-			};
-
-			this.listenToKeyEvents = function ( domElement ) {
-
-				domElement.addEventListener( 'keydown', onKeyDown );
-				this._domElementKeyEvents = domElement;
-
-			};
-
-			this.saveState = function () {
-
-				scope.target0.copy( scope.target );
-				scope.position0.copy( scope.object.position );
-				scope.zoom0 = scope.object.zoom;
-
-			};
-
-			this.reset = function () {
-
-				scope.target.copy( scope.target0 );
-				scope.object.position.copy( scope.position0 );
-				scope.object.zoom = scope.zoom0;
-
-				scope.object.updateProjectionMatrix();
-				scope.dispatchEvent( _changeEvent );
-
-				scope.update();
-
-				state = STATE.NONE;
-
-			};
-
-			// this method is exposed, but perhaps it would be better if we can make it private...
-			this.update = function () {
-
-				const offset = new Vector3();
-
-				// so camera.up is the orbit axis
-				const quat = new Quaternion().setFromUnitVectors( object.up, new Vector3( 0, 1, 0 ) );
-				const quatInverse = quat.clone().invert();
-
-				const lastPosition = new Vector3();
-				const lastQuaternion = new Quaternion();
-
-				const twoPI = 2 * Math.PI;
-
-				return function update() {
-
-					const position = scope.object.position;
-
-					offset.copy( position ).sub( scope.target );
-
-					// rotate offset to "y-axis-is-up" space
-					offset.applyQuaternion( quat );
-
-					// angle from z-axis around y-axis
-					spherical.setFromVector3( offset );
-
-					if ( scope.autoRotate && state === STATE.NONE ) {
-
-						rotateLeft( getAutoRotationAngle() );
-
-					}
-
-					if ( scope.enableDamping ) {
-
-						spherical.theta += sphericalDelta.theta * scope.dampingFactor;
-						spherical.phi += sphericalDelta.phi * scope.dampingFactor;
-
-					} else {
-
-						spherical.theta += sphericalDelta.theta;
-						spherical.phi += sphericalDelta.phi;
-
-					}
-
-					// restrict theta to be between desired limits
-
-					let min = scope.minAzimuthAngle;
-					let max = scope.maxAzimuthAngle;
-
-					if ( isFinite( min ) && isFinite( max ) ) {
-
-						if ( min < - Math.PI ) min += twoPI; else if ( min > Math.PI ) min -= twoPI;
-
-						if ( max < - Math.PI ) max += twoPI; else if ( max > Math.PI ) max -= twoPI;
-
-						if ( min <= max ) {
-
-							spherical.theta = Math.max( min, Math.min( max, spherical.theta ) );
-
-						} else {
-
-							spherical.theta = ( spherical.theta > ( min + max ) / 2 ) ?
-								Math.max( min, spherical.theta ) :
-								Math.min( max, spherical.theta );
-
-						}
-
-					}
-
-					// restrict phi to be between desired limits
-					spherical.phi = Math.max( scope.minPolarAngle, Math.min( scope.maxPolarAngle, spherical.phi ) );
-
-					spherical.makeSafe();
-
-
-					spherical.radius *= scale;
-
-					// restrict radius to be between desired limits
-					spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) );
-
-					// move target to panned location
-
-					if ( scope.enableDamping === true ) {
-
-						scope.target.addScaledVector( panOffset, scope.dampingFactor );
-
-					} else {
-
-						scope.target.add( panOffset );
-
-					}
-
-					offset.setFromSpherical( spherical );
-
-					// rotate offset back to "camera-up-vector-is-up" space
-					offset.applyQuaternion( quatInverse );
-
-					position.copy( scope.target ).add( offset );
-
-					scope.object.lookAt( scope.target );
-
-					if ( scope.enableDamping === true ) {
-
-						sphericalDelta.theta *= ( 1 - scope.dampingFactor );
-						sphericalDelta.phi *= ( 1 - scope.dampingFactor );
-
-						panOffset.multiplyScalar( 1 - scope.dampingFactor );
-
-					} else {
-
-						sphericalDelta.set( 0, 0, 0 );
-
-						panOffset.set( 0, 0, 0 );
-
-					}
-
-					scale = 1;
-
-					// update condition is:
-					// min(camera displacement, camera rotation in radians)^2 > EPS
-					// using small-angle approximation cos(x/2) = 1 - x^2 / 8
-
-					if ( zoomChanged ||
-						lastPosition.distanceToSquared( scope.object.position ) > EPS ||
-						8 * ( 1 - lastQuaternion.dot( scope.object.quaternion ) ) > EPS ) {
-
-						scope.dispatchEvent( _changeEvent );
-
-						lastPosition.copy( scope.object.position );
-						lastQuaternion.copy( scope.object.quaternion );
-						zoomChanged = false;
-
-						return true;
-
-					}
-
-					return false;
-
-				};
-
-			}();
-
-			this.dispose = function () {
-
-				scope.domElement.removeEventListener( 'contextmenu', onContextMenu );
-
-				scope.domElement.removeEventListener( 'pointerdown', onPointerDown );
-				scope.domElement.removeEventListener( 'pointercancel', onPointerCancel );
-				scope.domElement.removeEventListener( 'wheel', onMouseWheel );
-
-				scope.domElement.removeEventListener( 'pointermove', onPointerMove );
-				scope.domElement.removeEventListener( 'pointerup', onPointerUp );
-
-
-				if ( scope._domElementKeyEvents !== null ) {
-
-					scope._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
-
-				}
-
-				//scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
-
-			};
-
-			//
-			// internals
-			//
-
-			const scope = this;
-
-			const STATE = {
-				NONE: - 1,
-				ROTATE: 0,
-				DOLLY: 1,
-				PAN: 2,
-				TOUCH_ROTATE: 3,
-				TOUCH_PAN: 4,
-				TOUCH_DOLLY_PAN: 5,
-				TOUCH_DOLLY_ROTATE: 6
-			};
-
-			let state = STATE.NONE;
-
-			const EPS = 0.000001;
-
-			// current position in spherical coordinates
-			const spherical = new Spherical();
-			const sphericalDelta = new Spherical();
-
-			let scale = 1;
-			const panOffset = new Vector3();
-			let zoomChanged = false;
-
-			const rotateStart = new Vector2();
-			const rotateEnd = new Vector2();
-			const rotateDelta = new Vector2();
-
-			const panStart = new Vector2();
-			const panEnd = new Vector2();
-			const panDelta = new Vector2();
-
-			const dollyStart = new Vector2();
-			const dollyEnd = new Vector2();
-			const dollyDelta = new Vector2();
-
-			const pointers = [];
-			const pointerPositions = {};
-
-			function getAutoRotationAngle() {
-
-				return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed;
+				this.scene.add( this._gizmos );
 
 			}
 
-			function getZoomScale() {
+			this.domElement.style.touchAction = 'none';
+			this._devPxRatio = window.devicePixelRatio;
 
-				return Math.pow( 0.95, scope.zoomSpeed );
+			this.initializeMouseActions();
 
-			}
+			this.domElement.addEventListener( 'contextmenu', this.onContextMenu );
+			this.domElement.addEventListener( 'wheel', this.onWheel );
+			this.domElement.addEventListener( 'pointerdown', this.onPointerDown );
+			this.domElement.addEventListener( 'pointercancel', this.onPointerCancel );
 
-			function rotateLeft( angle ) {
+			window.addEventListener( 'resize', this.onWindowResize );
 
-				sphericalDelta.theta -= angle;
+		}
 
-			}
+		//listeners
 
-			function rotateUp( angle ) {
+		onWindowResize = () => {
 
-				sphericalDelta.phi -= angle;
+			const scale = ( this._gizmos.scale.x + this._gizmos.scale.y + this._gizmos.scale.z ) / 3;
+			this._tbRadius = this.calculateTbRadius( this.camera );
 
-			}
+			const newRadius = this._tbRadius / scale;
+			const curve = new EllipseCurve( 0, 0, newRadius, newRadius );
+			const points = curve.getPoints( this._curvePts );
+			const curveGeometry = new BufferGeometry().setFromPoints( points );
 
-			const panLeft = function () {
 
-				const v = new Vector3();
+			for ( const gizmo in this._gizmos.children ) {
 
-				return function panLeft( distance, objectMatrix ) {
-
-					v.setFromMatrixColumn( objectMatrix, 0 ); // get X column of objectMatrix
-					v.multiplyScalar( - distance );
-
-					panOffset.add( v );
-
-				};
-
-			}();
-
-			const panUp = function () {
-
-				const v = new Vector3();
-
-				return function panUp( distance, objectMatrix ) {
-
-					if ( scope.screenSpacePanning === true ) {
-
-						v.setFromMatrixColumn( objectMatrix, 1 );
-
-					} else {
-
-						v.setFromMatrixColumn( objectMatrix, 0 );
-						v.crossVectors( scope.object.up, v );
-
-					}
-
-					v.multiplyScalar( distance );
-
-					panOffset.add( v );
-
-				};
-
-			}();
-
-			// deltaX and deltaY are in pixels; right and down are positive
-			const pan = function () {
-
-				const offset = new Vector3();
-
-				return function pan( deltaX, deltaY ) {
-
-					const element = scope.domElement;
-
-					if ( scope.object.isPerspectiveCamera ) {
-
-						// perspective
-						const position = scope.object.position;
-						offset.copy( position ).sub( scope.target );
-						let targetDistance = offset.length();
-
-						// half of the fov is center to top of screen
-						targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
-
-						// we use only clientHeight here so aspect ratio does not distort speed
-						panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-						panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
-
-					} else if ( scope.object.isOrthographicCamera ) {
-
-						// orthographic
-						panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-						panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
-
-					} else {
-
-						// camera neither orthographic nor perspective
-						console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.' );
-						scope.enablePan = false;
-
-					}
-
-				};
-
-			}();
-
-			function dollyOut( dollyScale ) {
-
-				if ( scope.object.isPerspectiveCamera ) {
-
-					scale /= dollyScale;
-
-				} else if ( scope.object.isOrthographicCamera ) {
-
-					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom * dollyScale ) );
-					scope.object.updateProjectionMatrix();
-					zoomChanged = true;
-
-				} else {
-
-					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
-					scope.enableZoom = false;
-
-				}
+				this._gizmos.children[ gizmo ].geometry = curveGeometry;
 
 			}
 
-			function dollyIn( dollyScale ) {
+			this.dispatchEvent( _changeEvent );
 
-				if ( scope.object.isPerspectiveCamera ) {
+		};
 
-					scale *= dollyScale;
+		onContextMenu = ( event ) => {
 
-				} else if ( scope.object.isOrthographicCamera ) {
+			if ( ! this.enabled ) {
 
-					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom / dollyScale ) );
-					scope.object.updateProjectionMatrix();
-					zoomChanged = true;
-
-				} else {
-
-					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
-					scope.enableZoom = false;
-
-				}
+				return;
 
 			}
 
-			//
-			// event callbacks - update the object state
-			//
+			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
 
-			function handleMouseDownRotate( event ) {
+				if ( this.mouseActions[ i ].mouse == 2 ) {
 
-				rotateStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseDownDolly( event ) {
-
-				dollyStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseDownPan( event ) {
-
-				panStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseMoveRotate( event ) {
-
-				rotateEnd.set( event.clientX, event.clientY );
-
-				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
-
-				const element = scope.domElement;
-
-				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
-
-				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
-
-				rotateStart.copy( rotateEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseMoveDolly( event ) {
-
-				dollyEnd.set( event.clientX, event.clientY );
-
-				dollyDelta.subVectors( dollyEnd, dollyStart );
-
-				if ( dollyDelta.y > 0 ) {
-
-					dollyOut( getZoomScale() );
-
-				} else if ( dollyDelta.y < 0 ) {
-
-					dollyIn( getZoomScale() );
-
-				}
-
-				dollyStart.copy( dollyEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseMovePan( event ) {
-
-				panEnd.set( event.clientX, event.clientY );
-
-				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
-
-				pan( panDelta.x, panDelta.y );
-
-				panStart.copy( panEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseWheel( event ) {
-
-				if ( event.deltaY < 0 ) {
-
-					dollyIn( getZoomScale() );
-
-				} else if ( event.deltaY > 0 ) {
-
-					dollyOut( getZoomScale() );
-
-				}
-
-				scope.update();
-
-			}
-
-			function handleKeyDown( event ) {
-
-				let needsUpdate = false;
-
-				switch ( event.code ) {
-
-					case scope.keys.UP:
-						pan( 0, scope.keyPanSpeed );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.BOTTOM:
-						pan( 0, - scope.keyPanSpeed );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.LEFT:
-						pan( scope.keyPanSpeed, 0 );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.RIGHT:
-						pan( - scope.keyPanSpeed, 0 );
-						needsUpdate = true;
-						break;
-
-				}
-
-				if ( needsUpdate ) {
-
-					// prevent the browser from scrolling on cursor keys
+					//prevent only if button 2 is actually used
 					event.preventDefault();
-
-					scope.update();
-
-				}
-
-
-			}
-
-			function handleTouchStartRotate() {
-
-				if ( pointers.length === 1 ) {
-
-					rotateStart.set( pointers[ 0 ].pageX, pointers[ 0 ].pageY );
-
-				} else {
-
-					const x = 0.5 * ( pointers[ 0 ].pageX + pointers[ 1 ].pageX );
-					const y = 0.5 * ( pointers[ 0 ].pageY + pointers[ 1 ].pageY );
-
-					rotateStart.set( x, y );
+					break;
 
 				}
 
 			}
 
-			function handleTouchStartPan() {
+		};
 
-				if ( pointers.length === 1 ) {
+		onPointerCancel = () => {
 
-					panStart.set( pointers[ 0 ].pageX, pointers[ 0 ].pageY );
+			this._touchStart.splice( 0, this._touchStart.length );
+			this._touchCurrent.splice( 0, this._touchCurrent.length );
+			this._input = INPUT.NONE;
 
-				} else {
+		};
 
-					const x = 0.5 * ( pointers[ 0 ].pageX + pointers[ 1 ].pageX );
-					const y = 0.5 * ( pointers[ 0 ].pageY + pointers[ 1 ].pageY );
+		onPointerDown = ( event ) => {
 
-					panStart.set( x, y );
+			if ( event.button == 0 && event.isPrimary ) {
 
-				}
+				this._downValid = true;
+				this._downEvents.push( event );
+				this._downStart = performance.now();
 
-			}
+			} else {
 
-			function handleTouchStartDolly() {
-
-				const dx = pointers[ 0 ].pageX - pointers[ 1 ].pageX;
-				const dy = pointers[ 0 ].pageY - pointers[ 1 ].pageY;
-
-				const distance = Math.sqrt( dx * dx + dy * dy );
-
-				dollyStart.set( 0, distance );
+				this._downValid = false;
 
 			}
 
-			function handleTouchStartDollyPan() {
+			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
 
-				if ( scope.enableZoom ) handleTouchStartDolly();
+				this._touchStart.push( event );
+				this._touchCurrent.push( event );
 
-				if ( scope.enablePan ) handleTouchStartPan();
+				switch ( this._input ) {
 
-			}
+					case INPUT.NONE:
 
-			function handleTouchStartDollyRotate() {
+						//singleStart
+						this._input = INPUT.ONE_FINGER;
+						this.onSinglePanStart( event, 'ROTATE' );
 
-				if ( scope.enableZoom ) handleTouchStartDolly();
-
-				if ( scope.enableRotate ) handleTouchStartRotate();
-
-			}
-
-			function handleTouchMoveRotate( event ) {
-
-				if ( pointers.length == 1 ) {
-
-					rotateEnd.set( event.pageX, event.pageY );
-
-				} else {
-
-					const position = getSecondPointerPosition( event );
-
-					const x = 0.5 * ( event.pageX + position.x );
-					const y = 0.5 * ( event.pageY + position.y );
-
-					rotateEnd.set( x, y );
-
-				}
-
-				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
-
-				const element = scope.domElement;
-
-				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
-
-				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
-
-				rotateStart.copy( rotateEnd );
-
-			}
-
-			function handleTouchMovePan( event ) {
-
-				if ( pointers.length === 1 ) {
-
-					panEnd.set( event.pageX, event.pageY );
-
-				} else {
-
-					const position = getSecondPointerPosition( event );
-
-					const x = 0.5 * ( event.pageX + position.x );
-					const y = 0.5 * ( event.pageY + position.y );
-
-					panEnd.set( x, y );
-
-				}
-
-				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
-
-				pan( panDelta.x, panDelta.y );
-
-				panStart.copy( panEnd );
-
-			}
-
-			function handleTouchMoveDolly( event ) {
-
-				const position = getSecondPointerPosition( event );
-
-				const dx = event.pageX - position.x;
-				const dy = event.pageY - position.y;
-
-				const distance = Math.sqrt( dx * dx + dy * dy );
-
-				dollyEnd.set( 0, distance );
-
-				dollyDelta.set( 0, Math.pow( dollyEnd.y / dollyStart.y, scope.zoomSpeed ) );
-
-				dollyOut( dollyDelta.y );
-
-				dollyStart.copy( dollyEnd );
-
-			}
-
-			function handleTouchMoveDollyPan( event ) {
-
-				if ( scope.enableZoom ) handleTouchMoveDolly( event );
-
-				if ( scope.enablePan ) handleTouchMovePan( event );
-
-			}
-
-			function handleTouchMoveDollyRotate( event ) {
-
-				if ( scope.enableZoom ) handleTouchMoveDolly( event );
-
-				if ( scope.enableRotate ) handleTouchMoveRotate( event );
-
-			}
-
-			//
-			// event handlers - FSM: listen for events and reset state
-			//
-
-			function onPointerDown( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				if ( pointers.length === 0 ) {
-
-					scope.domElement.setPointerCapture( event.pointerId );
-
-					scope.domElement.addEventListener( 'pointermove', onPointerMove );
-					scope.domElement.addEventListener( 'pointerup', onPointerUp );
-
-				}
-
-				//
-
-				addPointer( event );
-
-				if ( event.pointerType === 'touch' ) {
-
-					onTouchStart( event );
-
-				} else {
-
-					onMouseDown( event );
-
-				}
-
-			}
-
-			function onPointerMove( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				if ( event.pointerType === 'touch' ) {
-
-					onTouchMove( event );
-
-				} else {
-
-					onMouseMove( event );
-
-				}
-
-			}
-
-			function onPointerUp( event ) {
-
-			    removePointer( event );
-
-			    if ( pointers.length === 0 ) {
-
-			        scope.domElement.releasePointerCapture( event.pointerId );
-
-			        scope.domElement.removeEventListener( 'pointermove', onPointerMove );
-			        scope.domElement.removeEventListener( 'pointerup', onPointerUp );
-
-			    }
-
-			    scope.dispatchEvent( _endEvent );
-
-			    state = STATE.NONE;
-
-			}
-
-			function onPointerCancel( event ) {
-
-				removePointer( event );
-
-			}
-
-			function onMouseDown( event ) {
-
-				let mouseAction;
-
-				switch ( event.button ) {
-
-					case 0:
-
-						mouseAction = scope.mouseButtons.LEFT;
-						break;
-
-					case 1:
-
-						mouseAction = scope.mouseButtons.MIDDLE;
-						break;
-
-					case 2:
-
-						mouseAction = scope.mouseButtons.RIGHT;
-						break;
-
-					default:
-
-						mouseAction = - 1;
-
-				}
-
-				switch ( mouseAction ) {
-
-					case MOUSE.DOLLY:
-
-						if ( scope.enableZoom === false ) return;
-
-						handleMouseDownDolly( event );
-
-						state = STATE.DOLLY;
+						window.addEventListener( 'pointermove', this.onPointerMove );
+						window.addEventListener( 'pointerup', this.onPointerUp );
 
 						break;
 
-					case MOUSE.ROTATE:
+					case INPUT.ONE_FINGER:
+					case INPUT.ONE_FINGER_SWITCHED:
 
-						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
+						//doubleStart
+						this._input = INPUT.TWO_FINGER;
 
-							if ( scope.enablePan === false ) return;
+						this.onRotateStart();
+						this.onPinchStart();
+						this.onDoublePanStart();
 
-							handleMouseDownPan( event );
+						break;
 
-							state = STATE.PAN;
+					case INPUT.TWO_FINGER:
 
-						} else {
+						//multipleStart
+						this._input = INPUT.MULT_FINGER;
+						this.onTriplePanStart( event );
+						break;
 
-							if ( scope.enableRotate === false ) return;
+				}
 
-							handleMouseDownRotate( event );
+			} else if ( event.pointerType != 'touch' && this._input == INPUT.NONE ) {
 
-							state = STATE.ROTATE;
+				let modifier = null;
+
+				if ( event.ctrlKey || event.metaKey ) {
+
+					modifier = 'CTRL';
+
+				} else if ( event.shiftKey ) {
+
+					modifier = 'SHIFT';
+
+				}
+
+				this._mouseOp = this.getOpFromAction( event.button, modifier );
+				if ( this._mouseOp != null ) {
+
+					window.addEventListener( 'pointermove', this.onPointerMove );
+					window.addEventListener( 'pointerup', this.onPointerUp );
+
+					//singleStart
+					this._input = INPUT.CURSOR;
+					this._button = event.button;
+					this.onSinglePanStart( event, this._mouseOp );
+
+				}
+
+			}
+
+		};
+
+		onPointerMove = ( event ) => {
+
+			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
+
+				switch ( this._input ) {
+
+					case INPUT.ONE_FINGER:
+
+						//singleMove
+						this.updateTouchEvent( event );
+
+						this.onSinglePanMove( event, STATE.ROTATE );
+						break;
+
+					case INPUT.ONE_FINGER_SWITCHED:
+
+						const movement = this.calculatePointersDistance( this._touchCurrent[ 0 ], event ) * this._devPxRatio;
+
+						if ( movement >= this._switchSensibility ) {
+
+							//singleMove
+							this._input = INPUT.ONE_FINGER;
+							this.updateTouchEvent( event );
+
+							this.onSinglePanStart( event, 'ROTATE' );
+							break;
 
 						}
 
 						break;
 
-					case MOUSE.PAN:
+					case INPUT.TWO_FINGER:
 
-						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
+						//rotate/pan/pinchMove
+						this.updateTouchEvent( event );
 
-							if ( scope.enableRotate === false ) return;
-
-							handleMouseDownRotate( event );
-
-							state = STATE.ROTATE;
-
-						} else {
-
-							if ( scope.enablePan === false ) return;
-
-							handleMouseDownPan( event );
-
-							state = STATE.PAN;
-
-						}
+						this.onRotateMove();
+						this.onPinchMove();
+						this.onDoublePanMove();
 
 						break;
 
-					default:
+					case INPUT.MULT_FINGER:
 
-						state = STATE.NONE;
+						//multMove
+						this.updateTouchEvent( event );
+
+						this.onTriplePanMove( event );
+						break;
 
 				}
 
-				if ( state !== STATE.NONE ) {
+			} else if ( event.pointerType != 'touch' && this._input == INPUT.CURSOR ) {
 
-					scope.dispatchEvent( _startEvent );
+				let modifier = null;
+
+				if ( event.ctrlKey || event.metaKey ) {
+
+					modifier = 'CTRL';
+
+				} else if ( event.shiftKey ) {
+
+					modifier = 'SHIFT';
+
+				}
+
+				const mouseOpState = this.getOpStateFromAction( this._button, modifier );
+
+				if ( mouseOpState != null ) {
+
+					this.onSinglePanMove( event, mouseOpState );
 
 				}
 
 			}
 
-			function onMouseMove( event ) {
+			//checkDistance
+			if ( this._downValid ) {
 
-				if ( scope.enabled === false ) return;
+				const movement = this.calculatePointersDistance( this._downEvents[ this._downEvents.length - 1 ], event ) * this._devPxRatio;
+				if ( movement > this._movementThreshold ) {
 
-				switch ( state ) {
+					this._downValid = false;
 
-					case STATE.ROTATE:
+				}
 
-						if ( scope.enableRotate === false ) return;
+			}
 
-						handleMouseMoveRotate( event );
+		};
+
+		onPointerUp = ( event ) => {
+
+			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
+
+				const nTouch = this._touchCurrent.length;
+
+				for ( let i = 0; i < nTouch; i ++ ) {
+
+					if ( this._touchCurrent[ i ].pointerId == event.pointerId ) {
+
+						this._touchCurrent.splice( i, 1 );
+						this._touchStart.splice( i, 1 );
+						break;
+
+					}
+
+				}
+
+				switch ( this._input ) {
+
+					case INPUT.ONE_FINGER:
+					case INPUT.ONE_FINGER_SWITCHED:
+
+						//singleEnd
+						window.removeEventListener( 'pointermove', this.onPointerMove );
+						window.removeEventListener( 'pointerup', this.onPointerUp );
+
+						this._input = INPUT.NONE;
+						this.onSinglePanEnd();
 
 						break;
 
-					case STATE.DOLLY:
+					case INPUT.TWO_FINGER:
 
-						if ( scope.enableZoom === false ) return;
+						//doubleEnd
+						this.onDoublePanEnd( event );
+						this.onPinchEnd( event );
+						this.onRotateEnd( event );
 
-						handleMouseMoveDolly( event );
+						//switching to singleStart
+						this._input = INPUT.ONE_FINGER_SWITCHED;
 
 						break;
+
+					case INPUT.MULT_FINGER:
+
+						if ( this._touchCurrent.length == 0 ) {
+
+							window.removeEventListener( 'pointermove', this.onPointerMove );
+							window.removeEventListener( 'pointerup', this.onPointerUp );
+
+							//multCancel
+							this._input = INPUT.NONE;
+							this.onTriplePanEnd();
+
+						}
+
+						break;
+
+				}
+
+			} else if ( event.pointerType != 'touch' && this._input == INPUT.CURSOR ) {
+
+				window.removeEventListener( 'pointermove', this.onPointerMove );
+				window.removeEventListener( 'pointerup', this.onPointerUp );
+
+				this._input = INPUT.NONE;
+				this.onSinglePanEnd();
+				this._button = - 1;
+
+			}
+
+			if ( event.isPrimary ) {
+
+				if ( this._downValid ) {
+
+					const downTime = event.timeStamp - this._downEvents[ this._downEvents.length - 1 ].timeStamp;
+
+					if ( downTime <= this._maxDownTime ) {
+
+						if ( this._nclicks == 0 ) {
+
+							//first valid click detected
+							this._nclicks = 1;
+							this._clickStart = performance.now();
+
+						} else {
+
+							const clickInterval = event.timeStamp - this._clickStart;
+							const movement = this.calculatePointersDistance( this._downEvents[ 1 ], this._downEvents[ 0 ] ) * this._devPxRatio;
+
+							if ( clickInterval <= this._maxInterval && movement <= this._posThreshold ) {
+
+								//second valid click detected
+								//fire double tap and reset values
+								this._nclicks = 0;
+								this._downEvents.splice( 0, this._downEvents.length );
+								this.onDoubleTap( event );
+
+							} else {
+
+								//new 'first click'
+								this._nclicks = 1;
+								this._downEvents.shift();
+								this._clickStart = performance.now();
+
+							}
+
+						}
+
+					} else {
+
+						this._downValid = false;
+						this._nclicks = 0;
+						this._downEvents.splice( 0, this._downEvents.length );
+
+					}
+
+				} else {
+
+					this._nclicks = 0;
+					this._downEvents.splice( 0, this._downEvents.length );
+
+				}
+
+			}
+
+		};
+
+		onWheel = ( event ) => {
+
+			if ( this.enabled && this.enableZoom ) {
+
+				let modifier = null;
+
+				if ( event.ctrlKey || event.metaKey ) {
+
+					modifier = 'CTRL';
+
+				} else if ( event.shiftKey ) {
+
+					modifier = 'SHIFT';
+
+				}
+
+				const mouseOp = this.getOpFromAction( 'WHEEL', modifier );
+
+				if ( mouseOp != null ) {
+
+					event.preventDefault();
+					this.dispatchEvent( _startEvent );
+
+					const notchDeltaY = 125; //distance of one notch of mouse wheel
+					let sgn = event.deltaY / notchDeltaY;
+
+					let size = 1;
+
+					if ( sgn > 0 ) {
+
+						size = 1 / this.scaleFactor;
+
+					} else if ( sgn < 0 ) {
+
+						size = this.scaleFactor;
+
+					}
+
+					switch ( mouseOp ) {
+
+						case 'ZOOM':
+
+							this.updateTbState( STATE.SCALE, true );
+
+							if ( sgn > 0 ) {
+
+								size = 1 / ( Math.pow( this.scaleFactor, sgn ) );
+
+							} else if ( sgn < 0 ) {
+
+								size = Math.pow( this.scaleFactor, - sgn );
+
+							}
+
+							if ( this.cursorZoom && this.enablePan ) {
+
+								let scalePoint;
+
+								if ( this.camera.isOrthographicCamera ) {
+
+									scalePoint = this.unprojectOnTbPlane( this.camera, event.clientX, event.clientY, this.domElement ).applyQuaternion( this.camera.quaternion ).multiplyScalar( 1 / this.camera.zoom ).add( this._gizmos.position );
+
+								} else if ( this.camera.isPerspectiveCamera ) {
+
+									scalePoint = this.unprojectOnTbPlane( this.camera, event.clientX, event.clientY, this.domElement ).applyQuaternion( this.camera.quaternion ).add( this._gizmos.position );
+
+								}
+
+								this.applyTransformMatrix( this.scale( size, scalePoint ) );
+
+							} else {
+
+								this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+
+							}
+
+							if ( this._grid != null ) {
+
+								this.disposeGrid();
+								this.drawGrid();
+
+							}
+
+							this.updateTbState( STATE.IDLE, false );
+
+							this.dispatchEvent( _changeEvent );
+							this.dispatchEvent( _endEvent );
+
+							break;
+
+						case 'FOV':
+
+							if ( this.camera.isPerspectiveCamera ) {
+
+								this.updateTbState( STATE.FOV, true );
+
+
+								//Vertigo effect
+
+								//	  fov / 2
+								//		|\
+								//		| \
+								//		|  \
+								//	x	|	\
+								//		| 	 \
+								//		| 	  \
+								//		| _ _ _\
+								//			y
+
+								//check for iOs shift shortcut
+								if ( event.deltaX != 0 ) {
+
+									sgn = event.deltaX / notchDeltaY;
+
+									size = 1;
+
+									if ( sgn > 0 ) {
+
+										size = 1 / ( Math.pow( this.scaleFactor, sgn ) );
+
+									} else if ( sgn < 0 ) {
+
+										size = Math.pow( this.scaleFactor, - sgn );
+
+									}
+
+								}
+
+								this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
+								const x = this._v3_1.distanceTo( this._gizmos.position );
+								let xNew = x / size;	//distance between camera and gizmos if scale(size, scalepoint) would be performed
+
+								//check min and max distance
+								xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+
+								const y = x * Math.tan( MathUtils.DEG2RAD * this.camera.fov * 0.5 );
+
+								//calculate new fov
+								let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
+
+								//check min and max fov
+								if ( newFov > this.maxFov ) {
+
+									newFov = this.maxFov;
+
+								} else if ( newFov < this.minFov ) {
+
+									newFov = this.minFov;
+
+								}
+
+								const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
+								size = x / newDistance;
+
+								this.setFov( newFov );
+								this.applyTransformMatrix( this.scale( size, this._gizmos.position, false ) );
+
+							}
+
+							if ( this._grid != null ) {
+
+								this.disposeGrid();
+								this.drawGrid();
+
+							}
+
+							this.updateTbState( STATE.IDLE, false );
+
+							this.dispatchEvent( _changeEvent );
+							this.dispatchEvent( _endEvent );
+
+							break;
+
+					}
+
+				}
+
+			}
+
+		};
+
+		onSinglePanStart = ( event, operation ) => {
+
+			if ( this.enabled ) {
+
+				this.dispatchEvent( _startEvent );
+
+				this.setCenter( event.clientX, event.clientY );
+
+				switch ( operation ) {
+
+					case 'PAN':
+
+						if ( ! this.enablePan ) {
+
+							return;
+
+						}
+
+						if ( this._animationId != - 1 ) {
+
+							cancelAnimationFrame( this._animationId );
+							this._animationId = - 1;
+							this._timeStart = - 1;
+
+							this.activateGizmos( false );
+							this.dispatchEvent( _changeEvent );
+
+						}
+
+						this.updateTbState( STATE.PAN, true );
+						this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
+						if ( this.enableGrid ) {
+
+							this.drawGrid();
+							this.dispatchEvent( _changeEvent );
+
+						}
+
+						break;
+
+					case 'ROTATE':
+
+						if ( ! this.enableRotate ) {
+
+							return;
+
+						}
+
+						if ( this._animationId != - 1 ) {
+
+							cancelAnimationFrame( this._animationId );
+							this._animationId = - 1;
+							this._timeStart = - 1;
+
+						}
+
+						this.updateTbState( STATE.ROTATE, true );
+						this._startCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
+						this.activateGizmos( true );
+						if ( this.enableAnimations ) {
+
+							this._timePrev = this._timeCurrent = performance.now();
+							this._angleCurrent = this._anglePrev = 0;
+							this._cursorPosPrev.copy( this._startCursorPosition );
+							this._cursorPosCurr.copy( this._cursorPosPrev );
+							this._wCurr = 0;
+							this._wPrev = this._wCurr;
+
+						}
+
+						this.dispatchEvent( _changeEvent );
+						break;
+
+					case 'FOV':
+
+						if ( ! this.camera.isPerspectiveCamera || ! this.enableZoom ) {
+
+							return;
+
+						}
+
+						if ( this._animationId != - 1 ) {
+
+							cancelAnimationFrame( this._animationId );
+							this._animationId = - 1;
+							this._timeStart = - 1;
+
+							this.activateGizmos( false );
+							this.dispatchEvent( _changeEvent );
+
+						}
+
+						this.updateTbState( STATE.FOV, true );
+						this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+						this._currentCursorPosition.copy( this._startCursorPosition );
+						break;
+
+					case 'ZOOM':
+
+						if ( ! this.enableZoom ) {
+
+							return;
+
+						}
+
+						if ( this._animationId != - 1 ) {
+
+							cancelAnimationFrame( this._animationId );
+							this._animationId = - 1;
+							this._timeStart = - 1;
+
+							this.activateGizmos( false );
+							this.dispatchEvent( _changeEvent );
+
+						}
+
+						this.updateTbState( STATE.SCALE, true );
+						this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+						this._currentCursorPosition.copy( this._startCursorPosition );
+						break;
+
+				}
+
+			}
+
+		};
+
+		onSinglePanMove = ( event, opState ) => {
+
+			if ( this.enabled ) {
+
+				const restart = opState != this._state;
+				this.setCenter( event.clientX, event.clientY );
+
+				switch ( opState ) {
 
 					case STATE.PAN:
 
-						if ( scope.enablePan === false ) return;
+						if ( this.enablePan ) {
 
-						handleMouseMovePan( event );
+							if ( restart ) {
 
-						break;
+								//switch to pan operation
 
-				}
+								this.dispatchEvent( _endEvent );
+								this.dispatchEvent( _startEvent );
 
-			}
+								this.updateTbState( opState, true );
+								this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
+								if ( this.enableGrid ) {
 
-			function onMouseWheel( event ) {
+									this.drawGrid();
 
-				if ( scope.enabled === false || scope.enableZoom === false || state !== STATE.NONE ) return;
+								}
 
-				event.preventDefault();
+								this.activateGizmos( false );
 
-				scope.dispatchEvent( _startEvent );
+							} else {
 
-				handleMouseWheel( event );
+								//continue with pan operation
+								this._currentCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
+								this.applyTransformMatrix( this.pan( this._startCursorPosition, this._currentCursorPosition ) );
 
-				scope.dispatchEvent( _endEvent );
-
-			}
-
-			function onKeyDown( event ) {
-
-				if ( scope.enabled === false || scope.enablePan === false ) return;
-
-				handleKeyDown( event );
-
-			}
-
-			function onTouchStart( event ) {
-
-				trackPointer( event );
-
-				switch ( pointers.length ) {
-
-					case 1:
-
-						switch ( scope.touches.ONE ) {
-
-							case TOUCH.ROTATE:
-
-								if ( scope.enableRotate === false ) return;
-
-								handleTouchStartRotate();
-
-								state = STATE.TOUCH_ROTATE;
-
-								break;
-
-							case TOUCH.PAN:
-
-								if ( scope.enablePan === false ) return;
-
-								handleTouchStartPan();
-
-								state = STATE.TOUCH_PAN;
-
-								break;
-
-							default:
-
-								state = STATE.NONE;
+							}
 
 						}
 
 						break;
 
-					case 2:
+					case STATE.ROTATE:
 
-						switch ( scope.touches.TWO ) {
+						if ( this.enableRotate ) {
 
-							case TOUCH.DOLLY_PAN:
+							if ( restart ) {
 
-								if ( scope.enableZoom === false && scope.enablePan === false ) return;
+								//switch to rotate operation
 
-								handleTouchStartDollyPan();
+								this.dispatchEvent( _endEvent );
+								this.dispatchEvent( _startEvent );
 
-								state = STATE.TOUCH_DOLLY_PAN;
+								this.updateTbState( opState, true );
+								this._startCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
 
-								break;
+								if ( this.enableGrid ) {
 
-							case TOUCH.DOLLY_ROTATE:
+									this.disposeGrid();
 
-								if ( scope.enableZoom === false && scope.enableRotate === false ) return;
+								}
 
-								handleTouchStartDollyRotate();
+								this.activateGizmos( true );
 
-								state = STATE.TOUCH_DOLLY_ROTATE;
+							} else {
 
-								break;
+								//continue with rotate operation
+								this._currentCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
 
-							default:
+								const distance = this._startCursorPosition.distanceTo( this._currentCursorPosition );
+								const angle = this._startCursorPosition.angleTo( this._currentCursorPosition );
+								const amount = Math.max( distance / this._tbRadius, angle ); //effective rotation angle
 
-								state = STATE.NONE;
+								this.applyTransformMatrix( this.rotate( this.calculateRotationAxis( this._startCursorPosition, this._currentCursorPosition ), amount ) );
+
+								if ( this.enableAnimations ) {
+
+									this._timePrev = this._timeCurrent;
+									this._timeCurrent = performance.now();
+									this._anglePrev = this._angleCurrent;
+									this._angleCurrent = amount;
+									this._cursorPosPrev.copy( this._cursorPosCurr );
+									this._cursorPosCurr.copy( this._currentCursorPosition );
+									this._wPrev = this._wCurr;
+									this._wCurr = this.calculateAngularSpeed( this._anglePrev, this._angleCurrent, this._timePrev, this._timeCurrent );
+
+								}
+
+							}
 
 						}
 
 						break;
 
-					default:
+					case STATE.SCALE:
 
-						state = STATE.NONE;
+						if ( this.enableZoom ) {
+
+							if ( restart ) {
+
+								//switch to zoom operation
+
+								this.dispatchEvent( _endEvent );
+								this.dispatchEvent( _startEvent );
+
+								this.updateTbState( opState, true );
+								this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+								this._currentCursorPosition.copy( this._startCursorPosition );
+
+								if ( this.enableGrid ) {
+
+									this.disposeGrid();
+
+								}
+
+								this.activateGizmos( false );
+
+							} else {
+
+								//continue with zoom operation
+								const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
+								this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+
+								const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+
+								let size = 1;
+
+								if ( movement < 0 ) {
+
+									size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+
+								} else if ( movement > 0 ) {
+
+									size = Math.pow( this.scaleFactor, movement * screenNotches );
+
+								}
+
+								this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+
+							}
+
+						}
+
+						break;
+
+					case STATE.FOV:
+
+						if ( this.enableZoom && this.camera.isPerspectiveCamera ) {
+
+							if ( restart ) {
+
+								//switch to fov operation
+
+								this.dispatchEvent( _endEvent );
+								this.dispatchEvent( _startEvent );
+
+								this.updateTbState( opState, true );
+								this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+								this._currentCursorPosition.copy( this._startCursorPosition );
+
+								if ( this.enableGrid ) {
+
+									this.disposeGrid();
+
+								}
+
+								this.activateGizmos( false );
+
+							} else {
+
+								//continue with fov operation
+								const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
+								this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+
+								const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+
+								let size = 1;
+
+								if ( movement < 0 ) {
+
+									size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+
+								} else if ( movement > 0 ) {
+
+									size = Math.pow( this.scaleFactor, movement * screenNotches );
+
+								}
+
+								this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
+								const x = this._v3_1.distanceTo( this._gizmos.position );
+								let xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+
+								//check min and max distance
+								xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+
+								const y = x * Math.tan( MathUtils.DEG2RAD * this._fovState * 0.5 );
+
+								//calculate new fov
+								let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
+
+								//check min and max fov
+								newFov = MathUtils.clamp( newFov, this.minFov, this.maxFov );
+
+								const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
+								size = x / newDistance;
+								this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+
+								this.setFov( newFov );
+								this.applyTransformMatrix( this.scale( size, this._v3_2, false ) );
+
+								//adjusting distance
+								_offset.copy( this._gizmos.position ).sub( this.camera.position ).normalize().multiplyScalar( newDistance / x );
+								this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
+
+							}
+
+						}
+
+						break;
 
 				}
 
-				if ( state !== STATE.NONE ) {
+				this.dispatchEvent( _changeEvent );
 
-					scope.dispatchEvent( _startEvent );
+			}
+
+		};
+
+		onSinglePanEnd = () => {
+
+			if ( this._state == STATE.ROTATE ) {
+
+
+				if ( ! this.enableRotate ) {
+
+					return;
+
+				}
+
+				if ( this.enableAnimations ) {
+
+					//perform rotation animation
+					const deltaTime = ( performance.now() - this._timeCurrent );
+					if ( deltaTime < 120 ) {
+
+						const w = Math.abs( ( this._wPrev + this._wCurr ) / 2 );
+
+						const self = this;
+						this._animationId = window.requestAnimationFrame( function ( t ) {
+
+							self.updateTbState( STATE.ANIMATION_ROTATE, true );
+							const rotationAxis = self.calculateRotationAxis( self._cursorPosPrev, self._cursorPosCurr );
+
+							self.onRotationAnim( t, rotationAxis, Math.min( w, self.wMax ) );
+
+						} );
+
+					} else {
+
+						//cursor has been standing still for over 120 ms since last movement
+						this.updateTbState( STATE.IDLE, false );
+						this.activateGizmos( false );
+						this.dispatchEvent( _changeEvent );
+
+					}
+
+				} else {
+
+					this.updateTbState( STATE.IDLE, false );
+					this.activateGizmos( false );
+					this.dispatchEvent( _changeEvent );
+
+				}
+
+			} else if ( this._state == STATE.PAN || this._state == STATE.IDLE ) {
+
+				this.updateTbState( STATE.IDLE, false );
+
+				if ( this.enableGrid ) {
+
+					this.disposeGrid();
+
+				}
+
+				this.activateGizmos( false );
+				this.dispatchEvent( _changeEvent );
+
+
+			}
+
+			this.dispatchEvent( _endEvent );
+
+		};
+
+		onDoubleTap = ( event ) => {
+
+			if ( this.enabled && this.enablePan && this.scene != null ) {
+
+				this.dispatchEvent( _startEvent );
+
+				this.setCenter( event.clientX, event.clientY );
+				const hitP = this.unprojectOnObj( this.getCursorNDC( _center.x, _center.y, this.domElement ), this.camera );
+
+				if ( hitP != null && this.enableAnimations ) {
+
+					const self = this;
+					if ( this._animationId != - 1 ) {
+
+						window.cancelAnimationFrame( this._animationId );
+
+					}
+
+					this._timeStart = - 1;
+					this._animationId = window.requestAnimationFrame( function ( t ) {
+
+						self.updateTbState( STATE.ANIMATION_FOCUS, true );
+						self.onFocusAnim( t, hitP, self._cameraMatrixState, self._gizmoMatrixState );
+
+					} );
+
+				} else if ( hitP != null && ! this.enableAnimations ) {
+
+					this.updateTbState( STATE.FOCUS, true );
+					this.focus( hitP, this.scaleFactor );
+					this.updateTbState( STATE.IDLE, false );
+					this.dispatchEvent( _changeEvent );
 
 				}
 
 			}
 
-			function onTouchMove( event ) {
+			this.dispatchEvent( _endEvent );
 
-				trackPointer( event );
+		};
 
-				switch ( state ) {
+		onDoublePanStart = () => {
 
-					case STATE.TOUCH_ROTATE:
+			if ( this.enabled && this.enablePan ) {
 
-						if ( scope.enableRotate === false ) return;
+				this.dispatchEvent( _startEvent );
 
-						handleTouchMoveRotate( event );
+				this.updateTbState( STATE.PAN, true );
 
-						scope.update();
+				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
+				this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement, true ) );
+				this._currentCursorPosition.copy( this._startCursorPosition );
 
-						break;
+				this.activateGizmos( false );
 
-					case STATE.TOUCH_PAN:
+			}
 
-						if ( scope.enablePan === false ) return;
+		};
 
-						handleTouchMovePan( event );
+		onDoublePanMove = () => {
 
-						scope.update();
+			if ( this.enabled && this.enablePan ) {
 
-						break;
+				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
 
-					case STATE.TOUCH_DOLLY_PAN:
+				if ( this._state != STATE.PAN ) {
 
-						if ( scope.enableZoom === false && scope.enablePan === false ) return;
+					this.updateTbState( STATE.PAN, true );
+					this._startCursorPosition.copy( this._currentCursorPosition );
 
-						handleTouchMoveDollyPan( event );
+				}
 
-						scope.update();
+				this._currentCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement, true ) );
+				this.applyTransformMatrix( this.pan( this._startCursorPosition, this._currentCursorPosition, true ) );
+				this.dispatchEvent( _changeEvent );
 
-						break;
+			}
 
-					case STATE.TOUCH_DOLLY_ROTATE:
+		};
 
-						if ( scope.enableZoom === false && scope.enableRotate === false ) return;
+		onDoublePanEnd = () => {
 
-						handleTouchMoveDollyRotate( event );
+			this.updateTbState( STATE.IDLE, false );
+			this.dispatchEvent( _endEvent );
 
-						scope.update();
+		};
 
-						break;
 
-					default:
+		onRotateStart = () => {
 
-						state = STATE.NONE;
+			if ( this.enabled && this.enableRotate ) {
+
+				this.dispatchEvent( _startEvent );
+
+				this.updateTbState( STATE.ZROTATE, true );
+
+				//this._startFingerRotation = event.rotation;
+
+				this._startFingerRotation = this.getAngle( this._touchCurrent[ 1 ], this._touchCurrent[ 0 ] ) + this.getAngle( this._touchStart[ 1 ], this._touchStart[ 0 ] );
+				this._currentFingerRotation = this._startFingerRotation;
+
+				this.camera.getWorldDirection( this._rotationAxis ); //rotation axis
+
+				if ( ! this.enablePan && ! this.enableZoom ) {
+
+					this.activateGizmos( true );
 
 				}
 
 			}
 
-			function onContextMenu( event ) {
+		};
 
-				if ( scope.enabled === false ) return;
+		onRotateMove = () => {
 
-				event.preventDefault();
+			if ( this.enabled && this.enableRotate ) {
+
+				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
+				let rotationPoint;
+
+				if ( this._state != STATE.ZROTATE ) {
+
+					this.updateTbState( STATE.ZROTATE, true );
+					this._startFingerRotation = this._currentFingerRotation;
+
+				}
+
+				//this._currentFingerRotation = event.rotation;
+				this._currentFingerRotation = this.getAngle( this._touchCurrent[ 1 ], this._touchCurrent[ 0 ] ) + this.getAngle( this._touchStart[ 1 ], this._touchStart[ 0 ] );
+
+				if ( ! this.enablePan ) {
+
+					rotationPoint = new Vector3().setFromMatrixPosition( this._gizmoMatrixState );
+
+				} else {
+
+					this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+					rotationPoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ).applyQuaternion( this.camera.quaternion ).multiplyScalar( 1 / this.camera.zoom ).add( this._v3_2 );
+
+				}
+
+				const amount = MathUtils.DEG2RAD * ( this._startFingerRotation - this._currentFingerRotation );
+
+				this.applyTransformMatrix( this.zRotate( rotationPoint, amount ) );
+				this.dispatchEvent( _changeEvent );
 
 			}
 
-			function addPointer( event ) {
+		};
 
-				pointers.push( event );
+		onRotateEnd = () => {
+
+			this.updateTbState( STATE.IDLE, false );
+			this.activateGizmos( false );
+			this.dispatchEvent( _endEvent );
+
+		};
+
+		onPinchStart = () => {
+
+			if ( this.enabled && this.enableZoom ) {
+
+				this.dispatchEvent( _startEvent );
+				this.updateTbState( STATE.SCALE, true );
+
+				this._startFingerDistance = this.calculatePointersDistance( this._touchCurrent[ 0 ], this._touchCurrent[ 1 ] );
+				this._currentFingerDistance = this._startFingerDistance;
+
+				this.activateGizmos( false );
 
 			}
 
-			function removePointer( event ) {
+		};
 
-				delete pointerPositions[ event.pointerId ];
+		onPinchMove = () => {
 
-				for ( let i = 0; i < pointers.length; i ++ ) {
+			if ( this.enabled && this.enableZoom ) {
 
-					if ( pointers[ i ].pointerId == event.pointerId ) {
+				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
+				const minDistance = 12; //minimum distance between fingers (in css pixels)
 
-						pointers.splice( i, 1 );
-						return;
+				if ( this._state != STATE.SCALE ) {
+
+					this._startFingerDistance = this._currentFingerDistance;
+					this.updateTbState( STATE.SCALE, true );
+
+				}
+
+				this._currentFingerDistance = Math.max( this.calculatePointersDistance( this._touchCurrent[ 0 ], this._touchCurrent[ 1 ] ), minDistance * this._devPxRatio );
+				const amount = this._currentFingerDistance / this._startFingerDistance;
+
+				let scalePoint;
+
+				if ( ! this.enablePan ) {
+
+					scalePoint = this._gizmos.position;
+
+				} else {
+
+					if ( this.camera.isOrthographicCamera ) {
+
+						scalePoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement )
+							.applyQuaternion( this.camera.quaternion )
+							.multiplyScalar( 1 / this.camera.zoom )
+							.add( this._gizmos.position );
+
+					} else if ( this.camera.isPerspectiveCamera ) {
+
+						scalePoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement )
+							.applyQuaternion( this.camera.quaternion )
+							.add( this._gizmos.position );
+
+					}
+
+				}
+
+				this.applyTransformMatrix( this.scale( amount, scalePoint ) );
+				this.dispatchEvent( _changeEvent );
+
+			}
+
+		};
+
+		onPinchEnd = () => {
+
+			this.updateTbState( STATE.IDLE, false );
+			this.dispatchEvent( _endEvent );
+
+		};
+
+		onTriplePanStart = () => {
+
+			if ( this.enabled && this.enableZoom ) {
+
+				this.dispatchEvent( _startEvent );
+
+				this.updateTbState( STATE.SCALE, true );
+
+				//const center = event.center;
+				let clientX = 0;
+				let clientY = 0;
+				const nFingers = this._touchCurrent.length;
+
+				for ( let i = 0; i < nFingers; i ++ ) {
+
+					clientX += this._touchCurrent[ i ].clientX;
+					clientY += this._touchCurrent[ i ].clientY;
+
+				}
+
+				this.setCenter( clientX / nFingers, clientY / nFingers );
+
+				this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+				this._currentCursorPosition.copy( this._startCursorPosition );
+
+			}
+
+		};
+
+		onTriplePanMove = () => {
+
+			if ( this.enabled && this.enableZoom ) {
+
+				//	  fov / 2
+				//		|\
+				//		| \
+				//		|  \
+				//	x	|	\
+				//		| 	 \
+				//		| 	  \
+				//		| _ _ _\
+				//			y
+
+				//const center = event.center;
+				let clientX = 0;
+				let clientY = 0;
+				const nFingers = this._touchCurrent.length;
+
+				for ( let i = 0; i < nFingers; i ++ ) {
+
+					clientX += this._touchCurrent[ i ].clientX;
+					clientY += this._touchCurrent[ i ].clientY;
+
+				}
+
+				this.setCenter( clientX / nFingers, clientY / nFingers );
+
+				const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
+				this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+
+				const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+
+				let size = 1;
+
+				if ( movement < 0 ) {
+
+					size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+
+				} else if ( movement > 0 ) {
+
+					size = Math.pow( this.scaleFactor, movement * screenNotches );
+
+				}
+
+				this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
+				const x = this._v3_1.distanceTo( this._gizmos.position );
+				let xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+
+				//check min and max distance
+				xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+
+				const y = x * Math.tan( MathUtils.DEG2RAD * this._fovState * 0.5 );
+
+				//calculate new fov
+				let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
+
+				//check min and max fov
+				newFov = MathUtils.clamp( newFov, this.minFov, this.maxFov );
+
+				const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
+				size = x / newDistance;
+				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+
+				this.setFov( newFov );
+				this.applyTransformMatrix( this.scale( size, this._v3_2, false ) );
+
+				//adjusting distance
+				_offset.copy( this._gizmos.position ).sub( this.camera.position ).normalize().multiplyScalar( newDistance / x );
+				this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
+
+				this.dispatchEvent( _changeEvent );
+
+			}
+
+		};
+
+		onTriplePanEnd = () => {
+
+			this.updateTbState( STATE.IDLE, false );
+			this.dispatchEvent( _endEvent );
+			//this.dispatchEvent( _changeEvent );
+
+		};
+
+		/**
+		 * Set _center's x/y coordinates
+		 * @param {Number} clientX
+		 * @param {Number} clientY
+		 */
+		setCenter = ( clientX, clientY ) => {
+
+			_center.x = clientX;
+			_center.y = clientY;
+
+		};
+
+		/**
+		 * Set default mouse actions
+		 */
+		initializeMouseActions = () => {
+
+			this.setMouseAction( 'PAN', 0, 'CTRL' );
+			this.setMouseAction( 'PAN', 2 );
+
+			this.setMouseAction( 'ROTATE', 0 );
+
+			this.setMouseAction( 'ZOOM', 'WHEEL' );
+			this.setMouseAction( 'ZOOM', 1 );
+
+			this.setMouseAction( 'FOV', 'WHEEL', 'SHIFT' );
+			this.setMouseAction( 'FOV', 1, 'SHIFT' );
+
+
+		};
+
+		/**
+		 * Compare two mouse actions
+		 * @param {Object} action1
+		 * @param {Object} action2
+		 * @returns {Boolean} True if action1 and action 2 are the same mouse action, false otherwise
+		 */
+		compareMouseAction = ( action1, action2 ) => {
+
+			if ( action1.operation == action2.operation ) {
+
+				if ( action1.mouse == action2.mouse && action1.key == action2.key ) {
+
+					return true;
+
+				} else {
+
+					return false;
+
+				}
+
+			} else {
+
+				return false;
+
+			}
+
+		};
+
+		/**
+		 * Set a new mouse action by specifying the operation to be performed and a mouse/key combination. In case of conflict, replaces the existing one
+		 * @param {String} operation The operation to be performed ('PAN', 'ROTATE', 'ZOOM', 'FOV)
+		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
+		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
+		 * @returns {Boolean} True if the mouse action has been successfully added, false otherwise
+		 */
+		setMouseAction = ( operation, mouse, key = null ) => {
+
+			const operationInput = [ 'PAN', 'ROTATE', 'ZOOM', 'FOV' ];
+			const mouseInput = [ 0, 1, 2, 'WHEEL' ];
+			const keyInput = [ 'CTRL', 'SHIFT', null ];
+			let state;
+
+			if ( ! operationInput.includes( operation ) || ! mouseInput.includes( mouse ) || ! keyInput.includes( key ) ) {
+
+				//invalid parameters
+				return false;
+
+			}
+
+			if ( mouse == 'WHEEL' ) {
+
+				if ( operation != 'ZOOM' && operation != 'FOV' ) {
+
+					//cannot associate 2D operation to 1D input
+					return false;
+
+				}
+
+			}
+
+			switch ( operation ) {
+
+				case 'PAN':
+
+					state = STATE.PAN;
+					break;
+
+				case 'ROTATE':
+
+					state = STATE.ROTATE;
+					break;
+
+				case 'ZOOM':
+
+					state = STATE.SCALE;
+					break;
+
+				case 'FOV':
+
+					state = STATE.FOV;
+					break;
+
+			}
+
+			const action = {
+
+				operation: operation,
+				mouse: mouse,
+				key: key,
+				state: state
+
+			};
+
+			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+				if ( this.mouseActions[ i ].mouse == action.mouse && this.mouseActions[ i ].key == action.key ) {
+
+					this.mouseActions.splice( i, 1, action );
+					return true;
+
+				}
+
+			}
+
+			this.mouseActions.push( action );
+			return true;
+
+		};
+
+		/**
+		 * Remove a mouse action by specifying its mouse/key combination
+		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
+		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
+		 * @returns {Boolean} True if the operation has been succesfully removed, false otherwise
+		 */
+		unsetMouseAction = ( mouse, key = null ) => {
+
+			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+				if ( this.mouseActions[ i ].mouse == mouse && this.mouseActions[ i ].key == key ) {
+
+					this.mouseActions.splice( i, 1 );
+					return true;
+
+				}
+
+			}
+
+			return false;
+
+		};
+
+		/**
+		 * Return the operation associated to a mouse/keyboard combination
+		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
+		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
+		 * @returns The operation if it has been found, null otherwise
+		 */
+		getOpFromAction = ( mouse, key ) => {
+
+			let action;
+
+			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+				action = this.mouseActions[ i ];
+				if ( action.mouse == mouse && action.key == key ) {
+
+					return action.operation;
+
+				}
+
+			}
+
+			if ( key != null ) {
+
+				for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+					action = this.mouseActions[ i ];
+					if ( action.mouse == mouse && action.key == null ) {
+
+						return action.operation;
 
 					}
 
@@ -32612,42 +34021,1459 @@
 
 			}
 
-			function trackPointer( event ) {
+			return null;
 
-				let position = pointerPositions[ event.pointerId ];
+		};
 
-				if ( position === undefined ) {
+		/**
+		 * Get the operation associated to mouse and key combination and returns the corresponding FSA state
+		 * @param {Number} mouse Mouse button
+		 * @param {String} key Keyboard modifier
+		 * @returns The FSA state obtained from the operation associated to mouse/keyboard combination
+		 */
+		getOpStateFromAction = ( mouse, key ) => {
 
-					position = new Vector2();
-					pointerPositions[ event.pointerId ] = position;
+			let action;
+
+			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+				action = this.mouseActions[ i ];
+				if ( action.mouse == mouse && action.key == key ) {
+
+					return action.state;
 
 				}
 
-				position.set( event.pageX, event.pageY );
+			}
+
+			if ( key != null ) {
+
+				for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+
+					action = this.mouseActions[ i ];
+					if ( action.mouse == mouse && action.key == null ) {
+
+						return action.state;
+
+					}
+
+				}
 
 			}
 
-			function getSecondPointerPosition( event ) {
+			return null;
 
-				const pointer = ( event.pointerId === pointers[ 0 ].pointerId ) ? pointers[ 1 ] : pointers[ 0 ];
+		};
 
-				return pointerPositions[ pointer.pointerId ];
+		/**
+		 * Calculate the angle between two pointers
+		 * @param {PointerEvent} p1
+		 * @param {PointerEvent} p2
+		 * @returns {Number} The angle between two pointers in degrees
+		 */
+		getAngle = ( p1, p2 ) => {
+
+			return Math.atan2( p2.clientY - p1.clientY, p2.clientX - p1.clientX ) * 180 / Math.PI;
+
+		};
+
+		/**
+		 * Update a PointerEvent inside current pointerevents array
+		 * @param {PointerEvent} event
+		 */
+		updateTouchEvent = ( event ) => {
+
+			for ( let i = 0; i < this._touchCurrent.length; i ++ ) {
+
+				if ( this._touchCurrent[ i ].pointerId == event.pointerId ) {
+
+					this._touchCurrent.splice( i, 1, event );
+					break;
+
+				}
 
 			}
 
-			//
+		};
 
-			scope.domElement.addEventListener( 'contextmenu', onContextMenu );
+		/**
+		 * Apply a transformation matrix, to the camera and gizmos
+		 * @param {Object} transformation Object containing matrices to apply to camera and gizmos
+		 */
+		applyTransformMatrix( transformation ) {
 
-			scope.domElement.addEventListener( 'pointerdown', onPointerDown );
-			scope.domElement.addEventListener( 'pointercancel', onPointerCancel );
-			scope.domElement.addEventListener( 'wheel', onMouseWheel, { passive: false } );
+			if ( transformation.camera != null ) {
 
-			// force an update at start
+				this._m4_1.copy( this._cameraMatrixState ).premultiply( transformation.camera );
+				this._m4_1.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+				this.camera.updateMatrix();
 
-			this.update();
+				//update camera up vector
+				if ( this._state == STATE.ROTATE || this._state == STATE.ZROTATE || this._state == STATE.ANIMATION_ROTATE ) {
+
+					this.camera.up.copy( this._upState ).applyQuaternion( this.camera.quaternion );
+
+				}
+
+			}
+
+			if ( transformation.gizmos != null ) {
+
+				this._m4_1.copy( this._gizmoMatrixState ).premultiply( transformation.gizmos );
+				this._m4_1.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+				this._gizmos.updateMatrix();
+
+			}
+
+			if ( this._state == STATE.SCALE || this._state == STATE.FOCUS || this._state == STATE.ANIMATION_FOCUS ) {
+
+				this._tbRadius = this.calculateTbRadius( this.camera );
+
+				if ( this.adjustNearFar ) {
+
+					const cameraDistance = this.camera.position.distanceTo( this._gizmos.position );
+
+					const bb = new Box3();
+					bb.setFromObject( this._gizmos );
+					const sphere = new Sphere();
+					bb.getBoundingSphere( sphere );
+
+					const adjustedNearPosition = Math.max( this._nearPos0, sphere.radius + sphere.center.length() );
+					const regularNearPosition = cameraDistance - this._initialNear;
+
+					const minNearPos = Math.min( adjustedNearPosition, regularNearPosition );
+					this.camera.near = cameraDistance - minNearPos;
+
+
+					const adjustedFarPosition = Math.min( this._farPos0, - sphere.radius + sphere.center.length() );
+					const regularFarPosition = cameraDistance - this._initialFar;
+
+					const minFarPos = Math.min( adjustedFarPosition, regularFarPosition );
+					this.camera.far = cameraDistance - minFarPos;
+
+					this.camera.updateProjectionMatrix();
+
+				} else {
+
+					let update = false;
+
+					if ( this.camera.near != this._initialNear ) {
+
+						this.camera.near = this._initialNear;
+						update = true;
+
+					}
+
+					if ( this.camera.far != this._initialFar ) {
+
+						this.camera.far = this._initialFar;
+						update = true;
+
+					}
+
+					if ( update ) {
+
+						this.camera.updateProjectionMatrix();
+
+					}
+
+				}
+
+			}
 
 		}
+
+		/**
+		 * Calculate the angular speed
+		 * @param {Number} p0 Position at t0
+		 * @param {Number} p1 Position at t1
+		 * @param {Number} t0 Initial time in milliseconds
+		 * @param {Number} t1 Ending time in milliseconds
+		 */
+		calculateAngularSpeed = ( p0, p1, t0, t1 ) => {
+
+			const s = p1 - p0;
+			const t = ( t1 - t0 ) / 1000;
+			if ( t == 0 ) {
+
+				return 0;
+
+			}
+
+			return s / t;
+
+		};
+
+		/**
+		 * Calculate the distance between two pointers
+		 * @param {PointerEvent} p0 The first pointer
+		 * @param {PointerEvent} p1 The second pointer
+		 * @returns {number} The distance between the two pointers
+		 */
+		calculatePointersDistance = ( p0, p1 ) => {
+
+			return Math.sqrt( Math.pow( p1.clientX - p0.clientX, 2 ) + Math.pow( p1.clientY - p0.clientY, 2 ) );
+
+		};
+
+		/**
+		 * Calculate the rotation axis as the vector perpendicular between two vectors
+		 * @param {Vector3} vec1 The first vector
+		 * @param {Vector3} vec2 The second vector
+		 * @returns {Vector3} The normalized rotation axis
+		 */
+		calculateRotationAxis = ( vec1, vec2 ) => {
+
+			this._rotationMatrix.extractRotation( this._cameraMatrixState );
+			this._quat.setFromRotationMatrix( this._rotationMatrix );
+
+			this._rotationAxis.crossVectors( vec1, vec2 ).applyQuaternion( this._quat );
+			return this._rotationAxis.normalize().clone();
+
+		};
+
+		/**
+		 * Calculate the trackball radius so that gizmo's diamater will be 2/3 of the minimum side of the camera frustum
+		 * @param {Camera} camera
+		 * @returns {Number} The trackball radius
+		 */
+		calculateTbRadius = ( camera ) => {
+
+			const distance = camera.position.distanceTo( this._gizmos.position );
+
+			if ( camera.type == 'PerspectiveCamera' ) {
+
+				const halfFovV = MathUtils.DEG2RAD * camera.fov * 0.5; //vertical fov/2 in radians
+				const halfFovH = Math.atan( ( camera.aspect ) * Math.tan( halfFovV ) ); //horizontal fov/2 in radians
+				return Math.tan( Math.min( halfFovV, halfFovH ) ) * distance * this.radiusFactor;
+
+			} else if ( camera.type == 'OrthographicCamera' ) {
+
+				return Math.min( camera.top, camera.right ) * this.radiusFactor;
+
+			}
+
+		};
+
+		/**
+		 * Focus operation consist of positioning the point of interest in front of the camera and a slightly zoom in
+		 * @param {Vector3} point The point of interest
+		 * @param {Number} size Scale factor
+		 * @param {Number} amount Amount of operation to be completed (used for focus animations, default is complete full operation)
+		 */
+		focus = ( point, size, amount = 1 ) => {
+
+			//move center of camera (along with gizmos) towards point of interest
+			_offset.copy( point ).sub( this._gizmos.position ).multiplyScalar( amount );
+			this._translationMatrix.makeTranslation( _offset.x, _offset.y, _offset.z );
+
+			_gizmoMatrixStateTemp.copy( this._gizmoMatrixState );
+			this._gizmoMatrixState.premultiply( this._translationMatrix );
+			this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+
+			_cameraMatrixStateTemp.copy( this._cameraMatrixState );
+			this._cameraMatrixState.premultiply( this._translationMatrix );
+			this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+
+			//apply zoom
+			if ( this.enableZoom ) {
+
+				this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+
+			}
+
+			this._gizmoMatrixState.copy( _gizmoMatrixStateTemp );
+			this._cameraMatrixState.copy( _cameraMatrixStateTemp );
+
+		};
+
+		/**
+		 * Draw a grid and add it to the scene
+		 */
+		drawGrid = () => {
+
+			if ( this.scene != null ) {
+
+				const color = 0x888888;
+				const multiplier = 3;
+				let size, divisions, maxLength, tick;
+
+				if ( this.camera.isOrthographicCamera ) {
+
+					const width = this.camera.right - this.camera.left;
+					const height = this.camera.bottom - this.camera.top;
+
+					maxLength = Math.max( width, height );
+					tick = maxLength / 20;
+
+					size = maxLength / this.camera.zoom * multiplier;
+					divisions = size / tick * this.camera.zoom;
+
+				} else if ( this.camera.isPerspectiveCamera ) {
+
+					const distance = this.camera.position.distanceTo( this._gizmos.position );
+					const halfFovV = MathUtils.DEG2RAD * this.camera.fov * 0.5;
+					const halfFovH = Math.atan( ( this.camera.aspect ) * Math.tan( halfFovV ) );
+
+					maxLength = Math.tan( Math.max( halfFovV, halfFovH ) ) * distance * 2;
+					tick = maxLength / 20;
+
+					size = maxLength * multiplier;
+					divisions = size / tick;
+
+				}
+
+				if ( this._grid == null ) {
+
+					this._grid = new GridHelper( size, divisions, color, color );
+					this._grid.position.copy( this._gizmos.position );
+					this._gridPosition.copy( this._grid.position );
+					this._grid.quaternion.copy( this.camera.quaternion );
+					this._grid.rotateX( Math.PI * 0.5 );
+
+					this.scene.add( this._grid );
+
+				}
+
+			}
+
+		};
+
+		/**
+		 * Remove all listeners, stop animations and clean scene
+		 */
+		dispose = () => {
+
+			if ( this._animationId != - 1 ) {
+
+				window.cancelAnimationFrame( this._animationId );
+
+			}
+
+			this.domElement.removeEventListener( 'pointerdown', this.onPointerDown );
+			this.domElement.removeEventListener( 'pointercancel', this.onPointerCancel );
+			this.domElement.removeEventListener( 'wheel', this.onWheel );
+			this.domElement.removeEventListener( 'contextmenu', this.onContextMenu );
+
+			window.removeEventListener( 'pointermove', this.onPointerMove );
+			window.removeEventListener( 'pointerup', this.onPointerUp );
+
+			window.removeEventListener( 'resize', this.onWindowResize );
+
+			if ( this.scene !== null ) this.scene.remove( this._gizmos );
+			this.disposeGrid();
+
+		};
+
+		/**
+		 * remove the grid from the scene
+		 */
+		disposeGrid = () => {
+
+			if ( this._grid != null && this.scene != null ) {
+
+				this.scene.remove( this._grid );
+				this._grid = null;
+
+			}
+
+		};
+
+		/**
+		 * Compute the easing out cubic function for ease out effect in animation
+		 * @param {Number} t The absolute progress of the animation in the bound of 0 (beginning of the) and 1 (ending of animation)
+		 * @returns {Number} Result of easing out cubic at time t
+		 */
+		easeOutCubic = ( t ) => {
+
+			return 1 - Math.pow( 1 - t, 3 );
+
+		};
+
+		/**
+		 * Make rotation gizmos more or less visible
+		 * @param {Boolean} isActive If true, make gizmos more visible
+		 */
+		activateGizmos = ( isActive ) => {
+
+			const gizmoX = this._gizmos.children[ 0 ];
+			const gizmoY = this._gizmos.children[ 1 ];
+			const gizmoZ = this._gizmos.children[ 2 ];
+
+			if ( isActive ) {
+
+				gizmoX.material.setValues( { opacity: 1 } );
+				gizmoY.material.setValues( { opacity: 1 } );
+				gizmoZ.material.setValues( { opacity: 1 } );
+
+			} else {
+
+				gizmoX.material.setValues( { opacity: 0.6 } );
+				gizmoY.material.setValues( { opacity: 0.6 } );
+				gizmoZ.material.setValues( { opacity: 0.6 } );
+
+			}
+
+		};
+
+		/**
+		 * Calculate the cursor position in NDC
+		 * @param {number} x Cursor horizontal coordinate within the canvas
+		 * @param {number} y Cursor vertical coordinate within the canvas
+		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
+		 * @returns {Vector2} Cursor normalized position inside the canvas
+		 */
+		getCursorNDC = ( cursorX, cursorY, canvas ) => {
+
+			const canvasRect = canvas.getBoundingClientRect();
+			this._v2_1.setX( ( ( cursorX - canvasRect.left ) / canvasRect.width ) * 2 - 1 );
+			this._v2_1.setY( ( ( canvasRect.bottom - cursorY ) / canvasRect.height ) * 2 - 1 );
+			return this._v2_1.clone();
+
+		};
+
+		/**
+		 * Calculate the cursor position inside the canvas x/y coordinates with the origin being in the center of the canvas
+		 * @param {Number} x Cursor horizontal coordinate within the canvas
+		 * @param {Number} y Cursor vertical coordinate within the canvas
+		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
+		 * @returns {Vector2} Cursor position inside the canvas
+		 */
+		getCursorPosition = ( cursorX, cursorY, canvas ) => {
+
+			this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
+			this._v2_1.x *= ( this.camera.right - this.camera.left ) * 0.5;
+			this._v2_1.y *= ( this.camera.top - this.camera.bottom ) * 0.5;
+			return this._v2_1.clone();
+
+		};
+
+		/**
+		 * Set the camera to be controlled
+		 * @param {Camera} camera The virtual camera to be controlled
+		 */
+		setCamera = ( camera ) => {
+
+			camera.lookAt( this.target );
+			camera.updateMatrix();
+
+			//setting state
+			if ( camera.type == 'PerspectiveCamera' ) {
+
+				this._fov0 = camera.fov;
+				this._fovState = camera.fov;
+
+			}
+
+			this._cameraMatrixState0.copy( camera.matrix );
+			this._cameraMatrixState.copy( this._cameraMatrixState0 );
+			this._cameraProjectionState.copy( camera.projectionMatrix );
+			this._zoom0 = camera.zoom;
+			this._zoomState = this._zoom0;
+
+			this._initialNear = camera.near;
+			this._nearPos0 = camera.position.distanceTo( this.target ) - camera.near;
+			this._nearPos = this._initialNear;
+
+			this._initialFar = camera.far;
+			this._farPos0 = camera.position.distanceTo( this.target ) - camera.far;
+			this._farPos = this._initialFar;
+
+			this._up0.copy( camera.up );
+			this._upState.copy( camera.up );
+
+			this.camera = camera;
+			this.camera.updateProjectionMatrix();
+
+			//making gizmos
+			this._tbRadius = this.calculateTbRadius( camera );
+			this.makeGizmos( this.target, this._tbRadius );
+
+		};
+
+		/**
+		 * Set gizmos visibility
+		 * @param {Boolean} value Value of gizmos visibility
+		 */
+		setGizmosVisible( value ) {
+
+			this._gizmos.visible = value;
+			this.dispatchEvent( _changeEvent );
+
+		}
+
+		/**
+		 * Set gizmos radius factor and redraws gizmos
+		 * @param {Float} value Value of radius factor
+		 */
+		setTbRadius( value ) {
+
+			this.radiusFactor = value;
+			this._tbRadius = this.calculateTbRadius( this.camera );
+
+			const curve = new EllipseCurve( 0, 0, this._tbRadius, this._tbRadius );
+			const points = curve.getPoints( this._curvePts );
+			const curveGeometry = new BufferGeometry().setFromPoints( points );
+
+
+			for ( const gizmo in this._gizmos.children ) {
+
+				this._gizmos.children[ gizmo ].geometry = curveGeometry;
+
+			}
+
+			this.dispatchEvent( _changeEvent );
+
+		}
+
+		/**
+		 * Creates the rotation gizmos matching trackball center and radius
+		 * @param {Vector3} tbCenter The trackball center
+		 * @param {number} tbRadius The trackball radius
+		 */
+		makeGizmos = ( tbCenter, tbRadius ) => {
+
+			const curve = new EllipseCurve( 0, 0, tbRadius, tbRadius );
+			const points = curve.getPoints( this._curvePts );
+
+			//geometry
+			const curveGeometry = new BufferGeometry().setFromPoints( points );
+
+			//material
+			const curveMaterialX = new LineBasicMaterial( { color: 0xff8080, fog: false, transparent: true, opacity: 0.6 } );
+			const curveMaterialY = new LineBasicMaterial( { color: 0x80ff80, fog: false, transparent: true, opacity: 0.6 } );
+			const curveMaterialZ = new LineBasicMaterial( { color: 0x8080ff, fog: false, transparent: true, opacity: 0.6 } );
+
+			//line
+			const gizmoX = new Line( curveGeometry, curveMaterialX );
+			const gizmoY = new Line( curveGeometry, curveMaterialY );
+			const gizmoZ = new Line( curveGeometry, curveMaterialZ );
+
+			const rotation = Math.PI * 0.5;
+			gizmoX.rotation.x = rotation;
+			gizmoY.rotation.y = rotation;
+
+
+			//setting state
+			this._gizmoMatrixState0.identity().setPosition( tbCenter );
+			this._gizmoMatrixState.copy( this._gizmoMatrixState0 );
+
+			if ( this.camera.zoom != 1 ) {
+
+				//adapt gizmos size to camera zoom
+				const size = 1 / this.camera.zoom;
+				this._scaleMatrix.makeScale( size, size, size );
+				this._translationMatrix.makeTranslation( - tbCenter.x, - tbCenter.y, - tbCenter.z );
+
+				this._gizmoMatrixState.premultiply( this._translationMatrix ).premultiply( this._scaleMatrix );
+				this._translationMatrix.makeTranslation( tbCenter.x, tbCenter.y, tbCenter.z );
+				this._gizmoMatrixState.premultiply( this._translationMatrix );
+
+			}
+
+			this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+
+			this._gizmos.clear();
+
+			this._gizmos.add( gizmoX );
+			this._gizmos.add( gizmoY );
+			this._gizmos.add( gizmoZ );
+
+		};
+
+		/**
+		 * Perform animation for focus operation
+		 * @param {Number} time Instant in which this function is called as performance.now()
+		 * @param {Vector3} point Point of interest for focus operation
+		 * @param {Matrix4} cameraMatrix Camera matrix
+		 * @param {Matrix4} gizmoMatrix Gizmos matrix
+		 */
+		onFocusAnim = ( time, point, cameraMatrix, gizmoMatrix ) => {
+
+			if ( this._timeStart == - 1 ) {
+
+				//animation start
+				this._timeStart = time;
+
+			}
+
+			if ( this._state == STATE.ANIMATION_FOCUS ) {
+
+				const deltaTime = time - this._timeStart;
+				const animTime = deltaTime / this.focusAnimationTime;
+
+				this._gizmoMatrixState.copy( gizmoMatrix );
+
+				if ( animTime >= 1 ) {
+
+					//animation end
+
+					this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+
+					this.focus( point, this.scaleFactor );
+
+					this._timeStart = - 1;
+					this.updateTbState( STATE.IDLE, false );
+					this.activateGizmos( false );
+
+					this.dispatchEvent( _changeEvent );
+
+				} else {
+
+					const amount = this.easeOutCubic( animTime );
+					const size = ( ( 1 - amount ) + ( this.scaleFactor * amount ) );
+
+					this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+					this.focus( point, size, amount );
+
+					this.dispatchEvent( _changeEvent );
+					const self = this;
+					this._animationId = window.requestAnimationFrame( function ( t ) {
+
+						self.onFocusAnim( t, point, cameraMatrix, gizmoMatrix.clone() );
+
+					} );
+
+				}
+
+			} else {
+
+				//interrupt animation
+
+				this._animationId = - 1;
+				this._timeStart = - 1;
+
+			}
+
+		};
+
+		/**
+		 * Perform animation for rotation operation
+		 * @param {Number} time Instant in which this function is called as performance.now()
+		 * @param {Vector3} rotationAxis Rotation axis
+		 * @param {number} w0 Initial angular velocity
+		 */
+		onRotationAnim = ( time, rotationAxis, w0 ) => {
+
+			if ( this._timeStart == - 1 ) {
+
+				//animation start
+				this._anglePrev = 0;
+				this._angleCurrent = 0;
+				this._timeStart = time;
+
+			}
+
+			if ( this._state == STATE.ANIMATION_ROTATE ) {
+
+				//w = w0 + alpha * t
+				const deltaTime = ( time - this._timeStart ) / 1000;
+				const w = w0 + ( ( - this.dampingFactor ) * deltaTime );
+
+				if ( w > 0 ) {
+
+					//tetha = 0.5 * alpha * t^2 + w0 * t + tetha0
+					this._angleCurrent = 0.5 * ( - this.dampingFactor ) * Math.pow( deltaTime, 2 ) + w0 * deltaTime + 0;
+					this.applyTransformMatrix( this.rotate( rotationAxis, this._angleCurrent ) );
+					this.dispatchEvent( _changeEvent );
+					const self = this;
+					this._animationId = window.requestAnimationFrame( function ( t ) {
+
+						self.onRotationAnim( t, rotationAxis, w0 );
+
+					} );
+
+				} else {
+
+					this._animationId = - 1;
+					this._timeStart = - 1;
+
+					this.updateTbState( STATE.IDLE, false );
+					this.activateGizmos( false );
+
+					this.dispatchEvent( _changeEvent );
+
+				}
+
+			} else {
+
+				//interrupt animation
+
+				this._animationId = - 1;
+				this._timeStart = - 1;
+
+				if ( this._state != STATE.ROTATE ) {
+
+					this.activateGizmos( false );
+					this.dispatchEvent( _changeEvent );
+
+				}
+
+			}
+
+		};
+
+
+		/**
+		 * Perform pan operation moving camera between two points
+		 * @param {Vector3} p0 Initial point
+		 * @param {Vector3} p1 Ending point
+		 * @param {Boolean} adjust If movement should be adjusted considering camera distance (Perspective only)
+		 */
+		pan = ( p0, p1, adjust = false ) => {
+
+			const movement = p0.clone().sub( p1 );
+
+			if ( this.camera.isOrthographicCamera ) {
+
+				//adjust movement amount
+				movement.multiplyScalar( 1 / this.camera.zoom );
+
+			} else if ( this.camera.isPerspectiveCamera && adjust ) {
+
+				//adjust movement amount
+				this._v3_1.setFromMatrixPosition( this._cameraMatrixState0 );	//camera's initial position
+				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState0 );	//gizmo's initial position
+				const distanceFactor = this._v3_1.distanceTo( this._v3_2 ) / this.camera.position.distanceTo( this._gizmos.position );
+				movement.multiplyScalar( 1 / distanceFactor );
+
+			}
+
+			this._v3_1.set( movement.x, movement.y, 0 ).applyQuaternion( this.camera.quaternion );
+
+			this._m4_1.makeTranslation( this._v3_1.x, this._v3_1.y, this._v3_1.z );
+
+			this.setTransformationMatrices( this._m4_1, this._m4_1 );
+			return _transformation;
+
+		};
+
+		/**
+		 * Reset trackball
+		 */
+		reset = () => {
+
+			this.camera.zoom = this._zoom0;
+
+			if ( this.camera.isPerspectiveCamera ) {
+
+				this.camera.fov = this._fov0;
+
+			}
+
+			this.camera.near = this._nearPos;
+			this.camera.far = this._farPos;
+			this._cameraMatrixState.copy( this._cameraMatrixState0 );
+			this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+			this.camera.up.copy( this._up0 );
+
+			this.camera.updateMatrix();
+			this.camera.updateProjectionMatrix();
+
+			this._gizmoMatrixState.copy( this._gizmoMatrixState0 );
+			this._gizmoMatrixState0.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+			this._gizmos.updateMatrix();
+
+			this._tbRadius = this.calculateTbRadius( this.camera );
+			this.makeGizmos( this._gizmos.position, this._tbRadius );
+
+			this.camera.lookAt( this._gizmos.position );
+
+			this.updateTbState( STATE.IDLE, false );
+
+			this.dispatchEvent( _changeEvent );
+
+		};
+
+		/**
+		 * Rotate the camera around an axis passing by trackball's center
+		 * @param {Vector3} axis Rotation axis
+		 * @param {number} angle Angle in radians
+		 * @returns {Object} Object with 'camera' field containing transformation matrix resulting from the operation to be applied to the camera
+		 */
+		rotate = ( axis, angle ) => {
+
+			const point = this._gizmos.position; //rotation center
+			this._translationMatrix.makeTranslation( - point.x, - point.y, - point.z );
+			this._rotationMatrix.makeRotationAxis( axis, - angle );
+
+			//rotate camera
+			this._m4_1.makeTranslation( point.x, point.y, point.z );
+			this._m4_1.multiply( this._rotationMatrix );
+			this._m4_1.multiply( this._translationMatrix );
+
+			this.setTransformationMatrices( this._m4_1 );
+
+			return _transformation;
+
+		};
+
+		copyState = () => {
+
+			let state;
+			if ( this.camera.isOrthographicCamera ) {
+
+				state = JSON.stringify( { arcballState: {
+
+					cameraFar: this.camera.far,
+					cameraMatrix: this.camera.matrix,
+					cameraNear: this.camera.near,
+					cameraUp: this.camera.up,
+					cameraZoom: this.camera.zoom,
+					gizmoMatrix: this._gizmos.matrix
+
+				} } );
+
+			} else if ( this.camera.isPerspectiveCamera ) {
+
+				state = JSON.stringify( { arcballState: {
+					cameraFar: this.camera.far,
+					cameraFov: this.camera.fov,
+					cameraMatrix: this.camera.matrix,
+					cameraNear: this.camera.near,
+					cameraUp: this.camera.up,
+					cameraZoom: this.camera.zoom,
+					gizmoMatrix: this._gizmos.matrix
+
+				} } );
+
+			}
+
+			navigator.clipboard.writeText( state );
+
+		};
+
+		pasteState = () => {
+
+			const self = this;
+			navigator.clipboard.readText().then( function resolved( value ) {
+
+				self.setStateFromJSON( value );
+
+			} );
+
+		};
+
+		/**
+		 * Save the current state of the control. This can later be recover with .reset
+		 */
+		saveState = () => {
+
+			this._cameraMatrixState0.copy( this.camera.matrix );
+			this._gizmoMatrixState0.copy( this._gizmos.matrix );
+			this._nearPos = this.camera.near;
+			this._farPos = this.camera.far;
+			this._zoom0 = this.camera.zoom;
+			this._up0.copy( this.camera.up );
+
+			if ( this.camera.isPerspectiveCamera ) {
+
+				this._fov0 = this.camera.fov;
+
+			}
+
+		};
+
+		/**
+		 * Perform uniform scale operation around a given point
+		 * @param {Number} size Scale factor
+		 * @param {Vector3} point Point around which scale
+		 * @param {Boolean} scaleGizmos If gizmos should be scaled (Perspective only)
+		 * @returns {Object} Object with 'camera' and 'gizmo' fields containing transformation matrices resulting from the operation to be applied to the camera and gizmos
+		 */
+		scale = ( size, point, scaleGizmos = true ) => {
+
+			_scalePointTemp.copy( point );
+			let sizeInverse = 1 / size;
+
+			if ( this.camera.isOrthographicCamera ) {
+
+				//camera zoom
+				this.camera.zoom = this._zoomState;
+				this.camera.zoom *= size;
+
+				//check min and max zoom
+				if ( this.camera.zoom > this.maxZoom ) {
+
+					this.camera.zoom = this.maxZoom;
+					sizeInverse = this._zoomState / this.maxZoom;
+
+				} else if ( this.camera.zoom < this.minZoom ) {
+
+					this.camera.zoom = this.minZoom;
+					sizeInverse = this._zoomState / this.minZoom;
+
+				}
+
+				this.camera.updateProjectionMatrix();
+
+				this._v3_1.setFromMatrixPosition( this._gizmoMatrixState );	//gizmos position
+
+				//scale gizmos so they appear in the same spot having the same dimension
+				this._scaleMatrix.makeScale( sizeInverse, sizeInverse, sizeInverse );
+				this._translationMatrix.makeTranslation( - this._v3_1.x, - this._v3_1.y, - this._v3_1.z );
+
+				this._m4_2.makeTranslation( this._v3_1.x, this._v3_1.y, this._v3_1.z ).multiply( this._scaleMatrix );
+				this._m4_2.multiply( this._translationMatrix );
+
+
+				//move camera and gizmos to obtain pinch effect
+				_scalePointTemp.sub( this._v3_1 );
+
+				const amount = _scalePointTemp.clone().multiplyScalar( sizeInverse );
+				_scalePointTemp.sub( amount );
+
+				this._m4_1.makeTranslation( _scalePointTemp.x, _scalePointTemp.y, _scalePointTemp.z );
+				this._m4_2.premultiply( this._m4_1 );
+
+				this.setTransformationMatrices( this._m4_1, this._m4_2 );
+				return _transformation;
+
+			} else if ( this.camera.isPerspectiveCamera ) {
+
+				this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
+				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+
+				//move camera
+				let distance = this._v3_1.distanceTo( _scalePointTemp );
+				let amount = distance - ( distance * sizeInverse );
+
+				//check min and max distance
+				const newDistance = distance - amount;
+				if ( newDistance < this.minDistance ) {
+
+					sizeInverse = this.minDistance / distance;
+					amount = distance - ( distance * sizeInverse );
+
+				} else if ( newDistance > this.maxDistance ) {
+
+					sizeInverse = this.maxDistance / distance;
+					amount = distance - ( distance * sizeInverse );
+
+				}
+
+				_offset.copy( _scalePointTemp ).sub( this._v3_1 ).normalize().multiplyScalar( amount );
+
+				this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
+
+
+				if ( scaleGizmos ) {
+
+					//scale gizmos so they appear in the same spot having the same dimension
+					const pos = this._v3_2;
+
+					distance = pos.distanceTo( _scalePointTemp );
+					amount = distance - ( distance * sizeInverse );
+					_offset.copy( _scalePointTemp ).sub( this._v3_2 ).normalize().multiplyScalar( amount );
+
+					this._translationMatrix.makeTranslation( pos.x, pos.y, pos.z );
+					this._scaleMatrix.makeScale( sizeInverse, sizeInverse, sizeInverse );
+
+					this._m4_2.makeTranslation( _offset.x, _offset.y, _offset.z ).multiply( this._translationMatrix );
+					this._m4_2.multiply( this._scaleMatrix );
+
+					this._translationMatrix.makeTranslation( - pos.x, - pos.y, - pos.z );
+
+					this._m4_2.multiply( this._translationMatrix );
+					this.setTransformationMatrices( this._m4_1, this._m4_2 );
+
+
+				} else {
+
+					this.setTransformationMatrices( this._m4_1 );
+
+				}
+
+				return _transformation;
+
+			}
+
+		};
+
+		/**
+		 * Set camera fov
+		 * @param {Number} value fov to be setted
+		 */
+		setFov = ( value ) => {
+
+			if ( this.camera.isPerspectiveCamera ) {
+
+				this.camera.fov = MathUtils.clamp( value, this.minFov, this.maxFov );
+				this.camera.updateProjectionMatrix();
+
+			}
+
+		};
+
+		/**
+		 * Set values in transformation object
+		 * @param {Matrix4} camera Transformation to be applied to the camera
+		 * @param {Matrix4} gizmos Transformation to be applied to gizmos
+		 */
+		 setTransformationMatrices( camera = null, gizmos = null ) {
+
+			if ( camera != null ) {
+
+				if ( _transformation.camera != null ) {
+
+					_transformation.camera.copy( camera );
+
+				} else {
+
+					_transformation.camera = camera.clone();
+
+				}
+
+			} else {
+
+				_transformation.camera = null;
+
+			}
+
+			if ( gizmos != null ) {
+
+				if ( _transformation.gizmos != null ) {
+
+					_transformation.gizmos.copy( gizmos );
+
+				} else {
+
+					_transformation.gizmos = gizmos.clone();
+
+				}
+
+			} else {
+
+				_transformation.gizmos = null;
+
+			}
+
+		}
+
+		/**
+		 * Rotate camera around its direction axis passing by a given point by a given angle
+		 * @param {Vector3} point The point where the rotation axis is passing trough
+		 * @param {Number} angle Angle in radians
+		 * @returns The computed transormation matix
+		 */
+		zRotate = ( point, angle ) => {
+
+			this._rotationMatrix.makeRotationAxis( this._rotationAxis, angle );
+			this._translationMatrix.makeTranslation( - point.x, - point.y, - point.z );
+
+			this._m4_1.makeTranslation( point.x, point.y, point.z );
+			this._m4_1.multiply( this._rotationMatrix );
+			this._m4_1.multiply( this._translationMatrix );
+
+			this._v3_1.setFromMatrixPosition( this._gizmoMatrixState ).sub( point );	//vector from rotation center to gizmos position
+			this._v3_2.copy( this._v3_1 ).applyAxisAngle( this._rotationAxis, angle );	//apply rotation
+			this._v3_2.sub( this._v3_1 );
+
+			this._m4_2.makeTranslation( this._v3_2.x, this._v3_2.y, this._v3_2.z );
+
+			this.setTransformationMatrices( this._m4_1, this._m4_2 );
+			return _transformation;
+
+		};
+
+
+		getRaycaster() {
+
+			return _raycaster;
+
+		}
+
+
+		/**
+		 * Unproject the cursor on the 3D object surface
+		 * @param {Vector2} cursor Cursor coordinates in NDC
+		 * @param {Camera} camera Virtual camera
+		 * @returns {Vector3} The point of intersection with the model, if exist, null otherwise
+		 */
+		unprojectOnObj = ( cursor, camera ) => {
+
+			const raycaster = this.getRaycaster();
+			raycaster.near = camera.near;
+			raycaster.far = camera.far;
+			raycaster.setFromCamera( cursor, camera );
+
+			const intersect = raycaster.intersectObjects( this.scene.children, true );
+
+			for ( let i = 0; i < intersect.length; i ++ ) {
+
+				if ( intersect[ i ].object.uuid != this._gizmos.uuid && intersect[ i ].face != null ) {
+
+					return intersect[ i ].point.clone();
+
+				}
+
+			}
+
+			return null;
+
+		};
+
+		/**
+		 * Unproject the cursor on the trackball surface
+		 * @param {Camera} camera The virtual camera
+		 * @param {Number} cursorX Cursor horizontal coordinate on screen
+		 * @param {Number} cursorY Cursor vertical coordinate on screen
+		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
+		 * @param {number} tbRadius The trackball radius
+		 * @returns {Vector3} The unprojected point on the trackball surface
+		 */
+		unprojectOnTbSurface = ( camera, cursorX, cursorY, canvas, tbRadius ) => {
+
+			if ( camera.type == 'OrthographicCamera' ) {
+
+				this._v2_1.copy( this.getCursorPosition( cursorX, cursorY, canvas ) );
+				this._v3_1.set( this._v2_1.x, this._v2_1.y, 0 );
+
+				const x2 = Math.pow( this._v2_1.x, 2 );
+				const y2 = Math.pow( this._v2_1.y, 2 );
+				const r2 = Math.pow( this._tbRadius, 2 );
+
+				if ( x2 + y2 <= r2 * 0.5 ) {
+
+					//intersection with sphere
+					this._v3_1.setZ( Math.sqrt( r2 - ( x2 + y2 ) ) );
+
+				} else {
+
+					//intersection with hyperboloid
+					this._v3_1.setZ( ( r2 * 0.5 ) / ( Math.sqrt( x2 + y2 ) ) );
+
+				}
+
+				return this._v3_1;
+
+			} else if ( camera.type == 'PerspectiveCamera' ) {
+
+				//unproject cursor on the near plane
+				this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
+
+				this._v3_1.set( this._v2_1.x, this._v2_1.y, - 1 );
+				this._v3_1.applyMatrix4( camera.projectionMatrixInverse );
+
+				const rayDir = this._v3_1.clone().normalize(); //unprojected ray direction
+				const cameraGizmoDistance = camera.position.distanceTo( this._gizmos.position );
+				const radius2 = Math.pow( tbRadius, 2 );
+
+				//	  camera
+				//		|\
+				//		| \
+				//		|  \
+				//	h	|	\
+				//		| 	 \
+				//		| 	  \
+				//	_ _ | _ _ _\ _ _  near plane
+				//			l
+
+				const h = this._v3_1.z;
+				const l = Math.sqrt( Math.pow( this._v3_1.x, 2 ) + Math.pow( this._v3_1.y, 2 ) );
+
+				if ( l == 0 ) {
+
+					//ray aligned with camera
+					rayDir.set( this._v3_1.x, this._v3_1.y, tbRadius );
+					return rayDir;
+
+				}
+
+				const m = h / l;
+				const q = cameraGizmoDistance;
+
+				/*
+				 * calculate intersection point between unprojected ray and trackball surface
+				 *|y = m * x + q
+				 *|x^2 + y^2 = r^2
+				 *
+				 * (m^2 + 1) * x^2 + (2 * m * q) * x + q^2 - r^2 = 0
+				 */
+				let a = Math.pow( m, 2 ) + 1;
+				let b = 2 * m * q;
+				let c = Math.pow( q, 2 ) - radius2;
+				let delta = Math.pow( b, 2 ) - ( 4 * a * c );
+
+				if ( delta >= 0 ) {
+
+					//intersection with sphere
+					this._v2_1.setX( ( - b - Math.sqrt( delta ) ) / ( 2 * a ) );
+					this._v2_1.setY( m * this._v2_1.x + q );
+
+					const angle = MathUtils.RAD2DEG * this._v2_1.angle();
+
+					if ( angle >= 45 ) {
+
+						//if angle between intersection point and X' axis is >= 45°, return that point
+						//otherwise, calculate intersection point with hyperboloid
+
+						const rayLength = Math.sqrt( Math.pow( this._v2_1.x, 2 ) + Math.pow( ( cameraGizmoDistance - this._v2_1.y ), 2 ) );
+						rayDir.multiplyScalar( rayLength );
+						rayDir.z += cameraGizmoDistance;
+						return rayDir;
+
+					}
+
+				}
+
+				//intersection with hyperboloid
+				/*
+				 *|y = m * x + q
+				 *|y = (1 / x) * (r^2 / 2)
+				 *
+				 * m * x^2 + q * x - r^2 / 2 = 0
+				 */
+
+				a = m;
+				b = q;
+				c = - radius2 * 0.5;
+				delta = Math.pow( b, 2 ) - ( 4 * a * c );
+				this._v2_1.setX( ( - b - Math.sqrt( delta ) ) / ( 2 * a ) );
+				this._v2_1.setY( m * this._v2_1.x + q );
+
+				const rayLength = Math.sqrt( Math.pow( this._v2_1.x, 2 ) + Math.pow( ( cameraGizmoDistance - this._v2_1.y ), 2 ) );
+
+				rayDir.multiplyScalar( rayLength );
+				rayDir.z += cameraGizmoDistance;
+				return rayDir;
+
+			}
+
+		};
+
+
+		/**
+		 * Unproject the cursor on the plane passing through the center of the trackball orthogonal to the camera
+		 * @param {Camera} camera The virtual camera
+		 * @param {Number} cursorX Cursor horizontal coordinate on screen
+		 * @param {Number} cursorY Cursor vertical coordinate on screen
+		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
+		 * @param {Boolean} initialDistance If initial distance between camera and gizmos should be used for calculations instead of current (Perspective only)
+		 * @returns {Vector3} The unprojected point on the trackball plane
+		 */
+		unprojectOnTbPlane = ( camera, cursorX, cursorY, canvas, initialDistance = false ) => {
+
+			if ( camera.type == 'OrthographicCamera' ) {
+
+				this._v2_1.copy( this.getCursorPosition( cursorX, cursorY, canvas ) );
+				this._v3_1.set( this._v2_1.x, this._v2_1.y, 0 );
+
+				return this._v3_1.clone();
+
+			} else if ( camera.type == 'PerspectiveCamera' ) {
+
+				this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
+
+				//unproject cursor on the near plane
+				this._v3_1.set( this._v2_1.x, this._v2_1.y, - 1 );
+				this._v3_1.applyMatrix4( camera.projectionMatrixInverse );
+
+				const rayDir = this._v3_1.clone().normalize(); //unprojected ray direction
+
+				//	  camera
+				//		|\
+				//		| \
+				//		|  \
+				//	h	|	\
+				//		| 	 \
+				//		| 	  \
+				//	_ _ | _ _ _\ _ _  near plane
+				//			l
+
+				const h = this._v3_1.z;
+				const l = Math.sqrt( Math.pow( this._v3_1.x, 2 ) + Math.pow( this._v3_1.y, 2 ) );
+				let cameraGizmoDistance;
+
+				if ( initialDistance ) {
+
+					cameraGizmoDistance = this._v3_1.setFromMatrixPosition( this._cameraMatrixState0 ).distanceTo( this._v3_2.setFromMatrixPosition( this._gizmoMatrixState0 ) );
+
+				} else {
+
+					cameraGizmoDistance = camera.position.distanceTo( this._gizmos.position );
+
+				}
+
+				/*
+				 * calculate intersection point between unprojected ray and the plane
+				 *|y = mx + q
+				 *|y = 0
+				 *
+				 * x = -q/m
+				*/
+				if ( l == 0 ) {
+
+					//ray aligned with camera
+					rayDir.set( 0, 0, 0 );
+					return rayDir;
+
+				}
+
+				const m = h / l;
+				const q = cameraGizmoDistance;
+				const x = - q / m;
+
+				const rayLength = Math.sqrt( Math.pow( q, 2 ) + Math.pow( x, 2 ) );
+				rayDir.multiplyScalar( rayLength );
+				rayDir.z = 0;
+				return rayDir;
+
+			}
+
+		};
+
+		/**
+		 * Update camera and gizmos state
+		 */
+		updateMatrixState = () => {
+
+			//update camera and gizmos state
+			this._cameraMatrixState.copy( this.camera.matrix );
+			this._gizmoMatrixState.copy( this._gizmos.matrix );
+
+			if ( this.camera.isOrthographicCamera ) {
+
+				this._cameraProjectionState.copy( this.camera.projectionMatrix );
+				this.camera.updateProjectionMatrix();
+				this._zoomState = this.camera.zoom;
+
+			} else if ( this.camera.isPerspectiveCamera ) {
+
+				this._fovState = this.camera.fov;
+
+			}
+
+		};
+
+		/**
+		 * Update the trackball FSA
+		 * @param {STATE} newState New state of the FSA
+		 * @param {Boolean} updateMatrices If matriices state should be updated
+		 */
+		updateTbState = ( newState, updateMatrices ) => {
+
+			this._state = newState;
+			if ( updateMatrices ) {
+
+				this.updateMatrixState();
+
+			}
+
+		};
+
+		update = () => {
+
+			const EPS = 0.000001;
+
+			if ( this.target.equals( this._currentTarget ) === false ) {
+
+				this._gizmos.position.copy( this.target );	//for correct radius calculation
+				this._tbRadius = this.calculateTbRadius( this.camera );
+				this.makeGizmos( this.target, this._tbRadius );
+				this._currentTarget.copy( this.target );
+
+			}
+
+			//check min/max parameters
+			if ( this.camera.isOrthographicCamera ) {
+
+				//check zoom
+				if ( this.camera.zoom > this.maxZoom || this.camera.zoom < this.minZoom ) {
+
+					const newZoom = MathUtils.clamp( this.camera.zoom, this.minZoom, this.maxZoom );
+					this.applyTransformMatrix( this.scale( newZoom / this.camera.zoom, this._gizmos.position, true ) );
+
+				}
+
+			} else if ( this.camera.isPerspectiveCamera ) {
+
+				//check distance
+				const distance = this.camera.position.distanceTo( this._gizmos.position );
+
+				if ( distance > this.maxDistance + EPS || distance < this.minDistance - EPS ) {
+
+					const newDistance = MathUtils.clamp( distance, this.minDistance, this.maxDistance );
+					this.applyTransformMatrix( this.scale( newDistance / distance, this._gizmos.position ) );
+					this.updateMatrixState();
+
+				 }
+
+				//check fov
+				if ( this.camera.fov < this.minFov || this.camera.fov > this.maxFov ) {
+
+					this.camera.fov = MathUtils.clamp( this.camera.fov, this.minFov, this.maxFov );
+					this.camera.updateProjectionMatrix();
+
+				}
+
+				const oldRadius = this._tbRadius;
+				this._tbRadius = this.calculateTbRadius( this.camera );
+
+				if ( oldRadius < this._tbRadius - EPS || oldRadius > this._tbRadius + EPS ) {
+
+					const scale = ( this._gizmos.scale.x + this._gizmos.scale.y + this._gizmos.scale.z ) / 3;
+					const newRadius = this._tbRadius / scale;
+					const curve = new EllipseCurve( 0, 0, newRadius, newRadius );
+					const points = curve.getPoints( this._curvePts );
+					const curveGeometry = new BufferGeometry().setFromPoints( points );
+
+					for ( const gizmo in this._gizmos.children ) {
+
+						this._gizmos.children[ gizmo ].geometry = curveGeometry;
+
+					}
+
+				}
+
+			}
+
+			this.camera.lookAt( this._gizmos.position );
+
+		};
+
+		setStateFromJSON = ( json ) => {
+
+			const state = JSON.parse( json );
+
+			if ( state.arcballState != undefined ) {
+
+				this._cameraMatrixState.fromArray( state.arcballState.cameraMatrix.elements );
+				this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+
+				this.camera.up.copy( state.arcballState.cameraUp );
+				this.camera.near = state.arcballState.cameraNear;
+				this.camera.far = state.arcballState.cameraFar;
+
+				this.camera.zoom = state.arcballState.cameraZoom;
+
+				if ( this.camera.isPerspectiveCamera ) {
+
+					this.camera.fov = state.arcballState.cameraFov;
+
+				}
+
+				this._gizmoMatrixState.fromArray( state.arcballState.gizmoMatrix.elements );
+				this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+
+				this.camera.updateMatrix();
+				this.camera.updateProjectionMatrix();
+
+				this._gizmos.updateMatrix();
+
+				this._tbRadius = this.calculateTbRadius( this.camera );
+				const gizmoTmp = new Matrix4().copy( this._gizmoMatrixState0 );
+				this.makeGizmos( this._gizmos.position, this._tbRadius );
+				this._gizmoMatrixState0.copy( gizmoTmp );
+
+				this.camera.lookAt( this._gizmos.position );
+				this.updateTbState( STATE.IDLE, false );
+
+				this.dispatchEvent( _changeEvent );
+
+			}
+
+		};
 
 	}
 
@@ -33012,6 +35838,186 @@
 	  }
 	};
 
+	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
+
+	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat minmach = u_thresholds[253];\n\t\tfloat maxmach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, minmach,maxmach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], minmach,maxmach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
+
+	var ContouredMesh = function ContouredMesh(id, dataPromise, uniforms) {
+	  _classCallCheck(this, ContouredMesh);
+
+	  var obj = this;
+	  obj.config = {
+	    name: id,
+	    visible: true,
+	    remove: function remove() {}
+	  };
+	  /*
+	  The data promises should each return an array containing only hte relevant data. 
+	  dataPromise.then(a=>{
+	  	a[0] = vertices
+	  	a[1] = indices
+	  	a[2] = values
+	  })
+	  
+	  
+	  Uniforms are expected (by the shaders), to have the following form.
+	  
+	  const uniforms = {
+	  	u_colorbar: { type: "t", value: new THREE.CanvasTexture( colorbar.canvas ) },
+	  	u_thresholds: {value: initialThresholds },
+	  	u_n_thresholds: {value: n },
+	  	u_isolines_flag: {value: false },
+	  };
+	  */
+
+	  obj.created = dataPromise.then(function (a) {
+	    var distinctContouringMaterial = new ShaderMaterial({
+	      uniforms: uniforms,
+	      vertexShader: vertexShader,
+	      fragmentShader: fragmentShader,
+	      side: DoubleSide
+	    }); // distinctContouringMaterial
+	    // Create teh geometry basics.
+
+	    var geometry = new BufferGeometry();
+	    geometry.setAttribute('position', new BufferAttribute(a[0], 3));
+	    geometry.setIndex(new BufferAttribute(a[1], 1));
+	    geometry.computeVertexNormals(); // Add flow attributes.
+
+	    geometry.setAttribute('a_mach', new BufferAttribute(a[2], 1));
+	    var mesh = new Mesh(geometry, distinctContouringMaterial);
+	    mesh.name = "Colour contours"; // Add a wireframe on top.
+	    //var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
+	    //var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+	    //var wireframe = new THREE.LineSegments( geo, mat );
+	    //mesh.add( wireframe );
+
+	    return mesh;
+	  }); // Promise.all
+	} // constructor
+	; // ContouredMesh
+
+	var PointerRay = /*#__PURE__*/function () {
+	  // Geometry to add to scene
+	  // Property to keep track of all intersections, and the currently selected intersection.
+	  // PointerRay interactions should be disabled on long navigation itneractions.
+	  // Property to track time since pointerdown.
+	  function PointerRay(camera) {
+	    _classCallCheck(this, PointerRay);
+
+	    this.mouse = new Vector2();
+	    this.line = void 0;
+	    this.raycaster = void 0;
+	    this.intersects = [];
+	    this.intersection = {
+	      intersects: false,
+	      point: new Vector3(),
+	      normal: new Vector3()
+	    };
+	    this.enabled = true;
+	    this.pointerdownTime = void 0;
+	    this.longPressTimer = void 0;
+	    var obj = this; // Camera to use by the raycaster.
+
+	    obj.camera = camera;
+	    obj.raycaster = new Raycaster(); // The line doesn't seem to work if it is not initialised near the surface. Why??
+
+	    var geometry = new BufferGeometry();
+	    geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
+	    obj.line = new Line(geometry, new LineBasicMaterial()); // Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
+
+	    window.addEventListener('pointerdown', function (event) {
+	      obj.enabled = true;
+	      obj.pointerdownTime = performance.now();
+	      obj.longPressTimer = window.setTimeout(function () {
+	        if (obj.enabled) {
+	          obj.pointerdown(event);
+	        } // if	
+
+	      }, 1000);
+	    }); // pointerdown
+
+	    window.addEventListener('pointerup', function (event) {
+	      // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
+	      clearTimeout(obj.longPressTimer);
+	      var clickTime = performance.now() - obj.pointerdownTime; // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
+
+	      if (obj.enabled && clickTime < 200) {
+	        obj.pointerup(event);
+	      } // if
+
+	    }); // pointerup
+	    // For now just focus on adding the pointer helper.
+
+	    window.addEventListener('pointermove', function (event) {
+	      obj.pointermove(event);
+	    }); // onPointerMove
+	  } // constructor
+	  // Placeholder functions
+
+
+	  _createClass(PointerRay, [{
+	    key: "pointermove",
+	    value: function pointermove() {} // pointermove
+
+	  }, {
+	    key: "pointerup",
+	    value: function pointerup() {} // pointerup
+
+	  }, {
+	    key: "pointerdown",
+	    value: function pointerdown() {} // pointerdown
+	    // Helper functions.
+
+	  }, {
+	    key: "checkIntersection",
+	    value: function checkIntersection(x, y, candidates) {
+	      // This should be adjusted so that the array of items to check the intersect against can be specified.
+	      var obj = this;
+	      if (candidates.length < 1) return;
+	      obj.mouse.x = x / window.innerWidth * 2 - 1;
+	      obj.mouse.y = -(y / window.innerHeight) * 2 + 1;
+	      obj.raycaster.setFromCamera(obj.mouse, obj.camera);
+	      obj.raycaster.intersectObjects(candidates, false, obj.intersects);
+
+	      if (obj.intersects.length > 0) {
+	        // Intersect point is the first point of the aimer line.
+	        var closest = obj.intersects[0];
+	        var p = closest.point; // The normal gets transformed into the second point here.
+
+	        var n = closest.face.normal.clone();
+	        n.multiplyScalar(0.1);
+	        n.add(closest.point); // Set the aiming line vertices.
+
+	        var positions = obj.line.geometry.attributes.position;
+	        positions.setXYZ(0, p.x, p.y, p.z);
+	        positions.setXYZ(1, n.x, n.y, n.z);
+	        positions.needsUpdate = true; // Intersection stores the intersect information for easier use later on.
+
+	        obj.intersection.point.copy(p);
+	        obj.intersection.normal.copy(closest.face.normal);
+	        obj.intersection.intersects = true; // Clear the intersects array.
+
+	        obj.intersects.length = 0;
+	        return closest;
+	      } else {
+	        return false;
+	      } // if
+
+	    } // checkIntersection
+
+	  }, {
+	    key: "getLinePoint",
+	    value: function getLinePoint(i) {
+	      var obj = this;
+	      return new Vector3(obj.line.geometry.attributes.position.getX(i), obj.line.geometry.attributes.position.getY(i), obj.line.geometry.attributes.position.getZ(i));
+	    } // getLinePoint
+
+	  }]);
+
+	  return PointerRay;
+	}(); // PointerRay
+
 	/**
 	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
 	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
@@ -33359,52 +36365,90 @@
 
 	}
 
+	var textureLoader = new TextureLoader(); // Parameters from the UI - repackage into class?
+
+	var Decal = /*#__PURE__*/function () {
+	  // Each decal is expected to be placed only once.
+	  function Decal() {
+	    _classCallCheck(this, Decal);
+
+	    this.position = new Vector3();
+	    this.orientation = new Euler();
+	    this.scale = 10;
+	    this.size = new Vector3(10, 10, 10);
+	    var obj = this; // Create the raycaster.
+
+	    /*
+	    BEHAVIOR:
+	    - click and drag should support OrbitControls without pasting the decal.
+	    - so store moved as before, and only past on pointerup?
+	    */
+
+	    var decalDiffuse = textureLoader.load('assets/oil_flow_half.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
+	    // normalMap: decalNormal,
+
+	    var decalMaterial = new MeshBasicMaterial({
+	      map: decalDiffuse,
+	      alphaMap: decalDiffuse,
+	      transparent: true,
+	      depthTest: true,
+	      depthWrite: false,
+	      polygonOffset: true,
+	      polygonOffsetFactor: -4,
+	      wireframe: false
+	    });
+	    var placeholderGeometry = new BufferGeometry();
+	    obj.mesh = new Mesh(placeholderGeometry, decalMaterial);
+	  } // constructor
+
+
+	  _createClass(Decal, [{
+	    key: "transform",
+	    value: function transform() {
+	      // Add a new instance of hte decal of this type.
+	      var obj = this; // Reset the size in case scale changed.
+
+	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
+
+	      var cutout = new DecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	      obj.mesh.geometry.copy(cutout);
+	    } // transform
+
+	  }, {
+	    key: "highlight",
+	    value: function highlight() {
+	      // Highlight this particular decal.
+	      var obj = this;
+	      obj.decalmesh.material.emissive.setHex(0x000000);
+	    } // highlight
+
+	  }]);
+
+	  return Decal;
+	}(); // Decal
+
 	var gui; // Scene items
 
 	var camera, scene, renderer, controls;
-	var domainMidPoint = new Vector3(0.5, 100.5, 0);
-	var color = new Color();
+	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
+	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
+
+	new Color();
 	var colorbar = new ColorBar(0.14, 0.44);
-	colorbar.setColormap("rainbow", 200); // SETUP THE GEOMETRY AND INTERSECT ITEMS.
+	colorbar.colormap = "d3Spectral"; // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 
-	var mesh;
-	var raycaster;
-	var line; // MOUSE INTERACTION HELPERS
+	var raypointer; // DECAL HELPERS
 
-	var moved;
-	var selectedDecal;
-	var intersection = {
-	  intersects: false,
-	  point: new Vector3(),
-	  normal: new Vector3()
-	};
-	var mouse = new Vector2();
-	var intersects = []; // array that stores found intersects with mesh.
-	// Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
+	var decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
+	decalOrientationHelper.visible = false;
+	var decals = []; // different Decal instances
+
+	var decalGeometries = []; // Geometries that can have a decal added on them.
+
+	var selectedDecal; // Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
 	// Check first on-the-go interactions.
-
-	var textureLoader = new TextureLoader();
-	var decalDiffuse = textureLoader.load('assets/oil_flow_half.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-	// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
-	// normalMap: decalNormal,
-
-	var decalMaterial = new MeshPhongMaterial({
-	  specular: 0x444444,
-	  map: decalDiffuse,
-	  normalScale: new Vector2(1, 1),
-	  shininess: 30,
-	  transparent: true,
-	  depthTest: true,
-	  depthWrite: false,
-	  polygonOffset: true,
-	  polygonOffsetFactor: -4,
-	  wireframe: false
-	});
-	var decals = [];
-	var decalOrientationHelper;
-	var position = new Vector3();
-	var orientation = new Euler();
-	var size = new Vector3(10, 10, 10); // Parameters from the UI - repackage into class?
+	// Parameters from the UI - repackage into class?
 
 	var params = {
 	  minScale: 0.10,
@@ -33412,120 +36456,113 @@
 	  clear: function clear() {
 	    removeDecals();
 	  }
-	};
+	}; // Decal is added through the GUI.
+
+	var oilFlowDecal = new Decal();
+	decals.push(oilFlowDecal);
 	init();
 	animate();
 
 	function init() {
 	  // FOUNDATIONS
 	  setupScene();
-	  addOrbitControls(); // GEOMETRY
-	  // Data domain viewframe.
-	  // The box is positioned by its centerpoint.
-
-	  /*
-	  const box = new THREE.BoxGeometry( 1.4, 1, 2 );
-	  const object = new THREE.Mesh( box, new THREE.MeshBasicMaterial( { color: 0x0FC3D6, wireframe: true } ) );
-	  object.position.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-	  scene.add( object );
-	  */
-	  // Add in the wing.
+	  addArcballControls(); // Add in the wing.
 
 	  addWingGeometry(); // RAYCASTER
 
 	  addAimingRay(); // mouse helper helps orinetate the decal onto the suface.
 
-	  decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
-	  decalOrientationHelper.visible = false;
-	  scene.add(decalOrientationHelper); // Bringing this lookAt to the end fixed the camera misdirection initialisation.
-	  // With trackball controls lookAt no longer works.
+	  scene.add(decalOrientationHelper); // Add the decal mesh to the scene.
 
-	  adjustView([0.43, 99, 1.2]);
+	  scene.add(oilFlowDecal.mesh);
 	  window.addEventListener('resize', onWindowResize);
 	  setupHUD();
 	} // init
 	// INTERACTIVITY
 
 
-	function addDecal() {
-	  // Position, Orientation, and Scale
-	  position.copy(intersection.point);
-	  orientation.copy(decalOrientationHelper.rotation); // decalOrientationHelper!!!
-
-	  orientation.z = Math.random() * 2 * Math.PI;
-	  var scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
-	  size.set(scale, scale, scale); // limit clipping box, or adjust puchDecalVertex!!!!
-	  // Make the decal object.
-
-	  var cutout = new DecalGeometry(mesh, position, orientation, size);
-	  var material = decalMaterial.clone();
-	  material.color.setHex(Math.random() * 0xffffff);
-	  var decal = new Mesh(cutout, material); // Add additional information required within the userData.
-
-	  decal.userData = {
-	    position: position,
-	    orientation: orientation,
-	    scale: scale
-	  };
-	  decals.push(decal);
-	  scene.add(decal);
-	  console.log(decals);
-	} // addDecal
+	function positionDecal(target) {
+	  // Reposition the orientation helper. Or maybe this can be done in addDecal?
+	  decalOrientationHelper.position.copy(raypointer.getLinePoint(0));
+	  decalOrientationHelper.lookAt(raypointer.getLinePoint(1));
+	  decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+	  oilFlowDecal.support = target.object;
+	  oilFlowDecal.position.copy(decalOrientationHelper.position);
+	  oilFlowDecal.orientation.copy(decalOrientationHelper.rotation);
+	  oilFlowDecal.scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
+	  oilFlowDecal.transform();
+	  /*
+	  // The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
+	  
+	  for(let i=0; i<decals.length; i++){
+	  	if(decals[i].active){
+	  		decals[i].pasteOn(target);
+	  	} // if
+	  } // for
+	  */
+	} // positionDecal
 
 
 	function removeDecals() {
 	  decals.forEach(function (d) {
-	    scene.remove(d);
+	    scene.remove(d.mesh);
 	  }); // forEach
 
 	  decals.length = 0;
 	}
 
-	function transformDecal(decal) {
-	  // Ok - try recalculating the decal geometry: seems to be working decently for this demo.
-	  // The input is an object that contains the decal object, as well as the new position, orientation, and scale.
-	  size.set(decal.userData.scale, decal.userData.scale, decal.userData.scale);
-	  var cutout = new DecalGeometry(mesh, decal.userData.position, decal.userData.orientation, size);
-	  decal.geometry.copy(cutout);
-	} // transformDecal
+	function addAimingRay() {
+	  // Create the raycaster.
+
+	  /*
+	  BEHAVIOR:
+	  - click and drag should support OrbitControls without pasting the decal.
+	  - so store moved as before, and only past on pointerup?
+	  */
+	  raypointer = new PointerRay(camera);
+	  scene.add(raypointer.line); // Disable the pointer long press events if the user is navigating the domain.
+
+	  controls.addEventListener('change', function () {
+	    raypointer.enabled = false;
+	  }); // change
+
+	  console.log(raypointer);
+
+	  raypointer.pointerdown = function (event) {
+	    // How do we deselect a decal? Another longpress, or when another decal is selected.
+	    var decalMeshes = decals.map(function (d) {
+	      return d.mesh;
+	    });
+	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalMeshes);
+	    var targetDecal = decals[decalMeshes.indexOf(target.object)];
+
+	    if (target) {
+	      decals.forEach(function (decal) {
+	        decal.mesh.material.color.setHex(0xffffff);
+	      }); // forEach
+	      // If target object is the current selected decal, then it should be turned off.
+
+	      var active = selectedDecal ? selectedDecal.mesh === target.object : false;
+	      target.object.material.color.setHex(active ? 0xffffff : 0xff00ff);
+	      selectedDecal = active ? undefined : targetDecal;
+	    }
+	  }; // pointerdown
 
 
-	function checkIntersection(x, y, candidates) {
-	  // This should be adjusted so that the array of items to check the intersect against can be specified.
-	  if (candidates.length < 1) return;
-	  mouse.x = x / window.innerWidth * 2 - 1;
-	  mouse.y = -(y / window.innerHeight) * 2 + 1;
-	  raycaster.setFromCamera(mouse, camera);
-	  raycaster.intersectObjects(candidates, false, intersects);
+	  raypointer.pointerup = function (event) {
+	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
 
-	  if (intersects.length > 0) {
-	    // Intersect point is the first point of the aimer line.
-	    var i = intersects[0];
-	    var p = i.point; // The normal gets transformed into the second point here.
+	    if (target) {
+	      positionDecal(target);
+	    }
+	  }; // pointerup
 
-	    var n = intersects[0].face.normal.clone();
-	    n.multiplyScalar(0.1);
-	    n.add(intersects[0].point); // Set the aiming line vertices.
 
-	    var positions = line.geometry.attributes.position;
-	    positions.setXYZ(0, p.x, p.y, p.z);
-	    positions.setXYZ(1, n.x, n.y, n.z);
-	    positions.needsUpdate = true; // Intersection stores the intersect information for easier use later on.
+	  raypointer.pointermove = function (event) {
+	    raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
+	  }; // pointermove
 
-	    intersection.point.copy(p);
-	    intersection.normal.copy(intersects[0].face.normal);
-	    intersection.intersects = true; // Clear the intersects array.
-
-	    intersects.length = 0; // Reposition hte helper.
-
-	    decalOrientationHelper.position.copy(p);
-	    decalOrientationHelper.lookAt(n);
-	    return i;
-	  } else {
-	    intersection.intersects = false;
-	  } // if
-
-	} // checkIntersection
+	} // addAimingRay
 	// SCENE.
 
 
@@ -33562,22 +36599,8 @@
 	} // setupScene
 
 
-	function adjustView(position) {
-	  // Is it the controls target that sets the view??
-	  controls.enabled = false;
-	  camera.position.set(position[0], position[1], position[2]);
-	  camera.lookAt(controls.target);
-	  controls.enabled = true;
-	} // adjustView
-
-
 	function addWingGeometry() {
-	  var wingmaterial = new MeshBasicMaterial({
-	    color: 0x0FC3D6,
-	    vertexColors: true,
-	    side: DoubleSide
-	  }); // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
-
+	  // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 	  var verticesPromise = fetch("./assets/deltawing/wing/vertices.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
@@ -33590,103 +36613,50 @@
 	    return new Uint32Array(ab);
 	  }); // uint32
 
-	  var colorPromise = fetch("./assets/deltawing/wing/mach.bin").then(function (res) {
+	  var valuePromise = fetch("./assets/deltawing/wing/mach.bin").then(function (res) {
 	    return res.arrayBuffer();
 	  }).then(function (ab) {
 	    return new Float32Array(ab);
 	  }); // float32
 
-	  Promise.all([verticesPromise, indicesPromise, colorPromise]).then(function (a) {
-	    // Convert the Mach numbers into colors to be used by the GPU. Maybe this can be extended later to perform the assignmend to color on the GPU?
-	    var colors = [];
-	    a[2].forEach(function (v, i) {
-	      // Populate the colors. Maybe for now just create colors?
-	      color.set(colorbar.getColor(v));
-	      colors.push(color.r, color.g, color.b, 1);
-	    }); // forEach
-
-	    var geometry = new BufferGeometry();
-	    geometry.setAttribute('position', new BufferAttribute(a[0], 3));
-	    geometry.setAttribute('color', new Float32BufferAttribute(colors, 4, true));
-	    geometry.setIndex(new BufferAttribute(a[1], 1));
-	    geometry.computeVertexNormals();
-	    mesh = new Mesh(geometry, wingmaterial);
+	  var dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
+	  var m = new ContouredMesh("deltawing", dataPromise, colorbar.uniforms);
+	  m.created.then(function (mesh) {
+	    mesh.name = "Delta wing";
 	    scene.add(mesh);
-	  }); // Promise.all
+	    decalGeometries.push(mesh); // Subscribe the mesh material to the colorbar for future changes.
+
+	    function updateMeshColorbarTexture(mesh) {
+	      /* Uniforms controlled by the colorbar GUI:
+	      obj.uniforms = {
+	      	u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+	      	u_thresholds: {value: initialThresholds },
+	      	u_n_thresholds: {value: obj.n },
+	      	u_isolines_flag: {value: false },
+	      	u_contours_flag: {value: true }
+	      };
+	      */
+	      mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
+	    } // updateMeshColorbarTexture
+
+
+	    colorbar.subscribers.push([mesh, updateMeshColorbarTexture]);
+	    /*
+	    // Add GUI controllers.
+	    const guiconfig = m.config;
+	    const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(guiconfig.name , 27) );
+	    
+	    folder.add( guiconfig, "visible" ); 	   // boolean
+	    
+	    
+	    guiconfig.remove = function(){
+	    	folder.destroy();
+	    	sceneWebGL.remove( mesh );
+	    } // remove
+	    folder.add( guiconfig, "remove" );      // button
+	    */
+	  }); // then
 	} // addWingGeometry
-
-
-	function addAimingRay() {
-	  // Create the raycaster.
-
-	  /*
-	  BEHAVIOR:
-	  - click and drag should support OrbitControls without pasting the decal.
-	  - so store moved as before, and only past on pointerup?
-	  */
-	  // The line doesn't seem to work if it is not initialised near the surface. Why??
-	  var geometry = new BufferGeometry();
-	  geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
-	  line = new Line(geometry, new LineBasicMaterial());
-	  scene.add(line); // The raycaster theat finds surface point.
-
-	  raycaster = new Raycaster(); // Behavior. Change on CONTROLS, pointerdown, pointerup on window!
-
-	  controls.addEventListener('change', function () {
-	    moved = true;
-	  }); // change
-	  // Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
-
-	  var pointerdownTime;
-	  var longPressTimer;
-	  window.addEventListener('pointerdown', function (event) {
-	    moved = false;
-	    pointerdownTime = performance.now();
-	    longPressTimer = window.setTimeout(function () {
-	      if (!moved) {
-	        // How do we deselect a decal? Another longpress, or when another decal is selected.
-	        var decalIntersection = checkIntersection(event.clientX, event.clientY, decals);
-
-	        if (decalIntersection) {
-	          highlightDecals(decalIntersection.object);
-	        }
-	      } // if	
-
-	    }, 1000);
-	  }); // pointerdown
-
-	  window.addEventListener('pointerup', function (event) {
-	    // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
-	    clearTimeout(longPressTimer);
-	    var clickTime = performance.now() - pointerdownTime; // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
-
-	    if (moved === false && clickTime < 200) {
-	      checkIntersection(event.clientX, event.clientY, mesh === undefined ? [] : [mesh]);
-
-	      if (intersection.intersects) {
-	        addDecal();
-	      }
-	    } // if
-
-	  }); // pointerup
-	  // For now just focus on adding the pointer helper.
-
-	  window.addEventListener('pointermove', function (event) {
-	    checkIntersection(event.clientX, event.clientY, mesh === undefined ? [] : [mesh]);
-	  }); // onPointerMove
-	  // Maybe we could highlight the wireframe instead of the emmissivity?
-
-	  function highlightDecals(d) {
-	    decals.forEach(function (decal) {
-	      decal.material.emissive.setHex(0x000000);
-	    }); // forEach
-
-	    var active = selectedDecal === d;
-	    d.material.emissive.setHex(active ? 0x000000 : 0xff0000);
-	    selectedDecal = active ? undefined : d;
-	  } // highlightDecals
-
-	} // addAimingRay
 
 
 	function setupHUD() {
@@ -33702,8 +36672,8 @@
 
 	  gui.rotation.node.addEventListener("input", function (e) {
 	    if (selectedDecal) {
-	      selectedDecal.userData.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-	      transformDecal(selectedDecal);
+	      selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
+	      selectedDecal.transform();
 	    } // if
 
 	  }); // rotation.addEventListener
@@ -33713,8 +36683,8 @@
 	    The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
 	    */
 	    if (selectedDecal) {
-	      selectedDecal.userData.scale += gui.size.value / 10;
-	      transformDecal(selectedDecal);
+	      selectedDecal.scale += gui.size.value / 10;
+	      selectedDecal.transform();
 	    } // if
 
 	  }); // rotation.addEventListener
@@ -33722,7 +36692,7 @@
 
 	  gui.eraser.node.onclick = function () {
 	    if (selectedDecal) {
-	      scene.remove(selectedDecal);
+	      scene.remove(selectedDecal.mesh);
 	      decals.splice(decals.indexOf(selectedDecal), 1);
 	    } // if
 
@@ -33732,11 +36702,13 @@
 	// CONTROLS
 
 
-	function addOrbitControls() {
-	  controls = new OrbitControls(camera, renderer.domElement);
-	  controls.addEventListener('change', render);
-	  controls.target.set(domainMidPoint.x, domainMidPoint.y, domainMidPoint.z);
-	} // addOrbitControls
+	function addArcballControls() {
+	  controls = new ArcballControls(camera, renderer.domElement, scene);
+	  controls.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+
+	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
+	  controls.update();
+	} // addArcballControls
 
 
 	function onWindowResize() {
