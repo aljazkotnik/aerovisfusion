@@ -38412,8 +38412,7 @@
 	function init() {
 	  setupScene();
 	  addArcballControls();
-	  addTransformControls();
-	  console.log(transformcontrols); // For development
+	  addTransformControls(); // For development
 
 	  addWingGeometry();
 	  addStaticImage('./assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI / 2, 0, 0);

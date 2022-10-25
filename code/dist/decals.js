@@ -30237,197 +30237,6 @@
 
 	Light.prototype.isLight = true;
 
-	const _projScreenMatrix$1 = /*@__PURE__*/ new Matrix4();
-	const _lightPositionWorld$1 = /*@__PURE__*/ new Vector3();
-	const _lookTarget$1 = /*@__PURE__*/ new Vector3();
-
-	class LightShadow {
-
-		constructor( camera ) {
-
-			this.camera = camera;
-
-			this.bias = 0;
-			this.normalBias = 0;
-			this.radius = 1;
-			this.blurSamples = 8;
-
-			this.mapSize = new Vector2( 512, 512 );
-
-			this.map = null;
-			this.mapPass = null;
-			this.matrix = new Matrix4();
-
-			this.autoUpdate = true;
-			this.needsUpdate = false;
-
-			this._frustum = new Frustum();
-			this._frameExtents = new Vector2( 1, 1 );
-
-			this._viewportCount = 1;
-
-			this._viewports = [
-
-				new Vector4( 0, 0, 1, 1 )
-
-			];
-
-		}
-
-		getViewportCount() {
-
-			return this._viewportCount;
-
-		}
-
-		getFrustum() {
-
-			return this._frustum;
-
-		}
-
-		updateMatrices( light ) {
-
-			const shadowCamera = this.camera;
-			const shadowMatrix = this.matrix;
-
-			_lightPositionWorld$1.setFromMatrixPosition( light.matrixWorld );
-			shadowCamera.position.copy( _lightPositionWorld$1 );
-
-			_lookTarget$1.setFromMatrixPosition( light.target.matrixWorld );
-			shadowCamera.lookAt( _lookTarget$1 );
-			shadowCamera.updateMatrixWorld();
-
-			_projScreenMatrix$1.multiplyMatrices( shadowCamera.projectionMatrix, shadowCamera.matrixWorldInverse );
-			this._frustum.setFromProjectionMatrix( _projScreenMatrix$1 );
-
-			shadowMatrix.set(
-				0.5, 0.0, 0.0, 0.5,
-				0.0, 0.5, 0.0, 0.5,
-				0.0, 0.0, 0.5, 0.5,
-				0.0, 0.0, 0.0, 1.0
-			);
-
-			shadowMatrix.multiply( shadowCamera.projectionMatrix );
-			shadowMatrix.multiply( shadowCamera.matrixWorldInverse );
-
-		}
-
-		getViewport( viewportIndex ) {
-
-			return this._viewports[ viewportIndex ];
-
-		}
-
-		getFrameExtents() {
-
-			return this._frameExtents;
-
-		}
-
-		dispose() {
-
-			if ( this.map ) {
-
-				this.map.dispose();
-
-			}
-
-			if ( this.mapPass ) {
-
-				this.mapPass.dispose();
-
-			}
-
-		}
-
-		copy( source ) {
-
-			this.camera = source.camera.clone();
-
-			this.bias = source.bias;
-			this.radius = source.radius;
-
-			this.mapSize.copy( source.mapSize );
-
-			return this;
-
-		}
-
-		clone() {
-
-			return new this.constructor().copy( this );
-
-		}
-
-		toJSON() {
-
-			const object = {};
-
-			if ( this.bias !== 0 ) object.bias = this.bias;
-			if ( this.normalBias !== 0 ) object.normalBias = this.normalBias;
-			if ( this.radius !== 1 ) object.radius = this.radius;
-			if ( this.mapSize.x !== 512 || this.mapSize.y !== 512 ) object.mapSize = this.mapSize.toArray();
-
-			object.camera = this.camera.toJSON( false ).object;
-			delete object.camera.matrix;
-
-			return object;
-
-		}
-
-	}
-
-	class DirectionalLightShadow extends LightShadow {
-
-		constructor() {
-
-			super( new OrthographicCamera( - 5, 5, 5, - 5, 0.5, 500 ) );
-
-		}
-
-	}
-
-	DirectionalLightShadow.prototype.isDirectionalLightShadow = true;
-
-	class DirectionalLight extends Light {
-
-		constructor( color, intensity ) {
-
-			super( color, intensity );
-
-			this.type = 'DirectionalLight';
-
-			this.position.copy( Object3D.DefaultUp );
-			this.updateMatrix();
-
-			this.target = new Object3D();
-
-			this.shadow = new DirectionalLightShadow();
-
-		}
-
-		dispose() {
-
-			this.shadow.dispose();
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.target = source.target.clone();
-			this.shadow = source.shadow.clone();
-
-			return this;
-
-		}
-
-	}
-
-	DirectionalLight.prototype.isDirectionalLight = true;
-
 	class AmbientLight extends Light {
 
 		constructor( color, intensity ) {
@@ -36447,9 +36256,8 @@
 
 	var gui; // Scene items
 
-	var camera, scene, renderer, controls;
-	var viewvec = new Vector3();
-	console.log(viewvec);
+	var camera, arcballcontrols;
+	var sceneWebGL, rendererWebGL;
 	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
 	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
 
@@ -36457,7 +36265,7 @@
 	var colorbar = new ColorBar(0.14, 0.44);
 	colorbar.colormap = "d3Spectral"; // SETUP THE GEOMETRY AND INTERSECT ITEMS.
 
-	var raypointer; // DECAL HELPERS
+	var raypointer; // DECAL HELPERS - should respond to domain size?
 
 	var decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
 	decalOrientationHelper.visible = false;
@@ -36491,14 +36299,42 @@
 
 	  addAimingRay(); // mouse helper helps orinetate the decal onto the suface.
 
-	  scene.add(decalOrientationHelper); // Add the decal mesh to the scene.
+	  sceneWebGL.add(decalOrientationHelper); // Add the decal mesh to the scene.
 
-	  scene.add(oilFlowDecal.mesh);
-	  console.log(oilFlowDecal);
+	  sceneWebGL.add(oilFlowDecal.mesh);
 	  window.addEventListener('resize', onWindowResize);
 	  setupHUD();
 	} // init
-	// INTERACTIVITY
+	// SCENE.
+
+
+	function setupScene() {
+	  // CAMERA
+	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
+	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z); // SCENES
+
+	  sceneWebGL = new Scene();
+	  sceneWebGL.name = "sceneWebGL"; // LIGHTS - ambient light seems to be sufficient.
+
+	  var ambientLight = new AmbientLight(0xaaaaaa);
+	  sceneWebGL.add(ambientLight); // RENDERERS
+
+	  rendererWebGL = new WebGLRenderer({
+	    alpha: true,
+	    antialias: true
+	  });
+	  rendererWebGL.setClearColor(0x000000, 0);
+	  rendererWebGL.setPixelRatio(window.devicePixelRatio);
+	  rendererWebGL.setSize(window.innerWidth, window.innerHeight);
+	  rendererWebGL.shadowMap.enabled = true;
+	  rendererWebGL.shadowMap.type = PCFSoftShadowMap; // default THREE.PCFShadowMap
+
+	  rendererWebGL.domElement.style.zIndex = 1;
+	  rendererWebGL.name = "rendererWebGL"; // APPEND RENDERES
+
+	  document.getElementById('webgl').appendChild(rendererWebGL.domElement);
+	} // setupScene
+	// DECALS
 
 
 	function positionDecal(target) {
@@ -36525,7 +36361,7 @@
 
 	function removeDecals() {
 	  decals.forEach(function (d) {
-	    scene.remove(d.mesh);
+	    sceneWebGL.remove(d.mesh);
 	  }); // forEach
 
 	  decals.length = 0;
@@ -36540,9 +36376,9 @@
 	  - so store moved as before, and only past on pointerup?
 	  */
 	  raypointer = new PointerRay(camera);
-	  scene.add(raypointer.line); // Disable the pointer long press events if the user is navigating the domain.
+	  sceneWebGL.add(raypointer.line); // Disable the pointer long press events if the user is navigating the domain.
 
-	  controls.addEventListener('change', function () {
+	  arcballcontrols.addEventListener('change', function () {
 	    raypointer.enabled = false;
 	  }); // change
 
@@ -36583,40 +36419,7 @@
 	  }; // pointermove
 
 	} // addAimingRay
-	// SCENE.
-
-
-	function setupScene() {
-	  /* SCENE, CAMERA, and LIGHT setup.
-	  camera inputs: view angle, aspect ratio, near, far.
-	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	  */
-	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
-	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
-
-	  /*
-	  light = new THREE.DirectionalLight( 0xffffff, 1 );
-	  light.position.set( 1, 1, 1 ).normalize();
-	  scene.add( light );
-	  */
-	  // The lighting has a major impact on the decals!!
-
-	  scene.add(new AmbientLight(0xffffff));
-	  var dirLight1 = new DirectionalLight(0xffffff, 1);
-	  dirLight1.position.set(1, 0.75, 0.5);
-	  scene.add(dirLight1);
-	  var dirLight2 = new DirectionalLight(0xffffff, 1);
-	  dirLight2.position.set(-1, 0.75, -0.5);
-	  scene.add(dirLight2); // SETUP THE ACTUAL LOOP
-	  // renderer.domElement is created in renderer.
-
-	  renderer = new WebGLRenderer({
-	    antialias: true
-	  });
-	  renderer.setSize(window.innerWidth, window.innerHeight); // renderer.setAnimationLoop( animation );
-
-	  document.body.appendChild(renderer.domElement);
-	} // setupScene
+	// GEOMETRY
 
 
 	function addWingGeometry() {
@@ -36643,7 +36446,7 @@
 	  var m = new ContouredMesh("deltawing", dataPromise, colorbar.uniforms);
 	  m.created.then(function (mesh) {
 	    mesh.name = "Delta wing";
-	    scene.add(mesh);
+	    sceneWebGL.add(mesh);
 	    decalGeometries.push(mesh); // Subscribe the mesh material to the colorbar for future changes.
 
 	    function updateMeshColorbarTexture(mesh) {
@@ -36684,14 +36487,9 @@
 
 	function setupHUD() {
 	  gui = new InterfaceDecals();
-	  document.body.appendChild(gui.node);
-	  /* What should the hud DO?
-	  	for now try to see how on-the-go interactions would work: seems to be adequate.
-	  	
-	  	how could I select a decal to be adjusted? For annotations I can just click on them. Do I want to be able to put decals on-top of decals?
-	  	
-	  	
-	  */
+	  document.body.appendChild(gui.node); // What should the hud DO?
+	  //	for now try to see how on-the-go interactions would work: seems to be adequate.
+	  //	how could I select a decal to be adjusted? For annotations I can just click on them. //	 Do I want to be able to put decals on-top of decals?
 
 	  gui.rotation.node.addEventListener("input", function (e) {
 	    if (selectedDecal) {
@@ -36702,9 +36500,7 @@
 	  }); // rotation.addEventListener
 
 	  gui.size.node.addEventListener("input", function (e) {
-	    /*
-	    The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
-	    */
+	    // The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
 	    if (selectedDecal) {
 	      selectedDecal.scale += gui.size.value / 10;
 	      selectedDecal.transform();
@@ -36715,7 +36511,7 @@
 
 	  gui.eraser.node.onclick = function () {
 	    if (selectedDecal) {
-	      scene.remove(selectedDecal.mesh);
+	      sceneWebGL.remove(selectedDecal.mesh);
 	      decals.splice(decals.indexOf(selectedDecal), 1);
 	    } // if
 
@@ -36726,31 +36522,30 @@
 
 
 	function addArcballControls() {
-	  controls = new ArcballControls(camera, renderer.domElement, scene);
-	  controls.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+	  arcballcontrols = new ArcballControls(camera, document.getElementById('css'), sceneWebGL);
+	  arcballcontrols.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
-	  controls.update();
+	  arcballcontrols.update();
 	} // addArcballControls
 
 
 	function onWindowResize() {
 	  camera.aspect = window.innerWidth / window.innerHeight;
 	  camera.updateProjectionMatrix();
-	  renderer.setSize(window.innerWidth, window.innerHeight);
+	  rendererWebGL.setSize(window.innerWidth, window.innerHeight);
 	} // onWindowResize
 
 
 	function animate() {
 	  requestAnimationFrame(animate);
-	  controls.update();
 	  gui.stats.update();
 	  render();
 	} // animate
 
 
 	function render() {
-	  renderer.render(scene, camera);
+	  rendererWebGL.render(sceneWebGL, camera);
 	} // render
 
 }());

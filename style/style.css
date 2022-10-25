@@ -103,3 +103,38 @@ mark {
 	cursor: pointer;
 }
 
+
+
+
+/* STYLING OF ADDITIONAL HTML ELEMENTS */
+#css, #webgl {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0; left: 0;
+}
+
+#css {
+  background: black;
+}
+
+#webgl {
+  pointer-events: none;
+}
+
+#info {
+	color: LightGray;
+	position: absolute;
+	top: 0px;
+	width: 100%;
+	padding: 10px;
+	box-sizing: border-box;
+	text-align: center;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	z-index: 1; /* TODO Solve this in HTML */
+	display: none;
+}

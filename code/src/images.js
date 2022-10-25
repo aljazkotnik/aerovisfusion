@@ -109,11 +109,10 @@ animate();
 function init() {
 
 	setupScene();
-	
-	
 	addArcballControls();
 	addTransformControls();
-	console.log(transformcontrols)
+	
+	
 	
 	// For development
 	addWingGeometry();
@@ -349,11 +348,7 @@ function addArcballControls(){
 	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	arcballcontrols.update();
-	
-	
-	
-	
-	
+
 } // addArcballControls
 
 function addTransformControls(){
@@ -467,7 +462,6 @@ function animate() {
 	requestAnimationFrame( animate );
 	render();
 } // animate
-
 
 function render(){
 	
