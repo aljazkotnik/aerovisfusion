@@ -67,10 +67,12 @@ var stats;
 
 
 // Scene items
-var camera, arcballcontrols;
+var camera, arcballcontrols, transformcontrols;
 var sceneWebGL, rendererWebGL;
-var gui;
 
+
+// GUI items
+var gui;
 
 /*
 wing domain roughly = {
@@ -174,21 +176,25 @@ function addDecal(){
 	
 	// RAYCASTER
 	// addAimingRay();
-	const oilFlowDecal = new Decal( camera, decalGeometries );
-	oilFlowDecal.addTo( sceneWebGL )
+	const decalobj = new Decal( camera, decalGeometries );
+	decalobj.addTo( sceneWebGL )
 	
 	
 	// Disable the pointer long press events if the user is navigating the domain.
 	arcballcontrols.addEventListener( 'change', function (){
-	   oilFlowDecal.raypointer.enabled = false;
+	   decalobj.raypointer.enabled = false;
 	}); // change
 	
 	
 	// Add teh decal gui to the overall gui.
-	oilFlowDecal.addGUI(gui);
+	const guiItem = decalobj.addGUI(gui);
+	const tc = guiItem.children[0];
+	
+
+	
 	
 	// And append the nodal to the session.
-	document.body.appendChild( oilFlowDecal.editor.node );
+	document.body.appendChild( decalobj.editor.node );
 	
 } // addDecal
 
@@ -298,52 +304,6 @@ function setupHUD(){
 		container: container.querySelector("div.controls"),
 		title: "Overall GUI"
 	});
-	
-	
-
-	/*
-	gui = new InterfaceDecals();
-	document.body.appendChild( gui.node );
-	
-	
-	// What should the hud DO?
-	//	for now try to see how on-the-go interactions would work: seems to be adequate.
-		
-	//	how could I select a decal to be adjusted? For annotations I can just click on them. //	 Do I want to be able to put decals on-top of decals?
-	
-	
-	gui.rotation.node.addEventListener("input", function(e){
-	
-		if(selectedDecal){
-			selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-			selectedDecal.transform();
-		} // if
-	
-	}) // rotation.addEventListener
-	
-	
-	
-	
-	gui.size.node.addEventListener("input", function(e){
-		// The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
-		if(selectedDecal){			
-			selectedDecal.scale += gui.size.value/10;
-			selectedDecal.transform();
-		} // if
-	
-	}) // rotation.addEventListener
-	
-	
-	
-	// The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
-	gui.eraser.node.onclick = function(){
-		if(selectedDecal){
-			sceneWebGL.remove(selectedDecal.mesh);
-			decals.splice( decals.indexOf(selectedDecal), 1);
-		} // if
-	} // onclick
-	*/
-	
 	
 } // setupHUD
 

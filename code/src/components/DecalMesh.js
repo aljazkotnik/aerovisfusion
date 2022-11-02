@@ -26,6 +26,7 @@ export default class DecalMesh{
 	orientation = new THREE.Euler()
 	scale = 10;
 	size = new THREE.Vector3( 10, 10, 10 )
+	support = undefined;
 	
 	constructor(texture){
 		let obj = this;
@@ -61,9 +62,11 @@ export default class DecalMesh{
 		// Reset the size in case scale changed.
 		obj.size.set( obj.scale, obj.scale, obj.scale );
 
-		// Make the decal object.
-		const cutout = new CustomDecalGeometry( obj.support, obj.position, obj.orientation, obj.size );		
-		obj.mesh.geometry.copy(cutout);
+		// Make the decal object if a support geometry has been prescribed.
+		if(obj.support){
+			const cutout = new CustomDecalGeometry( obj.support, obj.position, obj.orientation, obj.size );		
+			obj.mesh.geometry.copy(cutout)
+		} // if
 		
 	} // transform
 	

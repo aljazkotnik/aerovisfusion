@@ -4,10 +4,9 @@ export default class DecalPointerRay extends PointerRay{
 	
 	selected = undefined
 	decals = []
-	geometries = []
 	
-	constructor(camera){
-		super(camera)
+	constructor(camera, geometries){
+		super(camera, geometries)
 		let obj = this;
 		
 		// To select either a geometry to place a decal on, or a decal itself, the arrays of options need to be defined.
@@ -35,11 +34,6 @@ export default class DecalPointerRay extends PointerRay{
 				obj.positionInteraction( target );
 			}; // if
 		} // pointerup
-		
-		obj.pointermove = function(event){
-			obj.checkIntersection( event.clientX, event.clientY, obj.geometries );
-		} // pointermove
-		
 		
 	} // constructor
 	

@@ -55,19 +55,18 @@ export default class Decal{
 		// DECAL MESH
 		// The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
 		// Rename to DecalTextureEditor?
-		obj.editor = new DecalTextureUI( 'assets/20220125_143807.jpg' );
+		obj.editor = new DecalTextureUI( 'assets/20220125_143807_gray.jpg' );
 		
 		
 		// Now make the mesh object itself.
-		obj.decal = new DecalMesh( obj.editor.texture );
+		obj.decal = new DecalMesh( obj.editor.texture, obj.editor.alphatexture );
 		
 		
 		
 		// RAYPOINTER
 		// The user interaction for the initial positioning.
-		obj.raypointer = new DecalPointerRay( camera );
+		obj.raypointer = new DecalPointerRay( camera, admissibleTargetGeometries );
 		obj.raypointer.decals = [obj.decal];
-		obj.raypointer.geometries = admissibleTargetGeometries;
 		obj.raypointer.positionInteraction = function(target){
 			obj.position(target);
 		} // positionInteraction
@@ -81,9 +80,11 @@ export default class Decal{
 		// Target is the output of raycaster.checkIntersection();
 		let obj = this;
 		
-		// Reposition the orientation helper. Or maybe this can be done in addDecal?
+		// Reposition the orientation helper. Keep the previous rotation setting!
+		const rotation = obj.orientationHelper.rotation.clone();
 		obj.orientationHelper.position.copy( obj.raypointer.getLinePoint(0) );
 		obj.orientationHelper.lookAt( obj.raypointer.getLinePoint(1) );
+		obj.orientationHelper.rotation.z = rotation.z;
 		
 		// obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
 		
@@ -100,16 +101,66 @@ export default class Decal{
 	
 	addGUI(gui){
 		// lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+		
+		// I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
 		let obj = this;
 		
 		const decalEditorItem = gui.addFolder("Decal XY");
 		
 		const decalEditorItemConfig = {
-			show: function(){obj.editor.show()}
+			editor: function(){obj.editor.show()},
+			unpaste: function(){obj.unpaste()},
+			rotation: 0,
+			size: 1
 		}
+		console.log( decalEditorItemConfig )
 		
-		decalEditorItem.add( decalEditorItemConfig , "show" )
+		const rc = decalEditorItem.add( decalEditorItemConfig , "rotation", -15, 15 )
+		const sc = decalEditorItem.add( decalEditorItemConfig , "size", 0.9, 1.1 )
+		decalEditorItem.add( decalEditorItemConfig , "editor" )
+		decalEditorItem.add( decalEditorItemConfig , "unpaste" )
+		
+		console.log(decalEditorItem, decalEditorItemConfig)
+		
+		
+		// Need to know the controller, config, property, callback
+		
+		function applyIncrementalBehavior(controller, config, property, callback){
+			let timer = undefined;
+			let rate = undefined;
+			function increment(v, callback){
+				if(rate == v){
+					callback(v);
+					timer = setTimeout(function(){increment(v, callback)},200)
+				} // if
+			} // increment
 			
+			controller.onChange(function(v){
+				clearTimeout(timer);
+				rate = v;
+				increment(v, callback)
+			}).onFinishChange(function(){
+				clearTimeout(timer);
+				rate = undefined;
+				config[property] = ( controller._max + controller._min ) / 2;
+				controller.updateDisplay();
+			}) // events
+		} // applyIncrementalBehavior
+		
+		
+		applyIncrementalBehavior(rc, decalEditorItemConfig, "rotation", function(phi){
+			obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
+			obj.decal.orientation.copy( obj.orientationHelper.rotation );
+			obj.decal.transform();
+		});
+		
+		applyIncrementalBehavior(sc, decalEditorItemConfig, "size", function(k){
+			obj.decal.scale *= k;
+			obj.decal.transform();
+		});
+		
+		
+		return decalEditorItem;
 	} // addGUI
 	
 	
@@ -123,11 +174,11 @@ export default class Decal{
 		
 	} // addTo
 	
-	unstick(){
+	unpaste(){
 		// In case the user wants to unstick the decal, they really only want to erase the buffer geometry.
 		let obj = this;
 		obj.decal.mesh.geometry.copy( new THREE.BufferGeometry() );
-	} // unstick
+	} // unpaste
 	
 	removeCompletely(sceneWebGL){
 		let obj = this;

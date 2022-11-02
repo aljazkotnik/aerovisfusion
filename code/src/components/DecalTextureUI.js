@@ -31,14 +31,16 @@ export default class DecalTextureUI{
 		
 		
 		// Create the canvas to draw and edit the texture on.
-		let canvas = obj.node.querySelector("canvas")
+		let canvas = obj.node.querySelector("canvas");
 		// document.createElement('canvas');
 		// obj.node.querySelector("div.editor").appendChild(canvas)
 		
+		
+		// create an additional alphamap texture.
 		obj.texture = new THREE.CanvasTexture(canvas);
-
 		obj.ctx = canvas.getContext('2d');
 		let ctx = obj.ctx;
+		
 		
 		// The canvas width and height should be determined based on hte image aspect ratio.
 		ctx.canvas.width = 512; // window.innerWidth;
@@ -64,19 +66,7 @@ export default class DecalTextureUI{
 		// Add in the GUI.
 		const guiconfig = {
 			preview: function(){
-				// Clear everything
-				ctx.reset();
-				ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-				
-				
-				/// draw the shape we want to use for clipping
-				obj.maskUI.drawClip();
-				
-				/// change composite mode to use that shape. Source-over is default
-				ctx.globalCompositeOperation = 'source-in';
-
-				/// draw the image to be clipped
-				obj.rawImage.draw();
+				obj.preview();
 			},
 			adjust: function(){
 				obj.render();
@@ -88,8 +78,8 @@ export default class DecalTextureUI{
 				
 				// Would be good if the user could select the center of the decal...
 				
-				// Calculate a grayscale version of hte image also to aid with the blending!
 				
+				// Make the main texture
 				guiconfig.preview();
 				obj.texture.needsUpdate = true;
 				obj.hide();
@@ -108,6 +98,25 @@ export default class DecalTextureUI{
 		
 		
 	} // constructor
+	
+	
+	preview(){
+		let obj = this;
+		let ctx = obj.ctx;
+		
+		// Clear everything
+		ctx.reset();
+		ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+		
+		/// draw the shape we want to use for clipping
+		obj.maskUI.drawClip();
+		
+		/// change composite mode to use that shape. Source-over is default
+		ctx.globalCompositeOperation = 'source-in';
+
+		/// draw the image to be clipped
+		obj.rawImage.draw();
+	} // preview
 	
 	
 	render(){
@@ -423,7 +432,6 @@ class MaskEditor{
 		} // for	
 		
 		obj.correctionflag = g;
-		console.log(g);
 		
 	} // applyGeometrySelection
 	

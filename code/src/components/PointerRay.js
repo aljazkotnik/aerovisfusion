@@ -4,6 +4,9 @@ export default class PointerRay{
 	
 	mouse = new THREE.Vector2()
 	
+	// Geometries to check intersection with.
+	geometries = [];
+	
 	// Geometry to add to scene
 	line
 	raycaster
@@ -23,12 +26,13 @@ export default class PointerRay{
 	pointerdownTime
 	longPressTimer
 	
-	constructor(camera){
+	constructor(camera, geometries){
 		let obj = this;
 		
 		
 		// Camera to use by the raycaster.
 		obj.camera = camera;
+		obj.geometries = geometries;
 		obj.raycaster = new THREE.Raycaster();
 
 
@@ -70,6 +74,7 @@ export default class PointerRay{
 
 		// For now just focus on adding the pointer helper.
 		window.addEventListener( 'pointermove', function (event){
+			obj.checkIntersection( event.clientX, event.clientY, obj.geometries );
 			obj.pointermove(event);
 		}); // onPointerMove
 	

@@ -35678,14 +35678,16 @@
 	; // ContouredMesh
 
 	var PointerRay = /*#__PURE__*/function () {
+	  // Geometries to check intersection with.
 	  // Geometry to add to scene
 	  // Property to keep track of all intersections, and the currently selected intersection.
 	  // PointerRay interactions should be disabled on long navigation itneractions.
 	  // Property to track time since pointerdown.
-	  function PointerRay(camera) {
+	  function PointerRay(camera, geometries) {
 	    _classCallCheck(this, PointerRay);
 
 	    this.mouse = new Vector2();
+	    this.geometries = [];
 	    this.line = void 0;
 	    this.raycaster = void 0;
 	    this.intersects = [];
@@ -35700,6 +35702,7 @@
 	    var obj = this; // Camera to use by the raycaster.
 
 	    obj.camera = camera;
+	    obj.geometries = geometries;
 	    obj.raycaster = new Raycaster(); // The line doesn't seem to work if it is not initialised near the surface. Why??
 
 	    var geometry = new BufferGeometry();
@@ -35730,6 +35733,7 @@
 	    // For now just focus on adding the pointer helper.
 
 	    window.addEventListener('pointermove', function (event) {
+	      obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
 	      obj.pointermove(event);
 	    }); // onPointerMove
 	  } // constructor
@@ -35803,15 +35807,14 @@
 
 	  var _super = _createSuper(DecalPointerRay);
 
-	  function DecalPointerRay(camera) {
+	  function DecalPointerRay(camera, geometries) {
 	    var _this;
 
 	    _classCallCheck(this, DecalPointerRay);
 
-	    _this = _super.call(this, camera);
+	    _this = _super.call(this, camera, geometries);
 	    _this.selected = undefined;
 	    _this.decals = [];
-	    _this.geometries = [];
 
 	    var obj = _assertThisInitialized(_this); // To select either a geometry to place a decal on, or a decal itself, the arrays of options need to be defined.
 
@@ -35844,11 +35847,6 @@
 	        obj.positionInteraction(target);
 	      }
 	    }; // pointerup
-
-
-	    obj.pointermove = function (event) {
-	      obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
-	    }; // pointermove
 
 
 	    return _this;
@@ -36159,6 +36157,7 @@
 	    this.orientation = new Euler();
 	    this.scale = 10;
 	    this.size = new Vector3(10, 10, 10);
+	    this.support = undefined;
 	    var obj = this; // const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
 	    // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
 	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
@@ -36185,10 +36184,13 @@
 	      // Add a new instance of hte decal of this type.
 	      var obj = this; // Reset the size in case scale changed.
 
-	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
+	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object if a support geometry has been prescribed.
 
-	      var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
-	      obj.mesh.geometry.copy(cutout);
+	      if (obj.support) {
+	        var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	        obj.mesh.geometry.copy(cutout);
+	      } // if
+
 	    } // transform
 
 	  }, {
@@ -36232,6 +36234,7 @@
 
 	    var canvas = obj.node.querySelector("canvas"); // document.createElement('canvas');
 	    // obj.node.querySelector("div.editor").appendChild(canvas)
+	    // create an additional alphamap texture.
 
 	    obj.texture = new CanvasTexture(canvas);
 	    obj.ctx = canvas.getContext('2d');
@@ -36262,15 +36265,7 @@
 
 	    var guiconfig = {
 	      preview: function preview() {
-	        // Clear everything
-	        ctx.reset();
-	        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); /// draw the shape we want to use for clipping
-
-	        obj.maskUI.drawClip(); /// change composite mode to use that shape. Source-over is default
-
-	        ctx.globalCompositeOperation = 'source-in'; /// draw the image to be clipped
-
-	        obj.rawImage.draw();
+	        obj.preview();
 	      },
 	      adjust: function adjust() {
 	        obj.render();
@@ -36279,7 +36274,7 @@
 	        // When submitting hte preview needs to be drawn, and then the manager needs to be hidden. But the preview twice still doesn't work...
 	        // Would be good to somehow enlarge the clipped are to make the whole canvas area available. Enlarging should be easy, it's more about positioning the clip over the image correctly...
 	        // Would be good if the user could select the center of the decal...
-	        // Calculate a grayscale version of hte image also to aid with the blending!
+	        // Make the main texture
 	        guiconfig.preview();
 	        obj.texture.needsUpdate = true;
 	        obj.hide();
@@ -36298,6 +36293,22 @@
 
 
 	  _createClass(DecalTextureUI, [{
+	    key: "preview",
+	    value: function preview() {
+	      var obj = this;
+	      var ctx = obj.ctx; // Clear everything
+
+	      ctx.reset();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); /// draw the shape we want to use for clipping
+
+	      obj.maskUI.drawClip(); /// change composite mode to use that shape. Source-over is default
+
+	      ctx.globalCompositeOperation = 'source-in'; /// draw the image to be clipped
+
+	      obj.rawImage.draw();
+	    } // preview
+
+	  }, {
 	    key: "render",
 	    value: function render() {
 	      var obj = this;
@@ -36605,7 +36616,6 @@
 
 
 	      obj.correctionflag = g;
-	      console.log(g);
 	    } // applyGeometrySelection
 
 	  }, {
@@ -36877,14 +36887,13 @@
 	    // The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
 	    // Rename to DecalTextureEditor?
 
-	    obj.editor = new DecalTextureUI('assets/20220125_143807.jpg'); // Now make the mesh object itself.
+	    obj.editor = new DecalTextureUI('assets/20220125_143807_gray.jpg'); // Now make the mesh object itself.
 
-	    obj.decal = new DecalMesh(obj.editor.texture); // RAYPOINTER
+	    obj.decal = new DecalMesh(obj.editor.texture, obj.editor.alphatexture); // RAYPOINTER
 	    // The user interaction for the initial positioning.
 
-	    obj.raypointer = new DecalPointerRay(camera);
+	    obj.raypointer = new DecalPointerRay(camera, admissibleTargetGeometries);
 	    obj.raypointer.decals = [obj.decal];
-	    obj.raypointer.geometries = admissibleTargetGeometries;
 
 	    obj.raypointer.positionInteraction = function (target) {
 	      obj.position(target);
@@ -36897,10 +36906,12 @@
 	    key: "position",
 	    value: function position(target) {
 	      // Target is the output of raycaster.checkIntersection();
-	      var obj = this; // Reposition the orientation helper. Or maybe this can be done in addDecal?
+	      var obj = this; // Reposition the orientation helper. Keep the previous rotation setting!
 
+	      var rotation = obj.orientationHelper.rotation.clone();
 	      obj.orientationHelper.position.copy(obj.raypointer.getLinePoint(0));
-	      obj.orientationHelper.lookAt(obj.raypointer.getLinePoint(1)); // obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+	      obj.orientationHelper.lookAt(obj.raypointer.getLinePoint(1));
+	      obj.orientationHelper.rotation.z = rotation.z; // obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
 
 	      obj.decal.support = target.object;
 	      obj.decal.position.copy(obj.orientationHelper.position);
@@ -36913,14 +36924,64 @@
 	    key: "addGUI",
 	    value: function addGUI(gui) {
 	      // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+	      // I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
 	      var obj = this;
 	      var decalEditorItem = gui.addFolder("Decal XY");
 	      var decalEditorItemConfig = {
-	        show: function show() {
+	        editor: function editor() {
 	          obj.editor.show();
-	        }
+	        },
+	        unpaste: function unpaste() {
+	          obj.unpaste();
+	        },
+	        rotation: 0,
+	        size: 1
 	      };
-	      decalEditorItem.add(decalEditorItemConfig, "show");
+	      console.log(decalEditorItemConfig);
+	      var rc = decalEditorItem.add(decalEditorItemConfig, "rotation", -15, 15);
+	      var sc = decalEditorItem.add(decalEditorItemConfig, "size", 0.9, 1.1);
+	      decalEditorItem.add(decalEditorItemConfig, "editor");
+	      decalEditorItem.add(decalEditorItemConfig, "unpaste");
+	      console.log(decalEditorItem, decalEditorItemConfig); // Need to know the controller, config, property, callback
+
+	      function applyIncrementalBehavior(controller, config, property, callback) {
+	        var timer = undefined;
+	        var rate = undefined;
+
+	        function increment(v, callback) {
+	          if (rate == v) {
+	            callback(v);
+	            timer = setTimeout(function () {
+	              increment(v, callback);
+	            }, 200);
+	          } // if
+
+	        } // increment
+
+
+	        controller.onChange(function (v) {
+	          clearTimeout(timer);
+	          rate = v;
+	          increment(v, callback);
+	        }).onFinishChange(function () {
+	          clearTimeout(timer);
+	          rate = undefined;
+	          config[property] = (controller._max + controller._min) / 2;
+	          controller.updateDisplay();
+	        }); // events
+	      } // applyIncrementalBehavior
+
+
+	      applyIncrementalBehavior(rc, decalEditorItemConfig, "rotation", function (phi) {
+	        obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
+	        obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	        obj.decal.transform();
+	      });
+	      applyIncrementalBehavior(sc, decalEditorItemConfig, "size", function (k) {
+	        obj.decal.scale *= k;
+	        obj.decal.transform();
+	      });
+	      return decalEditorItem;
 	    } // addGUI
 
 	  }, {
@@ -36934,12 +36995,12 @@
 	    } // addTo
 
 	  }, {
-	    key: "unstick",
-	    value: function unstick() {
+	    key: "unpaste",
+	    value: function unpaste() {
 	      // In case the user wants to unstick the decal, they really only want to erase the buffer geometry.
 	      var obj = this;
 	      obj.decal.mesh.geometry.copy(new BufferGeometry());
-	    } // unstick
+	    } // unpaste
 
 	  }, {
 	    key: "removeCompletely",
@@ -36958,7 +37019,8 @@
 	var stats; // Scene items
 
 	var camera, arcballcontrols;
-	var sceneWebGL, rendererWebGL;
+	var sceneWebGL, rendererWebGL; // GUI items
+
 	var gui;
 	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
 	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
@@ -37019,17 +37081,18 @@
 	function addDecal() {
 	  // RAYCASTER
 	  // addAimingRay();
-	  var oilFlowDecal = new Decal(camera, decalGeometries);
-	  oilFlowDecal.addTo(sceneWebGL); // Disable the pointer long press events if the user is navigating the domain.
+	  var decalobj = new Decal(camera, decalGeometries);
+	  decalobj.addTo(sceneWebGL); // Disable the pointer long press events if the user is navigating the domain.
 
 	  arcballcontrols.addEventListener('change', function () {
-	    oilFlowDecal.raypointer.enabled = false;
+	    decalobj.raypointer.enabled = false;
 	  }); // change
 	  // Add teh decal gui to the overall gui.
 
-	  oilFlowDecal.addGUI(gui); // And append the nodal to the session.
+	  var guiItem = decalobj.addGUI(gui);
+	  guiItem.children[0]; // And append the nodal to the session.
 
-	  document.body.appendChild(oilFlowDecal.editor.node);
+	  document.body.appendChild(decalobj.editor.node);
 	} // addDecal
 	// GEOMETRY
 
@@ -37112,48 +37175,6 @@
 	    container: container.querySelector("div.controls"),
 	    title: "Overall GUI"
 	  });
-	  /*
-	  gui = new InterfaceDecals();
-	  document.body.appendChild( gui.node );
-	  
-	  
-	  // What should the hud DO?
-	  //	for now try to see how on-the-go interactions would work: seems to be adequate.
-	  	
-	  //	how could I select a decal to be adjusted? For annotations I can just click on them. //	 Do I want to be able to put decals on-top of decals?
-	  
-	  
-	  gui.rotation.node.addEventListener("input", function(e){
-	  
-	  	if(selectedDecal){
-	  		selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-	  		selectedDecal.transform();
-	  	} // if
-	  
-	  }) // rotation.addEventListener
-	  
-	  
-	  
-	  
-	  gui.size.node.addEventListener("input", function(e){
-	  	// The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
-	  	if(selectedDecal){			
-	  		selectedDecal.scale += gui.size.value/10;
-	  		selectedDecal.transform();
-	  	} // if
-	  
-	  }) // rotation.addEventListener
-	  
-	  
-	  
-	  // The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
-	  gui.eraser.node.onclick = function(){
-	  	if(selectedDecal){
-	  		sceneWebGL.remove(selectedDecal.mesh);
-	  		decals.splice( decals.indexOf(selectedDecal), 1);
-	  	} // if
-	  } // onclick
-	  */
 	} // setupHUD
 	// CONTROLS
 
