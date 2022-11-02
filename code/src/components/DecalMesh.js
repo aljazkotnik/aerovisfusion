@@ -17,16 +17,6 @@ import * as THREE from "three";
 import CustomDecalGeometry from "./CustomDecalGeometry.js";
 
 
-import DecalTextureUI from "./DecalTextureUI.js"
-
-const textureLoader = new THREE.TextureLoader();
-
-
-
-
-
-
-
 
 // This will be an instance of a decal, and many decals of the same type will be able to be added.
 export default class DecalMesh{
@@ -37,19 +27,8 @@ export default class DecalMesh{
 	scale = 10;
 	size = new THREE.Vector3( 10, 10, 10 )
 	
-	constructor(){
+	constructor(texture){
 		let obj = this;
-		
-		
-		// Create the raycaster.
-		/*
-		BEHAVIOR:
-		- click and drag should support OrbitControls without pasting the decal.
-		- so store moved as before, and only past on pointerup?
-		*/
-		obj.ui = new DecalTextureUI( 'assets/20220125_143807.jpg' );
-		const decalDiffuse = obj.ui.texture;
-		
 		
 		// const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
 		// const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
@@ -57,8 +36,8 @@ export default class DecalMesh{
 
 		// normalMap: decalNormal,
 		const decalMaterial = new THREE.MeshBasicMaterial( {
-			map: decalDiffuse,
-			alphaMap: decalDiffuse,
+			map: texture,
+			alphaMap: texture,
 			transparent: true,
 			depthTest: true,
 			depthWrite: false,
@@ -93,13 +72,16 @@ export default class DecalMesh{
 	
 	
 	
-	highlight(){
-		// Highlight this particular decal.
+	highlight(active){
+		// Highlight this particular decal based on a flag passed in.
 		let obj = this;
-		obj.mesh.material.emissive.setHex(0x000000);
+		obj.mesh.material.color.setHex( active ? 0xff00ff : 0xffffff);
 	} // highlight
 	
-	
+	unhighlight(){
+		let obj = this;
+		obj.mesh.material.color.setHex(0xffffff);
+	} // unhighlight
 	
 	
 } // DecalMesh

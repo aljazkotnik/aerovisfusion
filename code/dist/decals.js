@@ -35798,6 +35798,73 @@
 	  return PointerRay;
 	}(); // PointerRay
 
+	var DecalPointerRay = /*#__PURE__*/function (_PointerRay) {
+	  _inherits(DecalPointerRay, _PointerRay);
+
+	  var _super = _createSuper(DecalPointerRay);
+
+	  function DecalPointerRay(camera) {
+	    var _this;
+
+	    _classCallCheck(this, DecalPointerRay);
+
+	    _this = _super.call(this, camera);
+	    _this.selected = undefined;
+	    _this.decals = [];
+	    _this.geometries = [];
+
+	    var obj = _assertThisInitialized(_this); // To select either a geometry to place a decal on, or a decal itself, the arrays of options need to be defined.
+
+
+	    obj.pointerdown = function (event) {
+	      // How do we deselect a decal? Another longpress, or when another decal is selected.
+	      var decalMeshes = obj.decals.map(function (d) {
+	        return d.mesh;
+	      });
+	      var target = obj.checkIntersection(event.clientX, event.clientY, decalMeshes);
+	      var targetDecal = obj.decals[decalMeshes.indexOf(target.object)];
+
+	      if (target) {
+	        obj.decals.forEach(function (decal) {
+	          decal.unhighlight();
+	        }); // forEach
+	        // If target object is the current selected decal, then it should be turned off.
+
+	        var active = obj.selected ? obj.selected.mesh != target.object : true;
+	        targetDecal.highlight(active);
+	        obj.selected = active ? targetDecal : undefined;
+	      }
+	    }; // pointerdown
+
+
+	    obj.pointerup = function (event) {
+	      var target = obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
+
+	      if (target) {
+	        obj.positionInteraction(target);
+	      }
+	    }; // pointerup
+
+
+	    obj.pointermove = function (event) {
+	      obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
+	    }; // pointermove
+
+
+	    return _this;
+	  } // constructor
+
+
+	  _createClass(DecalPointerRay, [{
+	    key: "positionInteraction",
+	    value: function positionInteraction(target) {// Dummy function
+	    } // positionInteraction
+
+	  }]);
+
+	  return DecalPointerRay;
+	}(PointerRay); // DecalPointerRay
+
 	/**
 	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
 	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
@@ -36082,6 +36149,67 @@
 
 	  return DecalVertex;
 	}();
+
+	var DecalMesh = /*#__PURE__*/function () {
+	  // Each decal is expected to be placed only once.
+	  function DecalMesh(texture) {
+	    _classCallCheck(this, DecalMesh);
+
+	    this.position = new Vector3();
+	    this.orientation = new Euler();
+	    this.scale = 10;
+	    this.size = new Vector3(10, 10, 10);
+	    var obj = this; // const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
+	    // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
+	    // normalMap: decalNormal,
+
+	    var decalMaterial = new MeshBasicMaterial({
+	      map: texture,
+	      alphaMap: texture,
+	      transparent: true,
+	      depthTest: true,
+	      depthWrite: false,
+	      polygonOffset: true,
+	      polygonOffsetFactor: -4,
+	      wireframe: false
+	    });
+	    var placeholderGeometry = new BufferGeometry();
+	    obj.mesh = new Mesh(placeholderGeometry, decalMaterial);
+	  } // constructor
+
+
+	  _createClass(DecalMesh, [{
+	    key: "transform",
+	    value: function transform() {
+	      // Add a new instance of hte decal of this type.
+	      var obj = this; // Reset the size in case scale changed.
+
+	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
+
+	      var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	      obj.mesh.geometry.copy(cutout);
+	    } // transform
+
+	  }, {
+	    key: "highlight",
+	    value: function highlight(active) {
+	      // Highlight this particular decal based on a flag passed in.
+	      var obj = this;
+	      obj.mesh.material.color.setHex(active ? 0xff00ff : 0xffffff);
+	    } // highlight
+
+	  }, {
+	    key: "unhighlight",
+	    value: function unhighlight() {
+	      var obj = this;
+	      obj.mesh.material.color.setHex(0xffffff);
+	    } // unhighlight
+
+	  }]);
+
+	  return DecalMesh;
+	}(); // DecalMesh
 
 	/**
 	 * lil-gui
@@ -36725,117 +36853,135 @@
 
 	} // checkIntersect
 
-	new TextureLoader(); // This will be an instance of a decal, and many decals of the same type will be able to be added.
-
-	var DecalMesh = /*#__PURE__*/function () {
-	  // Each decal is expected to be placed only once.
-	  function DecalMesh() {
-	    _classCallCheck(this, DecalMesh);
-
-	    this.position = new Vector3();
-	    this.orientation = new Euler();
-	    this.scale = 10;
-	    this.size = new Vector3(10, 10, 10);
-	    var obj = this; // Create the raycaster.
-
-	    /*
-	    BEHAVIOR:
-	    - click and drag should support OrbitControls without pasting the decal.
-	    - so store moved as before, and only past on pointerup?
-	    */
-
-	    obj.ui = new DecalTextureUI('assets/20220125_143807.jpg');
-	    var decalDiffuse = obj.ui.texture; // const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
-	    // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
-	    // normalMap: decalNormal,
-
-	    var decalMaterial = new MeshBasicMaterial({
-	      map: decalDiffuse,
-	      alphaMap: decalDiffuse,
-	      transparent: true,
-	      depthTest: true,
-	      depthWrite: false,
-	      polygonOffset: true,
-	      polygonOffsetFactor: -4,
-	      wireframe: false
-	    });
-	    var placeholderGeometry = new BufferGeometry();
-	    obj.mesh = new Mesh(placeholderGeometry, decalMaterial);
-	  } // constructor
-
-
-	  _createClass(DecalMesh, [{
-	    key: "transform",
-	    value: function transform() {
-	      // Add a new instance of hte decal of this type.
-	      var obj = this; // Reset the size in case scale changed.
-
-	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
-
-	      var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
-	      obj.mesh.geometry.copy(cutout);
-	    } // transform
-
-	  }, {
-	    key: "highlight",
-	    value: function highlight() {
-	      // Highlight this particular decal.
-	      var obj = this;
-	      obj.mesh.material.emissive.setHex(0x000000);
-	    } // highlight
-
-	  }]);
-
-	  return DecalMesh;
-	}(); // DecalMesh
-
-	var stats; // Scene items
-
-	var camera, arcballcontrols;
-	var sceneWebGL, rendererWebGL;
-	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
-	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
-
-	new Color();
-	var colorbar = new ColorBar(0.14, 0.44);
-	colorbar.colormap = "d3Spectral"; // SETUP THE GEOMETRY AND INTERSECT ITEMS.
-
-	var raypointer; // DECAL HELPERS - should respond to domain size?
-
-	var decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
-	decalOrientationHelper.visible = false;
-	var decals = []; // different Decal instances
-
-	var decalGeometries = []; // Geometries that can have a decal added on them.
-
-	var selectedDecal; // Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
-	// Check first on-the-go interactions.
-	// Parameters from the UI - repackage into class?
-
 	var params = {
 	  minScale: 0.10,
 	  maxScale: 0.20,
 	  clear: function clear() {
 	    removeDecals();
 	  }
-	}; // Decal should be added through the GUI.
+	};
+	/*
+	One main idea is that the decal is added to the scene immediately upon creation. The pointer interaction merely selects a new position for the decal to be added to, and the buffer is only updated in the background.
+	*/
 
-	var oilFlowDecal = new DecalMesh();
-	decals.push(oilFlowDecal);
+	var Decal = /*#__PURE__*/function () {
+	  function Decal(camera, admissibleTargetGeometries) {
+	    _classCallCheck(this, Decal); // Camera is required to work with the raypointer.
+
+
+	    var obj = this; // DECAL HELPER
+	    // Help position the decal. Should respond to domain size?
+
+	    obj.orientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
+	    obj.orientationHelper.visible = false; // DECAL MESH
+	    // The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
+	    // Rename to DecalTextureEditor?
+
+	    obj.editor = new DecalTextureUI('assets/20220125_143807.jpg'); // Now make the mesh object itself.
+
+	    obj.decal = new DecalMesh(obj.editor.texture); // RAYPOINTER
+	    // The user interaction for the initial positioning.
+
+	    obj.raypointer = new DecalPointerRay(camera);
+	    obj.raypointer.decals = [obj.decal];
+	    obj.raypointer.geometries = admissibleTargetGeometries;
+
+	    obj.raypointer.positionInteraction = function (target) {
+	      obj.position(target);
+	    }; // positionInteraction
+
+	  } // constructor
+
+
+	  _createClass(Decal, [{
+	    key: "position",
+	    value: function position(target) {
+	      // Target is the output of raycaster.checkIntersection();
+	      var obj = this; // Reposition the orientation helper. Or maybe this can be done in addDecal?
+
+	      obj.orientationHelper.position.copy(obj.raypointer.getLinePoint(0));
+	      obj.orientationHelper.lookAt(obj.raypointer.getLinePoint(1)); // obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+
+	      obj.decal.support = target.object;
+	      obj.decal.position.copy(obj.orientationHelper.position);
+	      obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	      obj.decal.scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
+	      obj.decal.transform();
+	    } // position
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(gui) {
+	      // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+	      var obj = this;
+	      var decalEditorItem = gui.addFolder("Decal XY");
+	      var decalEditorItemConfig = {
+	        show: function show() {
+	          obj.editor.show();
+	        }
+	      };
+	      decalEditorItem.add(decalEditorItemConfig, "show");
+	    } // addGUI
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      // Helper to add this decal with all its ancilliary geometries to the scene.
+	      var obj = this;
+	      sceneWebGL.add(obj.orientationHelper);
+	      sceneWebGL.add(obj.raypointer.line);
+	      sceneWebGL.add(obj.decal.mesh);
+	    } // addTo
+
+	  }, {
+	    key: "unstick",
+	    value: function unstick() {
+	      // In case the user wants to unstick the decal, they really only want to erase the buffer geometry.
+	      var obj = this;
+	      obj.decal.mesh.geometry.copy(new BufferGeometry());
+	    } // unstick
+
+	  }, {
+	    key: "removeCompletely",
+	    value: function removeCompletely(sceneWebGL) {
+	      var obj = this; // Note that this removes everything, but maybe what the user wanted was to just remove the mesh.
+
+	      sceneWebGL.remove(obj.orientationHelper);
+	      sceneWebGL.remove(obj.raypointer.line);
+	      sceneWebGL.remove(obj.decal.mesh);
+	    }
+	  }]);
+
+	  return Decal;
+	}(); // Decal
+
+	var stats; // Scene items
+
+	var camera, arcballcontrols;
+	var sceneWebGL, rendererWebGL;
+	var gui;
+	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
+	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
+
+	new Color();
+	var colorbar = new ColorBar(0.14, 0.44);
+	colorbar.colormap = "d3Spectral"; // Some helpers for decals.
+
+	var decalGeometries = []; // Geometries that can have a decal added on them.
+
 	init();
 	animate();
 
 	function init() {
 	  // FOUNDATIONS
 	  setupScene();
-	  addArcballControls(); // Add in the wing.
+	  addArcballControls();
+	  setupHUD(); // Add in the wing.
 
 	  addWingGeometry(); // Add in a decal
 
 	  addDecal();
 	  window.addEventListener('resize', onWindowResize);
-	  setupHUD();
 	} // init
 	// SCENE.
 
@@ -36872,94 +37018,19 @@
 
 	function addDecal() {
 	  // RAYCASTER
-	  addAimingRay(); // mouse helper helps orinetate the decal onto the suface.
-
-	  sceneWebGL.add(decalOrientationHelper); // Add the decal mesh to the scene.
-
-	  sceneWebGL.add(oilFlowDecal.mesh);
-	} // addDecal
-
-
-	function positionDecal(target) {
-	  // Reposition the orientation helper. Or maybe this can be done in addDecal?
-	  decalOrientationHelper.position.copy(raypointer.getLinePoint(0));
-	  decalOrientationHelper.lookAt(raypointer.getLinePoint(1)); // decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
-
-	  oilFlowDecal.support = target.object;
-	  oilFlowDecal.position.copy(decalOrientationHelper.position);
-	  oilFlowDecal.orientation.copy(decalOrientationHelper.rotation);
-	  oilFlowDecal.scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
-	  oilFlowDecal.transform();
-	  /*
-	  // The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
-	  
-	  for(let i=0; i<decals.length; i++){
-	  	if(decals[i].active){
-	  		decals[i].pasteOn(target);
-	  	} // if
-	  } // for
-	  */
-	} // positionDecal
-
-
-	function removeDecals() {
-	  decals.forEach(function (d) {
-	    sceneWebGL.remove(d.mesh);
-	  }); // forEach
-
-	  decals.length = 0;
-	}
-
-	function addAimingRay() {
-	  // Create the raycaster.
-
-	  /*
-	  BEHAVIOR:
-	  - click and drag should support OrbitControls without pasting the decal.
-	  - so store moved as before, and only past on pointerup?
-	  */
-	  raypointer = new PointerRay(camera);
-	  sceneWebGL.add(raypointer.line); // Disable the pointer long press events if the user is navigating the domain.
+	  // addAimingRay();
+	  var oilFlowDecal = new Decal(camera, decalGeometries);
+	  oilFlowDecal.addTo(sceneWebGL); // Disable the pointer long press events if the user is navigating the domain.
 
 	  arcballcontrols.addEventListener('change', function () {
-	    raypointer.enabled = false;
+	    oilFlowDecal.raypointer.enabled = false;
 	  }); // change
+	  // Add teh decal gui to the overall gui.
 
-	  raypointer.pointerdown = function (event) {
-	    // How do we deselect a decal? Another longpress, or when another decal is selected.
-	    var decalMeshes = decals.map(function (d) {
-	      return d.mesh;
-	    });
-	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalMeshes);
-	    var targetDecal = decals[decalMeshes.indexOf(target.object)];
+	  oilFlowDecal.addGUI(gui); // And append the nodal to the session.
 
-	    if (target) {
-	      decals.forEach(function (decal) {
-	        decal.mesh.material.color.setHex(0xffffff);
-	      }); // forEach
-	      // If target object is the current selected decal, then it should be turned off.
-
-	      var active = selectedDecal ? selectedDecal.mesh === target.object : false;
-	      target.object.material.color.setHex(active ? 0xffffff : 0xff00ff);
-	      selectedDecal = active ? undefined : targetDecal;
-	    }
-	  }; // pointerdown
-
-
-	  raypointer.pointerup = function (event) {
-	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
-
-	    if (target) {
-	      positionDecal(target);
-	    }
-	  }; // pointerup
-
-
-	  raypointer.pointermove = function (event) {
-	    raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
-	  }; // pointermove
-
-	} // addAimingRay
+	  document.body.appendChild(oilFlowDecal.editor.node);
+	} // addDecal
 	// GEOMETRY
 
 
@@ -37035,18 +37106,12 @@
 	  stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
 	  container.querySelector("div.stats").appendChild(stats.dom); // The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
+	  // Lets see if I can make a gui, and then append a whole new GUI to it.
 
-	  var decalEditorItem = new g({
+	  gui = new g({
 	    container: container.querySelector("div.controls"),
-	    title: "Decal Editor"
+	    title: "Overall GUI"
 	  });
-	  var decalEditorItemConfig = {
-	    show: function show() {
-	      oilFlowDecal.ui.show();
-	    }
-	  };
-	  decalEditorItem.add(decalEditorItemConfig, "show");
-	  document.body.appendChild(oilFlowDecal.ui.node);
 	  /*
 	  gui = new InterfaceDecals();
 	  document.body.appendChild( gui.node );

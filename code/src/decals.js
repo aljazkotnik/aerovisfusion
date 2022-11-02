@@ -51,8 +51,7 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 import InterfaceDecals from "./GUI/InterfaceDecals.js";
 import ColorBar from "./GUI/ColorBar.js";
 import ContouredMesh from "./components/ContouredMesh.js";
-import PointerRay from "./components/PointerRay.js";
-import DecalMesh from "./components/DecalMesh.js";
+import Decal from "./components/Decal.js";
 
 
 // Debugging
@@ -70,7 +69,7 @@ var stats;
 // Scene items
 var camera, arcballcontrols;
 var sceneWebGL, rendererWebGL;
-
+var gui;
 
 
 /*
@@ -92,42 +91,14 @@ const colorbar = new ColorBar(0.14, 0.44);
 colorbar.colormap = "d3Spectral";
 
 
-// SETUP THE GEOMETRY AND INTERSECT ITEMS.
-var raypointer;
 
 
-// DECAL HELPERS - should respond to domain size?
-const decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), 
-new THREE.MeshNormalMaterial() );
-decalOrientationHelper.visible = false;
-	
-const decals = []; // different Decal instances
+// Some helpers for decals.
 const decalGeometries = []; // Geometries that can have a decal added on them.
-let selectedDecal;
-
-
-
-// Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
-
-// Check first on-the-go interactions.
-
-
-
-// Parameters from the UI - repackage into class?
-const params = {
-	minScale: 0.10,
-	maxScale: 0.20,
-	clear: function () {
-		removeDecals();
-	}
-};
 
 
 
 
-// Decal should be added through the GUI.
-const oilFlowDecal = new DecalMesh();
-decals.push( oilFlowDecal )
 
 
 init();
@@ -140,7 +111,7 @@ function init() {
 	// FOUNDATIONS
 	setupScene();
 	addArcballControls();
-	
+	setupHUD();
 	
 	
 	
@@ -154,11 +125,6 @@ function init() {
 	
 
 	window.addEventListener( 'resize', onWindowResize );
-	
-	
-	
-	setupHUD();
-	
 	
 
 } // init
@@ -207,104 +173,26 @@ function setupScene(){
 function addDecal(){
 	
 	// RAYCASTER
-	addAimingRay();
+	// addAimingRay();
+	const oilFlowDecal = new Decal( camera, decalGeometries );
+	oilFlowDecal.addTo( sceneWebGL )
 	
-
-	// mouse helper helps orinetate the decal onto the suface.
-	sceneWebGL.add( decalOrientationHelper );
-	
-	// Add the decal mesh to the scene.
-	sceneWebGL.add( oilFlowDecal.mesh );
-	
-} // addDecal
-
-function positionDecal(target) {
-	
-	// Reposition the orientation helper. Or maybe this can be done in addDecal?
-	decalOrientationHelper.position.copy( raypointer.getLinePoint(0) );
-	decalOrientationHelper.lookAt( raypointer.getLinePoint(1) );
-	
-	// decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
-	
-	oilFlowDecal.support = target.object;
-	oilFlowDecal.position.copy( decalOrientationHelper.position )
-	oilFlowDecal.orientation.copy( decalOrientationHelper.rotation )
-	oilFlowDecal.scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
-	
-	oilFlowDecal.transform()
-	
-	
-	/*
-	// The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
-	
-	for(let i=0; i<decals.length; i++){
-		if(decals[i].active){
-			decals[i].pasteOn(target);
-		} // if
-	} // for
-	*/
-
-} // positionDecal
-
-function removeDecals() {
-
-	decals.forEach( function ( d ) {
-		sceneWebGL.remove( d.mesh );
-	}); // forEach
-
-	decals.length = 0;
-
-}; // removeDecals
-
-function addAimingRay(){
-		
-	// Create the raycaster.
-	/*
-	BEHAVIOR:
-	- click and drag should support OrbitControls without pasting the decal.
-	- so store moved as before, and only past on pointerup?
-	*/
-	
-	raypointer = new PointerRay( camera );
-	sceneWebGL.add( raypointer.line )
 	
 	// Disable the pointer long press events if the user is navigating the domain.
 	arcballcontrols.addEventListener( 'change', function (){
-	   raypointer.enabled = false;
+	   oilFlowDecal.raypointer.enabled = false;
 	}); // change
 	
 	
-	raypointer.pointerdown = function(event){
-		// How do we deselect a decal? Another longpress, or when another decal is selected.
-		let decalMeshes = decals.map(d=>d.mesh);
-		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalMeshes );
-		let targetDecal = decals[decalMeshes.indexOf(target.object)];
-		
-		if ( target ){
-			decals.forEach(decal=>{
-				decal.mesh.material.color.setHex(0xffffff);
-			}) // forEach
-			
-			// If target object is the current selected decal, then it should be turned off.
-			let active = selectedDecal ? selectedDecal.mesh === target.object : false;
-			target.object.material.color.setHex( active ? 0xffffff : 0xff00ff);
-			selectedDecal = active ? undefined : targetDecal;
-		}; // if
-	} // pointerdown
+	// Add teh decal gui to the overall gui.
+	oilFlowDecal.addGUI(gui);
 	
-	raypointer.pointerup = function(event){
-		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
-		if ( target ){
-			positionDecal( target );
-		}; // if
-	} // pointerup
+	// And append the nodal to the session.
+	document.body.appendChild( oilFlowDecal.editor.node );
 	
-	raypointer.pointermove = function(event){
-		raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
-	} // pointermove
-	
-	
-} // addAimingRay
+} // addDecal
+
+
 
 
 
@@ -405,17 +293,14 @@ function setupHUD(){
 	
 	// The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
 	
-	const decalEditorItem = new GUI({
+	// Lets see if I can make a gui, and then append a whole new GUI to it.
+	gui = new GUI({
 		container: container.querySelector("div.controls"),
-		title: "Decal Editor"
-	})
-	const decalEditorItemConfig = {
-		show: function(){oilFlowDecal.ui.show()}
-	}
-	decalEditorItem.add( decalEditorItemConfig , "show" )
+		title: "Overall GUI"
+	});
 	
 	
-	document.body.appendChild( oilFlowDecal.ui.node );
+
 	/*
 	gui = new InterfaceDecals();
 	document.body.appendChild( gui.node );
