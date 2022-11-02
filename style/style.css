@@ -138,3 +138,18 @@ mark {
 	z-index: 1; /* TODO Solve this in HTML */
 	display: none;
 }
+
+
+
+
+/* DECAL EDITOR */
+canvas.editor {
+    padding: 0;
+    margin: auto;
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}

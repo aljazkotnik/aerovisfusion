@@ -41,23 +41,30 @@ Other approach is the Octtree. this would be required for internal passages. No 
 
 
 
+// THREE basics
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
 
+// Scene elements
 import InterfaceDecals from "./GUI/InterfaceDecals.js";
 import ColorBar from "./GUI/ColorBar.js";
 import ContouredMesh from "./components/ContouredMesh.js";
 import PointerRay from "./components/PointerRay.js";
-import Decal from "./components/Decal.js";
+import DecalMesh from "./components/DecalMesh.js";
 
 
+// Debugging
 import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper.js";
 
+// GUI
+import { html2element } from "./helpers.js";
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import Stats from "stats.js";
 
-// The gui - statse need to be updated as animated.
-var gui;
+
+var stats;
 
 
 // Scene items
@@ -118,8 +125,8 @@ const params = {
 
 
 
-// Decal is added through the GUI.
-const oilFlowDecal = new Decal();
+// Decal should be added through the GUI.
+const oilFlowDecal = new DecalMesh();
 decals.push( oilFlowDecal )
 
 
@@ -141,16 +148,9 @@ function init() {
 	addWingGeometry()
 	
 	
+	// Add in a decal
+	addDecal();
 	
-	// RAYCASTER
-	addAimingRay();
-	
-
-	// mouse helper helps orinetate the decal onto the suface.
-	sceneWebGL.add( decalOrientationHelper );
-	
-	// Add the decal mesh to the scene.
-	sceneWebGL.add( oilFlowDecal.mesh );
 	
 
 	window.addEventListener( 'resize', onWindowResize );
@@ -203,6 +203,21 @@ function setupScene(){
 
 
 // DECALS
+// There should be a single add decal function that takes in the image URL, and takes care of everything else.
+function addDecal(){
+	
+	// RAYCASTER
+	addAimingRay();
+	
+
+	// mouse helper helps orinetate the decal onto the suface.
+	sceneWebGL.add( decalOrientationHelper );
+	
+	// Add the decal mesh to the scene.
+	sceneWebGL.add( oilFlowDecal.mesh );
+	
+} // addDecal
+
 function positionDecal(target) {
 	
 	// Reposition the orientation helper. Or maybe this can be done in addDecal?
@@ -258,7 +273,6 @@ function addAimingRay(){
 	   raypointer.enabled = false;
 	}); // change
 	
-	console.log(raypointer)
 	
 	raypointer.pointerdown = function(event){
 		// How do we deselect a decal? Another longpress, or when another decal is selected.
@@ -374,6 +388,35 @@ function addWingGeometry(){
 
 function setupHUD(){
 	
+	let template = `
+	<div style="position: fixed;">
+	  <div class="stats"></div>
+	  <div class="controls" style="position: fixed; top: 10px; float: right; right: 10px;"></div>
+	</div>
+	`;
+	
+	const container = html2element(template);
+	document.body.appendChild( container );
+	
+	// Add the Stats object.
+	stats = new Stats();
+	stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+	container.querySelector("div.stats").appendChild( stats.dom );
+	
+	// The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
+	
+	const decalEditorItem = new GUI({
+		container: container.querySelector("div.controls"),
+		title: "Decal Editor"
+	})
+	const decalEditorItemConfig = {
+		show: function(){oilFlowDecal.ui.show()}
+	}
+	decalEditorItem.add( decalEditorItemConfig , "show" )
+	
+	
+	document.body.appendChild( oilFlowDecal.ui.node );
+	/*
 	gui = new InterfaceDecals();
 	document.body.appendChild( gui.node );
 	
@@ -414,7 +457,7 @@ function setupHUD(){
 			decals.splice( decals.indexOf(selectedDecal), 1);
 		} // if
 	} // onclick
-	
+	*/
 	
 	
 } // setupHUD
@@ -456,7 +499,7 @@ function onWindowResize() {
 
 function animate() {
 	requestAnimationFrame( animate );
-	gui.stats.update();
+	stats.update();
 	render();
 } // animate
 

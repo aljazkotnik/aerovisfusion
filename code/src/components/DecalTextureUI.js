@@ -1,22 +1,51 @@
-// import * as THREE from "three";
+import * as THREE from "three";
 
-// const loader = new THREE.TextureLoader();
-// const im = loader.load("assets/20220125_143807.jpg");
+/* What else needs to be done?
+- Add a lil gui to the decal manager.
+- Toggle the decal gui to adjust the texture
+- Restrict the texture to the size of hte image
+- Once the submit button is hit, the calculated texture should appear.
+
+- functionality to remove geometries and points. Maybe longclick?
+*/
+
+
+// GUI builder
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import { html2element } from "../helpers.js";
+
+
+const template = `<div style="display: none;">
+<canvas class="editor"></canvas>
+<div class="gui" style="position: absolute; top: 10px; right: 10px; text-align: right;"></div>
+</div>`
 
 
 export default class DecalTextureUI{
-	constructor(){
+	constructor(source){
 		let obj = this;
 		
-		// Creat ethe canvas to draw and edit the texture on.
-		obj.ctx = document.createElement('canvas').getContext('2d');
+		// Make a node to which everything is appended.
+		obj.node = html2element(template);
+		
+		
+		
+		// Create the canvas to draw and edit the texture on.
+		let canvas = obj.node.querySelector("canvas")
+		// document.createElement('canvas');
+		// obj.node.querySelector("div.editor").appendChild(canvas)
+		
+		obj.texture = new THREE.CanvasTexture(canvas);
+
+		obj.ctx = canvas.getContext('2d');
 		let ctx = obj.ctx;
 		
-		ctx.canvas.width = window.innerWidth;
-		ctx.canvas.height = window.innerHeight;
+		// The canvas width and height should be determined based on hte image aspect ratio.
+		ctx.canvas.width = 512; // window.innerWidth;
+		ctx.canvas.height = 512; // window.innerHeight;
 		
 		// Get the raw image.
-		obj.rawImage = new ImageTexture(ctx, 'assets/20220125_143807.jpg');
+		obj.rawImage = new ImageTexture(ctx, source);
 		
 		
 		// Configure the editor
@@ -33,29 +62,49 @@ export default class DecalTextureUI{
 		
 		
 		// Add in the GUI.
-		document.getElementById("submitbutton").onclick = function(){
-			// Draw the image within the clip to create a decal.
-			
-			
-			// Clear everything
-			ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-			
-			/// draw the shape we want to use for clipping
-			obj.maskUI.drawClip();
-			ctx.clip()
-			
-			/// change composite mode to use that shape. Source-over is default
-			ctx.globalCompositeOperation = 'source-in';
-
-			/// draw the image to be clipped
-			obj.rawImage.draw();
+		const guiconfig = {
+			preview: function(){
+				// Clear everything
+				ctx.reset();
+				ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
 				
-		} // onclick
+				
+				/// draw the shape we want to use for clipping
+				obj.maskUI.drawClip();
+				
+				/// change composite mode to use that shape. Source-over is default
+				ctx.globalCompositeOperation = 'source-in';
+
+				/// draw the image to be clipped
+				obj.rawImage.draw();
+			},
+			adjust: function(){
+				obj.render();
+			},
+			submit: function(){
+				// When submitting hte preview needs to be drawn, and then the manager needs to be hidden. But the preview twice still doesn't work...
+				
+				// Would be good to somehow enlarge the clipped are to make the whole canvas area available. Enlarging should be easy, it's more about positioning the clip over the image correctly...
+				
+				// Would be good if the user could select the center of the decal...
+				
+				// Calculate a grayscale version of hte image also to aid with the blending!
+				
+				guiconfig.preview();
+				obj.texture.needsUpdate = true;
+				obj.hide();
+			}
+		}; // guiconfig
 		
 		
-		document.getElementById("renderbutton").onclick = function(){
-			obj.render();
-		}
+		
+		// Add a gui before the canvas
+		const gui = new GUI({container: obj.node.querySelector("div.gui"), title: "Decal editor"});
+		
+		gui.add(guiconfig, "preview")
+		gui.add(guiconfig, "adjust")
+		gui.add(guiconfig, "submit")
+		
 		
 		
 	} // constructor
@@ -73,6 +122,23 @@ export default class DecalTextureUI{
 		obj.rawImage.draw();
 		obj.maskUI.draw();
 	} // render
+	
+	
+	show(){
+		let obj = this;
+		obj.node.style.display = "";
+	} // show
+	
+	
+	hide(){
+		let obj = this;
+		obj.node.style.display = "none";
+	} // hide
+	
+	resize(w,h){
+		// Resize the manager given the width and height of the window.
+		
+	}
 	
 } // DecalTextureUI
 
@@ -119,6 +185,9 @@ class ImageTexture{
 		im.src = sourcelink;
 		im.onload = function() {
 			obj.im = im;
+			
+			obj.resize();
+			
 			obj.draw();
 		};
 		
@@ -159,20 +228,39 @@ class ImageTexture{
 			let cw = ctx.canvas.width;
 			let ch = ctx.canvas.height;
 			
-			// Draw the image.
+			// Image size.
 			let sw = obj.im.width;
 			let sh = obj.im.height;
 			
-			// Now calculate the aspect ration so the image fits in.
-			obj.ar = Math.min( cw/sw, ch/sh);
-			let dw = obj.ar*sw;
-			let dh = obj.ar*sh;
-			
-			ctx.drawImage(obj.im, 0, 0, sw, sh, 0, 0, dw, dh);
+			// If the canvas is resized here, then everything before this point is thrown away!!
+			ctx.drawImage(obj.im, 0, 0, sw, sh, 0, 0, cw, ch);
 		} // if
 	} // draw
 	
 	
+	
+	resize(){
+		// The maximum size of the canvas has changed. Adjust the canvas to the image size.
+		// Set the canvas aspect ratio here.
+		let obj = this;
+		let ctx = obj.ctx;
+		
+		let cw = ctx.canvas.width;
+		let ch = ctx.canvas.height;
+		
+		// Draw the image.
+		let sw = obj.im.width;
+		let sh = obj.im.height;
+		
+		// Now calculate the aspect ration so the image fits in.
+		obj.ar = Math.min( cw/sw, ch/sh);
+		let dw = obj.ar*sw;
+		let dh = obj.ar*sh;
+		
+		ctx.canvas.width = dw;
+		ctx.canvas.height = dh;
+		
+	} // resize
 	
 	
 } // ImageTexture
@@ -374,7 +462,10 @@ class MaskEditor{
 	
 	// DATA TRANSFORM PLACEHOLDERS
 	event2canvas(event){
-		return [event.clientX, event.clientY]
+		// Get the canvas bounding box.
+		let obj = this;
+		let rect = obj.ctx.canvas.getBoundingClientRect();
+		return [event.clientX - rect.x, event.clientY - rect.y]
 	} // event2canvas
 	
 	px2unit(p){
@@ -410,8 +501,7 @@ class MaskEditor{
 		let obj = this;
 		let ctx = obj.ctx;
 		// Draw the current clip
-		ctx.fillStyle = '#000000';
-		ctx.lineWidth = 2;
+		ctx.fillStyle = '#FFFFFF';
 		
 		ctx.beginPath();
 		

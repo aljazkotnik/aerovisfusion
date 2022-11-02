@@ -15,28 +15,21 @@ Get decal color from the original geometry.
 
 import * as THREE from "three";
 import CustomDecalGeometry from "./CustomDecalGeometry.js";
-const textureLoader = new THREE.TextureLoader();
+
+
+import DecalTextureUI from "./DecalTextureUI.js"
+
+// const textureLoader = new THREE.TextureLoader();
 
 
 
 
 
-// Parameters from the UI - repackage into class?
-const params = {
-	minScale: 0.10,
-	maxScale: 0.20,
-	clear: function () {
-		removeDecals();
-	}
-};
-
-
-
-var viewDirection = new THREE.Vector3();
 
 
 
 
+// This will be an instance of a decal, and many decals of the same type will be able to be added.
 export default class Decal{
 	
 	// Each decal is expected to be placed only once.
@@ -55,56 +48,19 @@ export default class Decal{
 		- click and drag should support OrbitControls without pasting the decal.
 		- so store moved as before, and only past on pointerup?
 		*/
+		obj.ui = new DecalTextureUI( 'assets/20220125_143807.jpg' );
+		const decalDiffuse = obj.ui.texture;
 		
 		
 		
-		const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
-		// const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
-		// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
 
-		// normalMap: decalNormal,
-		const decalMaterial = new THREE.MeshBasicMaterial( {
-			map: decalDiffuse,
-			alphaMap: decalDiffuse,
-			transparent: true,
-			depthTest: true,
-			depthWrite: false,
-			polygonOffset: true,
-			polygonOffsetFactor: - 4,
-			wireframe: false
-		} );
-		const placeholderGeometry = new THREE.BufferGeometry();
 		
-		
-		obj.mesh = new THREE.Mesh( placeholderGeometry, decalMaterial );
 		
 
 	} // constructor
 	
 	
-	transform(){
-		// Add a new instance of hte decal of this type.
-		let obj = this;
-		
-		// Reset the size in case scale changed.
-		obj.size.set( obj.scale, obj.scale, obj.scale );
-
-		// Make the decal object.
-		const cutout = new CustomDecalGeometry( obj.support, obj.position, obj.orientation, obj.size );		
-		obj.mesh.geometry.copy(cutout);
-		
-	} // transform
 	
-	
-
-	
-	
-	
-	highlight(){
-		// Highlight this particular decal.
-		let obj = this;
-		obj.decalmesh.material.emissive.setHex(0x000000);
-	} // highlight
 	
 	
 	
