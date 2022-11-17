@@ -30237,197 +30237,6 @@
 
 	Light.prototype.isLight = true;
 
-	const _projScreenMatrix$1 = /*@__PURE__*/ new Matrix4();
-	const _lightPositionWorld$1 = /*@__PURE__*/ new Vector3();
-	const _lookTarget$1 = /*@__PURE__*/ new Vector3();
-
-	class LightShadow {
-
-		constructor( camera ) {
-
-			this.camera = camera;
-
-			this.bias = 0;
-			this.normalBias = 0;
-			this.radius = 1;
-			this.blurSamples = 8;
-
-			this.mapSize = new Vector2( 512, 512 );
-
-			this.map = null;
-			this.mapPass = null;
-			this.matrix = new Matrix4();
-
-			this.autoUpdate = true;
-			this.needsUpdate = false;
-
-			this._frustum = new Frustum();
-			this._frameExtents = new Vector2( 1, 1 );
-
-			this._viewportCount = 1;
-
-			this._viewports = [
-
-				new Vector4( 0, 0, 1, 1 )
-
-			];
-
-		}
-
-		getViewportCount() {
-
-			return this._viewportCount;
-
-		}
-
-		getFrustum() {
-
-			return this._frustum;
-
-		}
-
-		updateMatrices( light ) {
-
-			const shadowCamera = this.camera;
-			const shadowMatrix = this.matrix;
-
-			_lightPositionWorld$1.setFromMatrixPosition( light.matrixWorld );
-			shadowCamera.position.copy( _lightPositionWorld$1 );
-
-			_lookTarget$1.setFromMatrixPosition( light.target.matrixWorld );
-			shadowCamera.lookAt( _lookTarget$1 );
-			shadowCamera.updateMatrixWorld();
-
-			_projScreenMatrix$1.multiplyMatrices( shadowCamera.projectionMatrix, shadowCamera.matrixWorldInverse );
-			this._frustum.setFromProjectionMatrix( _projScreenMatrix$1 );
-
-			shadowMatrix.set(
-				0.5, 0.0, 0.0, 0.5,
-				0.0, 0.5, 0.0, 0.5,
-				0.0, 0.0, 0.5, 0.5,
-				0.0, 0.0, 0.0, 1.0
-			);
-
-			shadowMatrix.multiply( shadowCamera.projectionMatrix );
-			shadowMatrix.multiply( shadowCamera.matrixWorldInverse );
-
-		}
-
-		getViewport( viewportIndex ) {
-
-			return this._viewports[ viewportIndex ];
-
-		}
-
-		getFrameExtents() {
-
-			return this._frameExtents;
-
-		}
-
-		dispose() {
-
-			if ( this.map ) {
-
-				this.map.dispose();
-
-			}
-
-			if ( this.mapPass ) {
-
-				this.mapPass.dispose();
-
-			}
-
-		}
-
-		copy( source ) {
-
-			this.camera = source.camera.clone();
-
-			this.bias = source.bias;
-			this.radius = source.radius;
-
-			this.mapSize.copy( source.mapSize );
-
-			return this;
-
-		}
-
-		clone() {
-
-			return new this.constructor().copy( this );
-
-		}
-
-		toJSON() {
-
-			const object = {};
-
-			if ( this.bias !== 0 ) object.bias = this.bias;
-			if ( this.normalBias !== 0 ) object.normalBias = this.normalBias;
-			if ( this.radius !== 1 ) object.radius = this.radius;
-			if ( this.mapSize.x !== 512 || this.mapSize.y !== 512 ) object.mapSize = this.mapSize.toArray();
-
-			object.camera = this.camera.toJSON( false ).object;
-			delete object.camera.matrix;
-
-			return object;
-
-		}
-
-	}
-
-	class DirectionalLightShadow extends LightShadow {
-
-		constructor() {
-
-			super( new OrthographicCamera( - 5, 5, 5, - 5, 0.5, 500 ) );
-
-		}
-
-	}
-
-	DirectionalLightShadow.prototype.isDirectionalLightShadow = true;
-
-	class DirectionalLight extends Light {
-
-		constructor( color, intensity ) {
-
-			super( color, intensity );
-
-			this.type = 'DirectionalLight';
-
-			this.position.copy( Object3D.DefaultUp );
-			this.updateMatrix();
-
-			this.target = new Object3D();
-
-			this.shadow = new DirectionalLightShadow();
-
-		}
-
-		dispose() {
-
-			this.shadow.dispose();
-
-		}
-
-		copy( source ) {
-
-			super.copy( source );
-
-			this.target = source.target.clone();
-			this.shadow = source.shadow.clone();
-
-			return this;
-
-		}
-
-	}
-
-	DirectionalLight.prototype.isDirectionalLight = true;
-
 	class AmbientLight extends Light {
 
 		constructor( color, intensity ) {
@@ -35499,136 +35308,84 @@
 	  return Constructor;
 	}
 
-	function html2element(html) {
-	  var template = document.createElement('template');
-	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
+	function _inherits(subClass, superClass) {
+	  if (typeof superClass !== "function" && superClass !== null) {
+	    throw new TypeError("Super expression must either be null or a function");
+	  }
 
-	  return template.content.firstChild;
-	} // html2element
-	 // trimStringToLength
-
-	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-	function createCommonjsModule(fn) {
-	  var module = { exports: {} };
-		return fn(module, module.exports), module.exports;
+	  subClass.prototype = Object.create(superClass && superClass.prototype, {
+	    constructor: {
+	      value: subClass,
+	      writable: true,
+	      configurable: true
+	    }
+	  });
+	  if (superClass) _setPrototypeOf(subClass, superClass);
 	}
 
-	var stats_min = createCommonjsModule(function (module, exports) {
-	// stats.js - http://github.com/mrdoob/stats.js
-	(function(f,e){module.exports=e();})(commonjsGlobal,function(){var f=function(){function e(a){c.appendChild(a.dom);return a}function u(a){for(var d=0;d<c.children.length;d++)c.children[d].style.display=d===a?"block":"none";l=a;}var l=0,c=document.createElement("div");c.style.cssText="position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click",function(a){a.preventDefault();
-	u(++l%c.children.length);},!1);var k=(performance||Date).now(),g=k,a=0,r=e(new f.Panel("FPS","#0ff","#002")),h=e(new f.Panel("MS","#0f0","#020"));if(self.performance&&self.performance.memory)var t=e(new f.Panel("MB","#f08","#201"));u(0);return {REVISION:16,dom:c,addPanel:e,showPanel:u,begin:function(){k=(performance||Date).now();},end:function(){a++;var c=(performance||Date).now();h.update(c-k,200);if(c>g+1E3&&(r.update(1E3*a/(c-g),100),g=c,a=0,t)){var d=performance.memory;t.update(d.usedJSHeapSize/
-	1048576,d.jsHeapSizeLimit/1048576);}return c},update:function(){k=this.end();},domElement:c,setMode:u}};f.Panel=function(e,f,l){var c=Infinity,k=0,g=Math.round,a=g(window.devicePixelRatio||1),r=80*a,h=48*a,t=3*a,v=2*a,d=3*a,m=15*a,n=74*a,p=30*a,q=document.createElement("canvas");q.width=r;q.height=h;q.style.cssText="width:80px;height:48px";var b=q.getContext("2d");b.font="bold "+9*a+"px Helvetica,Arial,sans-serif";b.textBaseline="top";b.fillStyle=l;b.fillRect(0,0,r,h);b.fillStyle=f;b.fillText(e,t,v);
-	b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
-	});
+	function _getPrototypeOf(o) {
+	  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+	    return o.__proto__ || Object.getPrototypeOf(o);
+	  };
+	  return _getPrototypeOf(o);
+	}
 
-	/*
-	On input increments should be launched. But if the user wants repeated increments they have to wiggle the mouse. Is it possible to keep launching the event even if the user has the cursor stationary? Maybe based on the value, which should be 0 if the cursor has been released. And update every half a second or so? Or faster? Maybe 20 frames per second?
+	function _setPrototypeOf(o, p) {
+	  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+	    o.__proto__ = p;
+	    return o;
+	  };
 
+	  return _setPrototypeOf(o, p);
+	}
 
+	function _isNativeReflectConstruct() {
+	  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+	  if (Reflect.construct.sham) return false;
+	  if (typeof Proxy === "function") return true;
 
-	*/
+	  try {
+	    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+	    return true;
+	  } catch (e) {
+	    return false;
+	  }
+	}
 
-	var IncrementController = /*#__PURE__*/function () {
-	  function IncrementController(label) {
-	    _classCallCheck(this, IncrementController);
+	function _assertThisInitialized(self) {
+	  if (self === void 0) {
+	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+	  }
 
-	    this.a = -1;
-	    this.b = 1;
-	    var obj = this;
-	    obj.node = html2element("\n      <div style=\"float: right;\">\n        <label style=\"color: white;\">".concat(label, "</label>\n        <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n      </div>\n    "));
-	    var i = obj.node.querySelector("input"); // No need to recalculate the mean value - it's always 0. Only the value released to the user is recalculated.
+	  return self;
+	}
 
-	    i.addEventListener("mouseout", function () {
-	      i.value = 0;
-	    });
-	    i.addEventListener("mouseup", function () {
-	      i.value = 0;
-	    });
-	  } // constructor
+	function _possibleConstructorReturn(self, call) {
+	  if (call && (typeof call === "object" || typeof call === "function")) {
+	    return call;
+	  }
 
+	  return _assertThisInitialized(self);
+	}
 
-	  _createClass(IncrementController, [{
-	    key: "value",
-	    get: function get() {
-	      var obj = this;
-	      return (Number(obj.node.querySelector("input").value) + 1) / 2 * (obj.b - obj.a) + obj.a;
-	    } // get value
+	function _createSuper(Derived) {
+	  var hasNativeReflectConstruct = _isNativeReflectConstruct();
 
-	  }]);
+	  return function _createSuperInternal() {
+	    var Super = _getPrototypeOf(Derived),
+	        result;
 
-	  return IncrementController;
-	}(); // IncrementController
+	    if (hasNativeReflectConstruct) {
+	      var NewTarget = _getPrototypeOf(this).constructor;
 
-	var ToggleButton = function ToggleButton(unicodeemoji) {
-	  _classCallCheck(this, ToggleButton);
+	      result = Reflect.construct(Super, arguments, NewTarget);
+	    } else {
+	      result = Super.apply(this, arguments);
+	    }
 
-	  this.on = false;
-	  var obj = this;
-	  var label = unicodeemoji ? unicodeemoji : "\uD83E\uDDFD";
-	  obj.node = html2element("\n      <div style=\"float: right;\">\n\t    <button class=\"icon\">".concat(label, "</button>\n      </div>\n    "));
-
-	  obj.node.onclick = function () {
-	    // Toggle the button, and change its appearance.
-	    obj.on = !obj.on;
-	    obj.node.querySelector("button").style.border = "2px solid ".concat(obj.on ? "gainsboro" : "black");
-	  }; // onclick
-
-	} // constructor
-	; // ToggleButton
-
-	//	<button class="icon edit">🔧</button>
-	// This template should be abstracted within the HUD class to allow dynamic creation, much like the GUI library. The GUI library is not used because I need some additional functionality, like hte incremenal controller. But for example the color picker from GUI is amazing.
-
-	var template = "\n<div style=\"position: fixed;\">\n  <div class=\"stats\"></div>\n  <div class=\"controls\" style=\"position: fixed; top: 10px; float: right; right: 10px;\"></div>\n</div>\n";
-	/*
-	The decals are roughly positioned by pointing and clicking. After that their (1) position, (2) orientation, and (3) size may need to be adjusted.
-
-	(1) Position:
-		The decal position is determined by the positioning of a 3D clipping box, which is itself positioned using an xyz triplet. The decal therefore itself is positioned using three dimensions. Then the user needs to keep track of the world orientation to use them correctly. If instead we want the user to orientate the decals based on the screen vertical and horizontal directions, the screen coordinate system needs to be transformed to the world corrdinate system, and the change in position applied there.
-		In practice when the user adjusts the increment, the on-screen coordinates of the raycaster used for placement need to be retrieved, the increment applied to them, and the decal geometry adjusted. 
-	(2) Orientation:
-	    Orientation is easier, as two angles are defined by the geometry, and only orientation on the geometry is really needed - we don't want to angle the image in other directions for now - although this could be used for images that were not taken head-on.
-	(3) Size:
-		Easiest - controlled by a single scalar.
-		
-		
-		
-
-	Perhaps it's easier if a whole new control is introduced for positioning? Like the `plus' controller. Or should they just be repositioned using click positioning? Perhaps a way to do it is to allow the user to place a reference point, and then use that to reposition the decal? Would also be a nice discreet operation. Okay, but then decal selection needs to be implemented. Maybe through a toggle button? Or should the aiming change color if a certain time passes and the cursor is stationary? But this won't work without a mouse. 
-	What about click and drag? This is similar to the additional reference point and then click to reposition.
-	Longclick on decal? And then delete when the button is pressed? So the button no longer needs to be a toggle button.
-		
-		
-	First the brute force approach - recompute the mesh
-	Alternately - pad the image to control the size and rotation of the decal?
-	*/
-
-	var InterfaceDecals = function InterfaceDecals() {
-	  _classCallCheck(this, InterfaceDecals);
-
-	  this.erase = false;
-	  var obj = this;
-	  obj.node = html2element(template); // Add the Stats object.
-
-	  obj.stats = new stats_min();
-	  obj.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-
-	  obj.node.querySelector("div.stats").appendChild(obj.stats.dom); // ABSTRACT AWAY!!
-
-	  var controlsdiv = obj.node.querySelector("div.controls"); // The inputs are used as controllers - -1 is negative and +1 is positive increment.
-
-	  obj.rotation = new IncrementController("Rotation");
-	  controlsdiv.appendChild(obj.rotation.node);
-	  controlsdiv.appendChild(document.createElement("br"));
-	  obj.size = new IncrementController("Size");
-	  controlsdiv.appendChild(obj.size.node);
-	  controlsdiv.appendChild(document.createElement("br")); // The buttons for handling annotation spheres.
-
-	  obj.eraser = new ToggleButton();
-	  controlsdiv.appendChild(obj.eraser.node);
-	} // constructor
-	; // InterfaceDecals
+	    return _possibleConstructorReturn(this, result);
+	  };
+	}
 
 	var ColorBar = /*#__PURE__*/function () {
 	  // Some helper color objects.
@@ -35840,7 +35597,7 @@
 
 	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
 
-	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat minmach = u_thresholds[253];\n\t\tfloat maxmach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, minmach,maxmach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], minmach,maxmach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
+	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
 
 	var ContouredMesh = function ContouredMesh(id, dataPromise, uniforms) {
 	  _classCallCheck(this, ContouredMesh);
@@ -35898,14 +35655,16 @@
 	; // ContouredMesh
 
 	var PointerRay = /*#__PURE__*/function () {
+	  // Geometries to check intersection with.
 	  // Geometry to add to scene
 	  // Property to keep track of all intersections, and the currently selected intersection.
 	  // PointerRay interactions should be disabled on long navigation itneractions.
 	  // Property to track time since pointerdown.
-	  function PointerRay(camera) {
+	  function PointerRay(camera, geometries) {
 	    _classCallCheck(this, PointerRay);
 
 	    this.mouse = new Vector2();
+	    this.geometries = [];
 	    this.line = void 0;
 	    this.raycaster = void 0;
 	    this.intersects = [];
@@ -35920,6 +35679,7 @@
 	    var obj = this; // Camera to use by the raycaster.
 
 	    obj.camera = camera;
+	    obj.geometries = geometries;
 	    obj.raycaster = new Raycaster(); // The line doesn't seem to work if it is not initialised near the surface. Why??
 
 	    var geometry = new BufferGeometry();
@@ -35950,6 +35710,7 @@
 	    // For now just focus on adding the pointer helper.
 
 	    window.addEventListener('pointermove', function (event) {
+	      obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
 	      obj.pointermove(event);
 	    }); // onPointerMove
 	  } // constructor
@@ -36018,6 +35779,67 @@
 	  return PointerRay;
 	}(); // PointerRay
 
+	var DecalPointerRay = /*#__PURE__*/function (_PointerRay) {
+	  _inherits(DecalPointerRay, _PointerRay);
+
+	  var _super = _createSuper(DecalPointerRay);
+
+	  function DecalPointerRay(camera, geometries) {
+	    var _this;
+
+	    _classCallCheck(this, DecalPointerRay);
+
+	    _this = _super.call(this, camera, geometries);
+	    _this.selected = undefined;
+	    _this.decals = [];
+
+	    var obj = _assertThisInitialized(_this); // To select either a geometry to place a decal on, or a decal itself, the arrays of options need to be defined.
+
+
+	    obj.pointerdown = function (event) {
+	      // How do we deselect a decal? Another longpress, or when another decal is selected.
+	      var decalMeshes = obj.decals.map(function (d) {
+	        return d.mesh;
+	      });
+	      var target = obj.checkIntersection(event.clientX, event.clientY, decalMeshes);
+	      var targetDecal = obj.decals[decalMeshes.indexOf(target.object)];
+
+	      if (target) {
+	        obj.decals.forEach(function (decal) {
+	          decal.unhighlight();
+	        }); // forEach
+	        // If target object is the current selected decal, then it should be turned off.
+
+	        var active = obj.selected ? obj.selected.mesh != target.object : true;
+	        targetDecal.highlight(active);
+	        obj.selected = active ? targetDecal : undefined;
+	      }
+	    }; // pointerdown
+
+
+	    obj.pointerup = function (event) {
+	      var target = obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
+
+	      if (target) {
+	        obj.positionInteraction(target);
+	      }
+	    }; // pointerup
+
+
+	    return _this;
+	  } // constructor
+
+
+	  _createClass(DecalPointerRay, [{
+	    key: "positionInteraction",
+	    value: function positionInteraction(target) {// Dummy function
+	    } // positionInteraction
+
+	  }]);
+
+	  return DecalPointerRay;
+	}(PointerRay); // DecalPointerRay
+
 	/**
 	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
 	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
@@ -36033,570 +35855,1238 @@
 	 *
 	 */
 
-	class DecalGeometry extends BufferGeometry {
-
-		constructor( mesh, position, orientation, size ) {
-
-			super();
-
-			// buffers
-
-			const vertices = [];
-			const normals = [];
-			const uvs = [];
-
-			// helpers
-
-			const plane = new Vector3();
-
-			// this matrix represents the transformation of the decal projector
-
-			const projectorMatrix = new Matrix4();
-			projectorMatrix.makeRotationFromEuler( orientation );
-			projectorMatrix.setPosition( position );
-
-			const projectorMatrixInverse = new Matrix4();
-			projectorMatrixInverse.copy( projectorMatrix ).invert();
-
-			// generate buffers
-
-			generate();
-
-			// build geometry
-
-			this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-			this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
-			this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
-
-			function generate() {
-
-				let decalVertices = [];
-
-				const vertex = new Vector3();
-				const normal = new Vector3();
-
-				// handle different geometry types
-
-				if ( mesh.geometry.isGeometry === true ) {
-
-					console.error( 'THREE.DecalGeometry no longer supports THREE.Geometry. Use BufferGeometry instead.' );
-					return;
-
-				}
-
-				const geometry = mesh.geometry;
-
-				const positionAttribute = geometry.attributes.position;
-				const normalAttribute = geometry.attributes.normal;
-
-				// first, create an array of 'DecalVertex' objects
-				// three consecutive 'DecalVertex' objects represent a single face
-				//
-				// this data structure will be later used to perform the clipping
-
-				if ( geometry.index !== null ) {
-
-					// indexed BufferGeometry
-
-					const index = geometry.index;
-
-					for ( let i = 0; i < index.count; i ++ ) {
-
-						vertex.fromBufferAttribute( positionAttribute, index.getX( i ) );
-						normal.fromBufferAttribute( normalAttribute, index.getX( i ) );
-
-						pushDecalVertex( decalVertices, vertex, normal );
-
-					}
-
-				} else {
-
-					// non-indexed BufferGeometry
-
-					for ( let i = 0; i < positionAttribute.count; i ++ ) {
-
-						vertex.fromBufferAttribute( positionAttribute, i );
-						normal.fromBufferAttribute( normalAttribute, i );
-
-						pushDecalVertex( decalVertices, vertex, normal );
-
-					}
-
-				}
-
-				// second, clip the geometry so that it doesn't extend out from the projector
-
-				decalVertices = clipGeometry( decalVertices, plane.set( 1, 0, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( - 1, 0, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 1, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, - 1, 0 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 0, 1 ) );
-				decalVertices = clipGeometry( decalVertices, plane.set( 0, 0, - 1 ) );
-
-				// third, generate final vertices, normals and uvs
-
-				for ( let i = 0; i < decalVertices.length; i ++ ) {
-
-					const decalVertex = decalVertices[ i ];
-
-					// create texture coordinates (we are still in projector space)
-
-					uvs.push(
-						0.5 + ( decalVertex.position.x / size.x ),
-						0.5 + ( decalVertex.position.y / size.y )
-					);
-
-					// transform the vertex back to world space
-
-					decalVertex.position.applyMatrix4( projectorMatrix );
-
-					// now create vertex and normal buffer data
-
-					vertices.push( decalVertex.position.x, decalVertex.position.y, decalVertex.position.z );
-					normals.push( decalVertex.normal.x, decalVertex.normal.y, decalVertex.normal.z );
-
-				}
-
-			}
-
-			function pushDecalVertex( decalVertices, vertex, normal ) {
-
-				// transform the vertex to world space, then to projector space
-
-				vertex.applyMatrix4( mesh.matrixWorld );
-				vertex.applyMatrix4( projectorMatrixInverse );
-
-				normal.transformDirection( mesh.matrixWorld );
-
-				decalVertices.push( new DecalVertex( vertex.clone(), normal.clone() ) );
-
-			}
-
-			function clipGeometry( inVertices, plane ) {
-
-				const outVertices = [];
-
-				const s = 0.5 * Math.abs( size.dot( plane ) );
-
-				// a single iteration clips one face,
-				// which consists of three consecutive 'DecalVertex' objects
-
-				for ( let i = 0; i < inVertices.length; i += 3 ) {
-
-					let total = 0;
-					let nV1;
-					let nV2;
-					let nV3;
-					let nV4;
-
-					const d1 = inVertices[ i + 0 ].position.dot( plane ) - s;
-					const d2 = inVertices[ i + 1 ].position.dot( plane ) - s;
-					const d3 = inVertices[ i + 2 ].position.dot( plane ) - s;
-
-					const v1Out = d1 > 0;
-					const v2Out = d2 > 0;
-					const v3Out = d3 > 0;
-
-					// calculate, how many vertices of the face lie outside of the clipping plane
-
-					total = ( v1Out ? 1 : 0 ) + ( v2Out ? 1 : 0 ) + ( v3Out ? 1 : 0 );
-
-					switch ( total ) {
-
-						case 0: {
-
-							// the entire face lies inside of the plane, no clipping needed
-
-							outVertices.push( inVertices[ i ] );
-							outVertices.push( inVertices[ i + 1 ] );
-							outVertices.push( inVertices[ i + 2 ] );
-							break;
-
-						}
-
-						case 1: {
-
-							// one vertex lies outside of the plane, perform clipping
-
-							if ( v1Out ) {
-
-								nV1 = inVertices[ i + 1 ];
-								nV2 = inVertices[ i + 2 ];
-								nV3 = clip( inVertices[ i ], nV1, plane, s );
-								nV4 = clip( inVertices[ i ], nV2, plane, s );
-
-							}
-
-							if ( v2Out ) {
-
-								nV1 = inVertices[ i ];
-								nV2 = inVertices[ i + 2 ];
-								nV3 = clip( inVertices[ i + 1 ], nV1, plane, s );
-								nV4 = clip( inVertices[ i + 1 ], nV2, plane, s );
-
-								outVertices.push( nV3 );
-								outVertices.push( nV2.clone() );
-								outVertices.push( nV1.clone() );
-
-								outVertices.push( nV2.clone() );
-								outVertices.push( nV3.clone() );
-								outVertices.push( nV4 );
-								break;
-
-							}
-
-							if ( v3Out ) {
-
-								nV1 = inVertices[ i ];
-								nV2 = inVertices[ i + 1 ];
-								nV3 = clip( inVertices[ i + 2 ], nV1, plane, s );
-								nV4 = clip( inVertices[ i + 2 ], nV2, plane, s );
-
-							}
-
-							outVertices.push( nV1.clone() );
-							outVertices.push( nV2.clone() );
-							outVertices.push( nV3 );
-
-							outVertices.push( nV4 );
-							outVertices.push( nV3.clone() );
-							outVertices.push( nV2.clone() );
-
-							break;
-
-						}
-
-						case 2: {
-
-							// two vertices lies outside of the plane, perform clipping
-
-							if ( ! v1Out ) {
-
-								nV1 = inVertices[ i ].clone();
-								nV2 = clip( nV1, inVertices[ i + 1 ], plane, s );
-								nV3 = clip( nV1, inVertices[ i + 2 ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							if ( ! v2Out ) {
-
-								nV1 = inVertices[ i + 1 ].clone();
-								nV2 = clip( nV1, inVertices[ i + 2 ], plane, s );
-								nV3 = clip( nV1, inVertices[ i ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							if ( ! v3Out ) {
-
-								nV1 = inVertices[ i + 2 ].clone();
-								nV2 = clip( nV1, inVertices[ i ], plane, s );
-								nV3 = clip( nV1, inVertices[ i + 1 ], plane, s );
-								outVertices.push( nV1 );
-								outVertices.push( nV2 );
-								outVertices.push( nV3 );
-
-							}
-
-							break;
-
-						}
-
-					}
-
-				}
-
-				return outVertices;
-
-			}
-
-			function clip( v0, v1, p, s ) {
-
-				const d0 = v0.position.dot( p ) - s;
-				const d1 = v1.position.dot( p ) - s;
-
-				const s0 = d0 / ( d0 - d1 );
-
-				const v = new DecalVertex(
-					new Vector3(
-						v0.position.x + s0 * ( v1.position.x - v0.position.x ),
-						v0.position.y + s0 * ( v1.position.y - v0.position.y ),
-						v0.position.z + s0 * ( v1.position.z - v0.position.z )
-					),
-					new Vector3(
-						v0.normal.x + s0 * ( v1.normal.x - v0.normal.x ),
-						v0.normal.y + s0 * ( v1.normal.y - v0.normal.y ),
-						v0.normal.z + s0 * ( v1.normal.z - v0.normal.z )
-					)
-				);
-
-				// need to clip more values (texture coordinates)? do it this way:
-				// intersectpoint.value = a.value + s * ( b.value - a.value );
-
-				return v;
-
-			}
-
-		}
-
-	}
-
-	// helper
-
-	class DecalVertex {
-
-		constructor( position, normal ) {
-
-			this.position = position;
-			this.normal = normal;
-
-		}
-
-		clone() {
-
-			return new this.constructor( this.position.clone(), this.normal.clone() );
-
-		}
-
-	}
-
-	var textureLoader = new TextureLoader(); // Parameters from the UI - repackage into class?
-
-	var Decal = /*#__PURE__*/function () {
+	var CustomDecalGeometry = /*#__PURE__*/function (_BufferGeometry) {
+	  _inherits(CustomDecalGeometry, _BufferGeometry);
+
+	  var _super = _createSuper(CustomDecalGeometry);
+
+	  function CustomDecalGeometry(mesh, position, orientation, size) {
+	    var _this;
+
+	    _classCallCheck(this, CustomDecalGeometry);
+
+	    _this = _super.call(this); // Now it does work correctly, just need to figure out hte angles.
+
+	    var triangleNormal = new Vector3(0, 0, 0);
+	    var viewDirection = new Vector3(0, 0, 1);
+	    viewDirection.applyEuler(orientation);
+	    viewDirection.transformDirection(mesh.matrixWorld); // buffers
+
+	    var vertices = [];
+	    var normals = [];
+	    var uvs = []; // helpers
+
+	    var plane = new Vector3(); // this matrix represents the transformation of the decal projector
+
+	    var projectorMatrix = new Matrix4();
+	    projectorMatrix.makeRotationFromEuler(orientation);
+	    projectorMatrix.setPosition(position);
+	    var projectorMatrixInverse = new Matrix4();
+	    projectorMatrixInverse.copy(projectorMatrix).invert(); // generate buffers
+
+	    generate(); // build geometry
+
+	    _this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+
+	    _this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+
+	    _this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+	    function generate() {
+	      var decalVertices = [];
+	      var vertex = new Vector3();
+	      var normal = new Vector3(); // handle different geometry types
+
+	      if (mesh.geometry.isGeometry === true) {
+	        console.error('THREE.DecalGeometry no longer supports THREE.Geometry. Use BufferGeometry instead.');
+	        return;
+	      }
+
+	      var geometry = mesh.geometry;
+	      var positionAttribute = geometry.attributes.position;
+	      var normalAttribute = geometry.attributes.normal; // first, create an array of 'DecalVertex' objects
+	      // three consecutive 'DecalVertex' objects represent a single face
+	      //
+	      // this data structure will be later used to perform the clipping
+
+	      if (geometry.index !== null) {
+	        // indexed BufferGeometry
+	        var index = geometry.index;
+
+	        for (var i = 0; i < index.count; i++) {
+	          vertex.fromBufferAttribute(positionAttribute, index.getX(i));
+	          normal.fromBufferAttribute(normalAttribute, index.getX(i));
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } else {
+	        // non-indexed BufferGeometry
+	        for (var _i = 0; _i < positionAttribute.count; _i++) {
+	          vertex.fromBufferAttribute(positionAttribute, _i);
+	          normal.fromBufferAttribute(normalAttribute, _i);
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } ///////////////////////////////////////
+
+
+	      var decalVerticesOneSided = [];
+
+	      for (var _i2 = 0; _i2 < decalVertices.length; _i2 += 3) {
+	        // Check if the triangle is oriented correctly.
+	        // So for a triangle p1, p2, p3, if the vector A = p2 - p1 and the vector B = p3 - p1 then the normal N = A x B and can be calculated by:
+	        // Nx = Ay * Bz - Az * By
+	        // Ny = Az * Bx - Ax * Bz
+	        // Nz = Ax * By - Ay * Bx
+	        // Just calculate the average of hte triangle normals.
+	        triangleNormal.set(0, 0, 0);
+	        triangleNormal.add(decalVertices[_i2 + 0].normal);
+	        triangleNormal.add(decalVertices[_i2 + 1].normal);
+	        triangleNormal.add(decalVertices[_i2 + 2].normal);
+
+	        if (triangleNormal.dot(viewDirection) >= -0.4) {
+	          decalVerticesOneSided.push(decalVertices[_i2 + 0]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 1]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 2]);
+	        }
+	      } // for
+	      // decalVertices = decalVerticesOneSided;
+	      // console.log(`N one sided: ${decalVerticesOneSided.length/3}`)
+	      // console.log(`N two sided: ${decalVertices.length/3}`)
+
+
+	      decalVertices = decalVerticesOneSided; ////////////////////////////////////////////
+	      // second, clip the geometry so that it doesn't extend out from the projector
+
+	      decalVertices = clipGeometry(decalVertices, plane.set(1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(-1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, -1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, 1));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, -1)); // third, generate final vertices, normals and uvs
+
+	      for (var _i3 = 0; _i3 < decalVertices.length; _i3++) {
+	        var decalVertex = decalVertices[_i3]; // create texture coordinates (we are still in projector space)
+
+	        uvs.push(0.5 + decalVertex.position.x / size.x, 0.5 + decalVertex.position.y / size.y); // transform the vertex back to world space
+
+	        decalVertex.position.applyMatrix4(projectorMatrix); // now create vertex and normal buffer data
+
+	        vertices.push(decalVertex.position.x, decalVertex.position.y, decalVertex.position.z);
+	        normals.push(decalVertex.normal.x, decalVertex.normal.y, decalVertex.normal.z);
+	      }
+	    }
+
+	    function pushDecalVertex(decalVertices, vertex, normal) {
+	      // transform the vertex to world space, then to projector space
+	      vertex.applyMatrix4(mesh.matrixWorld);
+	      vertex.applyMatrix4(projectorMatrixInverse);
+	      normal.transformDirection(mesh.matrixWorld);
+	      decalVertices.push(new DecalVertex(vertex.clone(), normal.clone()));
+	    }
+
+	    function clipGeometry(inVertices, plane) {
+	      var outVertices = [];
+	      var s = 0.5 * Math.abs(size.dot(plane)); // a single iteration clips one face,
+	      // which consists of three consecutive 'DecalVertex' objects
+
+	      for (var i = 0; i < inVertices.length; i += 3) {
+	        var total = 0;
+	        var nV1 = void 0;
+	        var nV2 = void 0;
+	        var nV3 = void 0;
+	        var nV4 = void 0;
+	        var d1 = inVertices[i + 0].position.dot(plane) - s;
+	        var d2 = inVertices[i + 1].position.dot(plane) - s;
+	        var d3 = inVertices[i + 2].position.dot(plane) - s;
+	        var v1Out = d1 > 0;
+	        var v2Out = d2 > 0;
+	        var v3Out = d3 > 0; // calculate, how many vertices of the face lie outside of the clipping plane
+
+	        total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+
+	        switch (total) {
+	          case 0:
+	            {
+	              // the entire face lies inside of the plane, no clipping needed
+	              outVertices.push(inVertices[i]);
+	              outVertices.push(inVertices[i + 1]);
+	              outVertices.push(inVertices[i + 2]);
+	              break;
+	            }
+
+	          case 1:
+	            {
+	              // one vertex lies outside of the plane, perform clipping
+	              if (v1Out) {
+	                nV1 = inVertices[i + 1];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i], nV1, plane, s);
+	                nV4 = clip(inVertices[i], nV2, plane, s);
+	              }
+
+	              if (v2Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i + 1], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 1], nV2, plane, s);
+	                outVertices.push(nV3);
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV1.clone());
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV3.clone());
+	                outVertices.push(nV4);
+	                break;
+	              }
+
+	              if (v3Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 1];
+	                nV3 = clip(inVertices[i + 2], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 2], nV2, plane, s);
+	              }
+
+	              outVertices.push(nV1.clone());
+	              outVertices.push(nV2.clone());
+	              outVertices.push(nV3);
+	              outVertices.push(nV4);
+	              outVertices.push(nV3.clone());
+	              outVertices.push(nV2.clone());
+	              break;
+	            }
+
+	          case 2:
+	            {
+	              // two vertices lies outside of the plane, perform clipping
+	              if (!v1Out) {
+	                nV1 = inVertices[i].clone();
+	                nV2 = clip(nV1, inVertices[i + 1], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 2], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v2Out) {
+	                nV1 = inVertices[i + 1].clone();
+	                nV2 = clip(nV1, inVertices[i + 2], plane, s);
+	                nV3 = clip(nV1, inVertices[i], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v3Out) {
+	                nV1 = inVertices[i + 2].clone();
+	                nV2 = clip(nV1, inVertices[i], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 1], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              break;
+	            }
+	        }
+	      }
+
+	      return outVertices;
+	    }
+
+	    function clip(v0, v1, p, s) {
+	      var d0 = v0.position.dot(p) - s;
+	      var d1 = v1.position.dot(p) - s;
+	      var s0 = d0 / (d0 - d1);
+	      var v = new DecalVertex(new Vector3(v0.position.x + s0 * (v1.position.x - v0.position.x), v0.position.y + s0 * (v1.position.y - v0.position.y), v0.position.z + s0 * (v1.position.z - v0.position.z)), new Vector3(v0.normal.x + s0 * (v1.normal.x - v0.normal.x), v0.normal.y + s0 * (v1.normal.y - v0.normal.y), v0.normal.z + s0 * (v1.normal.z - v0.normal.z))); // need to clip more values (texture coordinates)? do it this way:
+	      // intersectpoint.value = a.value + s * ( b.value - a.value );
+
+	      return v;
+	    }
+
+	    return _this;
+	  }
+
+	  return CustomDecalGeometry;
+	}(BufferGeometry); // helper
+
+	var DecalVertex = /*#__PURE__*/function () {
+	  function DecalVertex(position, normal) {
+	    _classCallCheck(this, DecalVertex);
+
+	    this.position = position;
+	    this.normal = normal;
+	  }
+
+	  _createClass(DecalVertex, [{
+	    key: "clone",
+	    value: function clone() {
+	      return new this.constructor(this.position.clone(), this.normal.clone());
+	    }
+	  }]);
+
+	  return DecalVertex;
+	}();
+
+	var DecalMesh = /*#__PURE__*/function () {
 	  // Each decal is expected to be placed only once.
-	  function Decal() {
-	    _classCallCheck(this, Decal);
+	  function DecalMesh(texture) {
+	    _classCallCheck(this, DecalMesh);
 
 	    this.position = new Vector3();
 	    this.orientation = new Euler();
 	    this.scale = 10;
 	    this.size = new Vector3(10, 10, 10);
-	    var obj = this; // Create the raycaster.
-
-	    /*
-	    BEHAVIOR:
-	    - click and drag should support OrbitControls without pasting the decal.
-	    - so store moved as before, and only past on pointerup?
-	    */
-
-	    var decalDiffuse = textureLoader.load('assets/oil_flow_half.png'); // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+	    this.support = undefined;
+	    var obj = this; // const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
+	    // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
 	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
 	    // normalMap: decalNormal,
 
 	    var decalMaterial = new MeshBasicMaterial({
-	      map: decalDiffuse,
-	      alphaMap: decalDiffuse,
+	      map: texture,
+	      alphaMap: texture,
 	      transparent: true,
 	      depthTest: true,
 	      depthWrite: false,
 	      polygonOffset: true,
 	      polygonOffsetFactor: -4,
-	      wireframe: false
+	      wireframe: false,
+	      blending: AdditiveBlending
 	    });
 	    var placeholderGeometry = new BufferGeometry();
 	    obj.mesh = new Mesh(placeholderGeometry, decalMaterial);
 	  } // constructor
 
 
-	  _createClass(Decal, [{
+	  _createClass(DecalMesh, [{
 	    key: "transform",
 	    value: function transform() {
 	      // Add a new instance of hte decal of this type.
 	      var obj = this; // Reset the size in case scale changed.
 
-	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object.
+	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object if a support geometry has been prescribed.
 
-	      var cutout = new DecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
-	      obj.mesh.geometry.copy(cutout);
+	      if (obj.support) {
+	        var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	        obj.mesh.geometry.copy(cutout);
+	      } // if
+
 	    } // transform
 
 	  }, {
 	    key: "highlight",
-	    value: function highlight() {
-	      // Highlight this particular decal.
+	    value: function highlight(active) {
+	      // Highlight this particular decal based on a flag passed in.
 	      var obj = this;
-	      obj.decalmesh.material.emissive.setHex(0x000000);
+	      obj.mesh.material.color.setHex(active ? 0xff00ff : 0xffffff);
 	    } // highlight
 
+	  }, {
+	    key: "unhighlight",
+	    value: function unhighlight() {
+	      var obj = this;
+	      obj.mesh.material.color.setHex(0xffffff);
+	    } // unhighlight
+
+	  }]);
+
+	  return DecalMesh;
+	}(); // DecalMesh
+
+	/**
+	 * lil-gui
+	 * https://lil-gui.georgealways.com
+	 * @version 0.16.0
+	 * @author George Michael Brower
+	 * @license MIT
+	 */
+	class t{constructor(i,e,s,n,r="div"){this.parent=i,this.object=e,this.property=s,this._disabled=!1,this.initialValue=this.getValue(),this.domElement=document.createElement("div"),this.domElement.classList.add("controller"),this.domElement.classList.add(n),this.$name=document.createElement("div"),this.$name.classList.add("name"),t.nextNameID=t.nextNameID||0,this.$name.id="lil-gui-name-"+ ++t.nextNameID,this.$widget=document.createElement(r),this.$widget.classList.add("widget"),this.$disable=this.$widget,this.domElement.appendChild(this.$name),this.domElement.appendChild(this.$widget),this.parent.children.push(this),this.parent.controllers.push(this),this.parent.$children.appendChild(this.domElement),this._listenCallback=this._listenCallback.bind(this),this.name(s);}name(t){return this._name=t,this.$name.innerHTML=t,this}onChange(t){return this._onChange=t,this}_callOnChange(){this.parent._callOnChange(this),void 0!==this._onChange&&this._onChange.call(this,this.getValue()),this._changed=!0;}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(){this._changed&&(this.parent._callOnFinishChange(this),void 0!==this._onFinishChange&&this._onFinishChange.call(this,this.getValue())),this._changed=!1;}reset(){return this.setValue(this.initialValue),this._callOnFinishChange(),this}enable(t=!0){return this.disable(!t)}disable(t=!0){return t===this._disabled||(this._disabled=t,this.domElement.classList.toggle("disabled",t),this.$disable.toggleAttribute("disabled",t)),this}options(t){const i=this.parent.add(this.object,this.property,t);return i.name(this._name),this.destroy(),i}min(t){return this}max(t){return this}step(t){return this}listen(t=!0){return this._listening=t,void 0!==this._listenCallbackID&&(cancelAnimationFrame(this._listenCallbackID),this._listenCallbackID=void 0),this._listening&&this._listenCallback(),this}_listenCallback(){this._listenCallbackID=requestAnimationFrame(this._listenCallback),this.updateDisplay();}getValue(){return this.object[this.property]}setValue(t){return this.object[this.property]=t,this._callOnChange(),this.updateDisplay(),this}updateDisplay(){return this}load(t){return this.setValue(t),this._callOnFinishChange(),this}save(){return this.getValue()}destroy(){this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.controllers.splice(this.parent.controllers.indexOf(this),1),this.parent.$children.removeChild(this.domElement);}}class i extends t{constructor(t,i,e){super(t,i,e,"boolean","label"),this.$input=document.createElement("input"),this.$input.setAttribute("type","checkbox"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$input.addEventListener("change",()=>{this.setValue(this.$input.checked),this._callOnFinishChange();}),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.checked=this.getValue(),this}}function e(t){let i,e;return (i=t.match(/(#|0x)?([a-f0-9]{6})/i))?e=i[2]:(i=t.match(/rgb\(\s*(\d*)\s*,\s*(\d*)\s*,\s*(\d*)\s*\)/))?e=parseInt(i[1]).toString(16).padStart(2,0)+parseInt(i[2]).toString(16).padStart(2,0)+parseInt(i[3]).toString(16).padStart(2,0):(i=t.match(/^#?([a-f0-9])([a-f0-9])([a-f0-9])$/i))&&(e=i[1]+i[1]+i[2]+i[2]+i[3]+i[3]),!!e&&"#"+e}const s={isPrimitive:!0,match:t=>"string"==typeof t,fromHexString:e,toHexString:e},n={isPrimitive:!0,match:t=>"number"==typeof t,fromHexString:t=>parseInt(t.substring(1),16),toHexString:t=>"#"+t.toString(16).padStart(6,0)},r={isPrimitive:!1,match:Array.isArray,fromHexString(t,i,e=1){const s=n.fromHexString(t);i[0]=(s>>16&255)/255*e,i[1]=(s>>8&255)/255*e,i[2]=(255&s)/255*e;},toHexString:([t,i,e],s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},l={isPrimitive:!1,match:t=>Object(t)===t,fromHexString(t,i,e=1){const s=n.fromHexString(t);i.r=(s>>16&255)/255*e,i.g=(s>>8&255)/255*e,i.b=(255&s)/255*e;},toHexString:({r:t,g:i,b:e},s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},o=[s,n,r,l];class a extends t{constructor(t,i,s,n){var r;super(t,i,s,"color"),this.$input=document.createElement("input"),this.$input.setAttribute("type","color"),this.$input.setAttribute("tabindex",-1),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$text=document.createElement("input"),this.$text.setAttribute("type","text"),this.$text.setAttribute("spellcheck","false"),this.$text.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this.$display.appendChild(this.$input),this.$widget.appendChild(this.$display),this.$widget.appendChild(this.$text),this._format=(r=this.initialValue,o.find(t=>t.match(r))),this._rgbScale=n,this._initialValueHexString=this.save(),this._textFocused=!1,this.$input.addEventListener("input",()=>{this._setValueFromHexString(this.$input.value);}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$text.addEventListener("input",()=>{const t=e(this.$text.value);t&&this._setValueFromHexString(t);}),this.$text.addEventListener("focus",()=>{this._textFocused=!0,this.$text.select();}),this.$text.addEventListener("blur",()=>{this._textFocused=!1,this.updateDisplay(),this._callOnFinishChange();}),this.$disable=this.$text,this.updateDisplay();}reset(){return this._setValueFromHexString(this._initialValueHexString),this}_setValueFromHexString(t){if(this._format.isPrimitive){const i=this._format.fromHexString(t);this.setValue(i);}else this._format.fromHexString(t,this.getValue(),this._rgbScale),this._callOnChange(),this.updateDisplay();}save(){return this._format.toHexString(this.getValue(),this._rgbScale)}load(t){return this._setValueFromHexString(t),this._callOnFinishChange(),this}updateDisplay(){return this.$input.value=this._format.toHexString(this.getValue(),this._rgbScale),this._textFocused||(this.$text.value=this.$input.value.substring(1)),this.$display.style.backgroundColor=this.$input.value,this}}class h extends t{constructor(t,i,e){super(t,i,e,"function"),this.$button=document.createElement("button"),this.$button.appendChild(this.$name),this.$widget.appendChild(this.$button),this.$button.addEventListener("click",t=>{t.preventDefault(),this.getValue().call(this.object);}),this.$button.addEventListener("touchstart",()=>{}),this.$disable=this.$button;}}class d extends t{constructor(t,i,e,s,n,r){super(t,i,e,"number"),this._initInput(),this.min(s),this.max(n);const l=void 0!==r;this.step(l?r:this._getImplicitStep(),l),this.updateDisplay();}min(t){return this._min=t,this._onUpdateMinMax(),this}max(t){return this._max=t,this._onUpdateMinMax(),this}step(t,i=!0){return this._step=t,this._stepExplicit=i,this}updateDisplay(){const t=this.getValue();if(this._hasSlider){let i=(t-this._min)/(this._max-this._min);i=Math.max(0,Math.min(i,1)),this.$fill.style.width=100*i+"%";}return this._inputFocused||(this.$input.value=t),this}_initInput(){this.$input=document.createElement("input"),this.$input.setAttribute("type","number"),this.$input.setAttribute("step","any"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$disable=this.$input;const t=t=>{const i=parseFloat(this.$input.value);isNaN(i)||(this._snapClampSetValue(i+t),this.$input.value=this.getValue());};let i,e,s,n,r,l=!1;const o=t=>{if(l){const s=t.clientX-i,n=t.clientY-e;Math.abs(n)>5?(t.preventDefault(),this.$input.blur(),l=!1,this._setDraggingStyle(!0,"vertical")):Math.abs(s)>5&&a();}if(!l){const i=t.clientY-s;r-=i*this._step*this._arrowKeyMultiplier(t),n+r>this._max?r=this._max-n:n+r<this._min&&(r=this._min-n),this._snapClampSetValue(n+r);}s=t.clientY;},a=()=>{this._setDraggingStyle(!1,"vertical"),this._callOnFinishChange(),window.removeEventListener("mousemove",o),window.removeEventListener("mouseup",a);};this.$input.addEventListener("input",()=>{const t=parseFloat(this.$input.value);isNaN(t)||this.setValue(this._clamp(t));}),this.$input.addEventListener("keydown",i=>{"Enter"===i.code&&this.$input.blur(),"ArrowUp"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i))),"ArrowDown"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i)*-1));}),this.$input.addEventListener("wheel",i=>{this._inputFocused&&(i.preventDefault(),t(this._step*this._normalizeMouseWheel(i)));}),this.$input.addEventListener("mousedown",t=>{i=t.clientX,e=s=t.clientY,l=!0,n=this.getValue(),r=0,window.addEventListener("mousemove",o),window.addEventListener("mouseup",a);}),this.$input.addEventListener("focus",()=>{this._inputFocused=!0;}),this.$input.addEventListener("blur",()=>{this._inputFocused=!1,this.updateDisplay(),this._callOnFinishChange();});}_initSlider(){this._hasSlider=!0,this.$slider=document.createElement("div"),this.$slider.classList.add("slider"),this.$fill=document.createElement("div"),this.$fill.classList.add("fill"),this.$slider.appendChild(this.$fill),this.$widget.insertBefore(this.$slider,this.$input),this.domElement.classList.add("hasSlider");const t=t=>{const i=this.$slider.getBoundingClientRect();let e=(s=t,n=i.left,r=i.right,l=this._min,o=this._max,(s-n)/(r-n)*(o-l)+l);var s,n,r,l,o;this._snapClampSetValue(e);},i=i=>{t(i.clientX);},e=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("mousemove",i),window.removeEventListener("mouseup",e);};let s,n,r=!1;const l=i=>{i.preventDefault(),this._setDraggingStyle(!0),t(i.touches[0].clientX),r=!1;},o=i=>{if(r){const t=i.touches[0].clientX-s,e=i.touches[0].clientY-n;Math.abs(t)>Math.abs(e)?l(i):(window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a));}else i.preventDefault(),t(i.touches[0].clientX);},a=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a);},h=this._callOnFinishChange.bind(this);let d;this.$slider.addEventListener("mousedown",s=>{this._setDraggingStyle(!0),t(s.clientX),window.addEventListener("mousemove",i),window.addEventListener("mouseup",e);}),this.$slider.addEventListener("touchstart",t=>{t.touches.length>1||(this._hasScrollBar?(s=t.touches[0].clientX,n=t.touches[0].clientY,r=!0):l(t),window.addEventListener("touchmove",o),window.addEventListener("touchend",a));}),this.$slider.addEventListener("wheel",t=>{if(Math.abs(t.deltaX)<Math.abs(t.deltaY)&&this._hasScrollBar)return;t.preventDefault();const i=this._normalizeMouseWheel(t)*this._step;this._snapClampSetValue(this.getValue()+i),this.$input.value=this.getValue(),clearTimeout(d),d=setTimeout(h,400);});}_setDraggingStyle(t,i="horizontal"){this.$slider&&this.$slider.classList.toggle("active",t),document.body.classList.toggle("lil-gui-dragging",t),document.body.classList.toggle("lil-gui-"+i,t);}_getImplicitStep(){return this._hasMin&&this._hasMax?(this._max-this._min)/1e3:.1}_onUpdateMinMax(){!this._hasSlider&&this._hasMin&&this._hasMax&&(this._stepExplicit||this.step(this._getImplicitStep(),!1),this._initSlider(),this.updateDisplay());}_normalizeMouseWheel(t){let{deltaX:i,deltaY:e}=t;Math.floor(t.deltaY)!==t.deltaY&&t.wheelDelta&&(i=0,e=-t.wheelDelta/120,e*=this._stepExplicit?1:10);return i+-e}_arrowKeyMultiplier(t){let i=this._stepExplicit?1:10;return t.shiftKey?i*=10:t.altKey&&(i/=10),i}_snap(t){const i=Math.round(t/this._step)*this._step;return parseFloat(i.toPrecision(15))}_clamp(t){return t<this._min&&(t=this._min),t>this._max&&(t=this._max),t}_snapClampSetValue(t){this.setValue(this._clamp(this._snap(t)));}get _hasScrollBar(){const t=this.parent.root.$children;return t.scrollHeight>t.clientHeight}get _hasMin(){return void 0!==this._min}get _hasMax(){return void 0!==this._max}}class c extends t{constructor(t,i,e,s){super(t,i,e,"option"),this.$select=document.createElement("select"),this.$select.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this._values=Array.isArray(s)?s:Object.values(s),this._names=Array.isArray(s)?s:Object.keys(s),this._names.forEach(t=>{const i=document.createElement("option");i.innerHTML=t,this.$select.appendChild(i);}),this.$select.addEventListener("change",()=>{this.setValue(this._values[this.$select.selectedIndex]),this._callOnFinishChange();}),this.$select.addEventListener("focus",()=>{this.$display.classList.add("focus");}),this.$select.addEventListener("blur",()=>{this.$display.classList.remove("focus");}),this.$widget.appendChild(this.$select),this.$widget.appendChild(this.$display),this.$disable=this.$select,this.updateDisplay();}updateDisplay(){const t=this.getValue(),i=this._values.indexOf(t);return this.$select.selectedIndex=i,this.$display.innerHTML=-1===i?t:this._names[i],this}}class u extends t{constructor(t,i,e){super(t,i,e,"string"),this.$input=document.createElement("input"),this.$input.setAttribute("type","text"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$input.addEventListener("input",()=>{this.setValue(this.$input.value);}),this.$input.addEventListener("keydown",t=>{"Enter"===t.code&&this.$input.blur();}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$widget.appendChild(this.$input),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.value=this.getValue(),this}}let p=!1;class g{constructor({parent:t,autoPlace:i=void 0===t,container:e,width:s,title:n="Controls",injectStyles:r=!0,touchStyles:l=!0}={}){if(this.parent=t,this.root=t?t.root:this,this.children=[],this.controllers=[],this.folders=[],this._closed=!1,this._hidden=!1,this.domElement=document.createElement("div"),this.domElement.classList.add("lil-gui"),this.$title=document.createElement("div"),this.$title.classList.add("title"),this.$title.setAttribute("role","button"),this.$title.setAttribute("aria-expanded",!0),this.$title.setAttribute("tabindex",0),this.$title.addEventListener("click",()=>this.openAnimated(this._closed)),this.$title.addEventListener("keydown",t=>{"Enter"!==t.code&&"Space"!==t.code||(t.preventDefault(),this.$title.click());}),this.$title.addEventListener("touchstart",()=>{}),this.$children=document.createElement("div"),this.$children.classList.add("children"),this.domElement.appendChild(this.$title),this.domElement.appendChild(this.$children),this.title(n),l&&this.domElement.classList.add("allow-touch-styles"),this.parent)return this.parent.children.push(this),this.parent.folders.push(this),void this.parent.$children.appendChild(this.domElement);this.domElement.classList.add("root"),!p&&r&&(!function(t){const i=document.createElement("style");i.innerHTML=t;const e=document.querySelector("head link[rel=stylesheet], head style");e?document.head.insertBefore(i,e):document.head.appendChild(i);}('.lil-gui{--background-color:#1f1f1f;--text-color:#ebebeb;--title-background-color:#111;--title-text-color:#ebebeb;--widget-color:#424242;--hover-color:#4f4f4f;--focus-color:#595959;--number-color:#2cc9ff;--string-color:#a2db3c;--font-size:11px;--input-font-size:11px;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--font-family-mono:Menlo,Monaco,Consolas,"Droid Sans Mono",monospace;--padding:4px;--spacing:4px;--widget-height:20px;--name-width:45%;--slider-knob-width:2px;--slider-input-width:27%;--color-input-width:27%;--slider-input-min-width:45px;--color-input-min-width:45px;--folder-indent:7px;--widget-padding:0 0 0 3px;--widget-border-radius:2px;--checkbox-size:calc(var(--widget-height)*0.75);--scrollbar-width:5px;background-color:var(--background-color);color:var(--text-color);font-family:var(--font-family);font-size:var(--font-size);font-style:normal;font-weight:400;line-height:1;text-align:left;touch-action:manipulation;user-select:none;-webkit-user-select:none}.lil-gui,.lil-gui *{box-sizing:border-box;margin:0;padding:0}.lil-gui.root{display:flex;flex-direction:column;width:var(--width,245px)}.lil-gui.root>.title{background:var(--title-background-color);color:var(--title-text-color)}.lil-gui.root>.children{overflow-x:hidden;overflow-y:auto}.lil-gui.root>.children::-webkit-scrollbar{background:var(--background-color);height:var(--scrollbar-width);width:var(--scrollbar-width)}.lil-gui.root>.children::-webkit-scrollbar-thumb{background:var(--focus-color);border-radius:var(--scrollbar-width)}.lil-gui.force-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}.lil-gui.autoPlace{max-height:100%;position:fixed;right:15px;top:0;z-index:1001}.lil-gui .controller{align-items:center;display:flex;margin:var(--spacing) 0;padding:0 var(--padding)}.lil-gui .controller.disabled{opacity:.5}.lil-gui .controller.disabled,.lil-gui .controller.disabled *{pointer-events:none!important}.lil-gui .controller>.name{flex-shrink:0;line-height:var(--widget-height);min-width:var(--name-width);padding-right:var(--spacing);white-space:pre}.lil-gui .controller .widget{align-items:center;display:flex;min-height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.string input{color:var(--string-color)}.lil-gui .controller.boolean .widget{cursor:pointer}.lil-gui .controller.color .display{border-radius:var(--widget-border-radius);height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.color input[type=color]{cursor:pointer;height:100%;opacity:0;width:100%}.lil-gui .controller.color input[type=text]{flex-shrink:0;font-family:var(--font-family-mono);margin-left:var(--spacing);min-width:var(--color-input-min-width);width:var(--color-input-width)}.lil-gui .controller.option select{max-width:100%;opacity:0;position:absolute;width:100%}.lil-gui .controller.option .display{background:var(--widget-color);border-radius:var(--widget-border-radius);height:var(--widget-height);line-height:var(--widget-height);max-width:100%;overflow:hidden;padding-left:.55em;padding-right:1.75em;pointer-events:none;position:relative;word-break:break-all}.lil-gui .controller.option .display.active{background:var(--focus-color)}.lil-gui .controller.option .display:after{bottom:0;content:"↕";font-family:lil-gui;padding-right:.375em;position:absolute;right:0;top:0}.lil-gui .controller.option .widget,.lil-gui .controller.option select{cursor:pointer}.lil-gui .controller.number input{color:var(--number-color)}.lil-gui .controller.number.hasSlider input{flex-shrink:0;margin-left:var(--spacing);min-width:var(--slider-input-min-width);width:var(--slider-input-width)}.lil-gui .controller.number .slider{background-color:var(--widget-color);border-radius:var(--widget-border-radius);cursor:ew-resize;height:var(--widget-height);overflow:hidden;padding-right:var(--slider-knob-width);touch-action:pan-y;width:100%}.lil-gui .controller.number .slider.active{background-color:var(--focus-color)}.lil-gui .controller.number .slider.active .fill{opacity:.95}.lil-gui .controller.number .fill{border-right:var(--slider-knob-width) solid var(--number-color);box-sizing:content-box;height:100%}.lil-gui-dragging .lil-gui{--hover-color:var(--widget-color)}.lil-gui-dragging *{cursor:ew-resize!important}.lil-gui-dragging.lil-gui-vertical *{cursor:ns-resize!important}.lil-gui .title{--title-height:calc(var(--widget-height) + var(--spacing)*1.25);-webkit-tap-highlight-color:transparent;text-decoration-skip:objects;cursor:pointer;font-weight:600;height:var(--title-height);line-height:calc(var(--title-height) - 4px);outline:none;padding:0 var(--padding)}.lil-gui .title:before{content:"▾";display:inline-block;font-family:lil-gui;padding-right:2px}.lil-gui .title:active{background:var(--title-background-color);opacity:.75}.lil-gui.root>.title:focus{text-decoration:none!important}.lil-gui.closed>.title:before{content:"▸"}.lil-gui.closed>.children{opacity:0;transform:translateY(-7px)}.lil-gui.closed:not(.transition)>.children{display:none}.lil-gui.transition>.children{overflow:hidden;pointer-events:none;transition-duration:.3s;transition-property:height,opacity,transform;transition-timing-function:cubic-bezier(.2,.6,.35,1)}.lil-gui .children:empty:before{content:"Empty";display:block;font-style:italic;height:var(--widget-height);line-height:var(--widget-height);margin:var(--spacing) 0;opacity:.5;padding:0 var(--padding)}.lil-gui.root>.children>.lil-gui>.title{border-width:0;border-bottom:1px solid var(--widget-color);border-left:0 solid var(--widget-color);border-right:0 solid var(--widget-color);border-top:1px solid var(--widget-color);transition:border-color .3s}.lil-gui.root>.children>.lil-gui.closed>.title{border-bottom-color:transparent}.lil-gui+.controller{border-top:1px solid var(--widget-color);margin-top:0;padding-top:var(--spacing)}.lil-gui .lil-gui .lil-gui>.title{border:none}.lil-gui .lil-gui .lil-gui>.children{border:none;border-left:2px solid var(--widget-color);margin-left:var(--folder-indent)}.lil-gui .lil-gui .controller{border:none}.lil-gui input{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:0;border-radius:var(--widget-border-radius);color:var(--text-color);font-family:var(--font-family);font-size:var(--input-font-size);height:var(--widget-height);outline:none;width:100%}.lil-gui input:disabled{opacity:1}.lil-gui input[type=number],.lil-gui input[type=text]{padding:var(--widget-padding)}.lil-gui input[type=number]:focus,.lil-gui input[type=text]:focus{background:var(--focus-color)}.lil-gui input::-webkit-inner-spin-button,.lil-gui input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.lil-gui input[type=number]{-moz-appearance:textfield}.lil-gui input[type=checkbox]{appearance:none;-webkit-appearance:none;border-radius:var(--widget-border-radius);cursor:pointer;height:var(--checkbox-size);text-align:center;width:var(--checkbox-size)}.lil-gui input[type=checkbox]:checked:before{content:"✓";font-family:lil-gui;font-size:var(--checkbox-size);line-height:var(--checkbox-size)}.lil-gui button{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:1px solid var(--widget-color);border-radius:var(--widget-border-radius);color:var(--text-color);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size);height:var(--widget-height);line-height:calc(var(--widget-height) - 4px);outline:none;text-align:center;text-transform:none;width:100%}.lil-gui button:active{background:var(--focus-color)}@font-face{font-family:lil-gui;src:url("data:application/font-woff;charset=utf-8;base64,d09GRgABAAAAAAUsAAsAAAAACJwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAAH4AAADAImwmYE9TLzIAAAGIAAAAPwAAAGBKqH5SY21hcAAAAcgAAAD0AAACrukyyJBnbHlmAAACvAAAAF8AAACEIZpWH2hlYWQAAAMcAAAAJwAAADZfcj2zaGhlYQAAA0QAAAAYAAAAJAC5AHhobXR4AAADXAAAABAAAABMAZAAAGxvY2EAAANsAAAAFAAAACgCEgIybWF4cAAAA4AAAAAeAAAAIAEfABJuYW1lAAADoAAAASIAAAIK9SUU/XBvc3QAAATEAAAAZgAAAJCTcMc2eJxVjbEOgjAURU+hFRBK1dGRL+ALnAiToyMLEzFpnPz/eAshwSa97517c/MwwJmeB9kwPl+0cf5+uGPZXsqPu4nvZabcSZldZ6kfyWnomFY/eScKqZNWupKJO6kXN3K9uCVoL7iInPr1X5baXs3tjuMqCtzEuagm/AAlzQgPAAB4nGNgYRBlnMDAysDAYM/gBiT5oLQBAwuDJAMDEwMrMwNWEJDmmsJwgCFeXZghBcjlZMgFCzOiKOIFAB71Bb8AeJy1kjFuwkAQRZ+DwRAwBtNQRUGKQ8OdKCAWUhAgKLhIuAsVSpWz5Bbkj3dEgYiUIszqWdpZe+Z7/wB1oCYmIoboiwiLT2WjKl/jscrHfGg/pKdMkyklC5Zs2LEfHYpjcRoPzme9MWWmk3dWbK9ObkWkikOetJ554fWyoEsmdSlt+uR0pCJR34b6t/TVg1SY3sYvdf8vuiKrpyaDXDISiegp17p7579Gp3p++y7HPAiY9pmTibljrr85qSidtlg4+l25GLCaS8e6rRxNBmsnERunKbaOObRz7N72ju5vdAjYpBXHgJylOAVsMseDAPEP8LYoUHicY2BiAAEfhiAGJgZWBgZ7RnFRdnVJELCQlBSRlATJMoLV2DK4glSYs6ubq5vbKrJLSbGrgEmovDuDJVhe3VzcXFwNLCOILB/C4IuQ1xTn5FPilBTj5FPmBAB4WwoqAHicY2BkYGAA4sk1sR/j+W2+MnAzpDBgAyEMQUCSg4EJxAEAwUgFHgB4nGNgZGBgSGFggJMhDIwMqEAYAByHATJ4nGNgAIIUNEwmAABl3AGReJxjYAACIQYlBiMGJ3wQAEcQBEV4nGNgZGBgEGZgY2BiAAEQyQWEDAz/wXwGAAsPATIAAHicXdBNSsNAHAXwl35iA0UQXYnMShfS9GPZA7T7LgIu03SSpkwzYTIt1BN4Ak/gKTyAeCxfw39jZkjymzcvAwmAW/wgwHUEGDb36+jQQ3GXGot79L24jxCP4gHzF/EIr4jEIe7wxhOC3g2TMYy4Q7+Lu/SHuEd/ivt4wJd4wPxbPEKMX3GI5+DJFGaSn4qNzk8mcbKSR6xdXdhSzaOZJGtdapd4vVPbi6rP+cL7TGXOHtXKll4bY1Xl7EGnPtp7Xy2n00zyKLVHfkHBa4IcJ2oD3cgggWvt/V/FbDrUlEUJhTn/0azVWbNTNr0Ens8de1tceK9xZmfB1CPjOmPH4kitmvOubcNpmVTN3oFJyjzCvnmrwhJTzqzVj9jiSX911FjeAAB4nG3HMRKCMBBA0f0giiKi4DU8k0V2GWbIZDOh4PoWWvq6J5V8If9NVNQcaDhyouXMhY4rPTcG7jwYmXhKq8Wz+p762aNaeYXom2n3m2dLTVgsrCgFJ7OTmIkYbwIbC6vIB7WmFfAAAA==") format("woff")}@media (pointer:coarse){.lil-gui.allow-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}}@media (hover:hover){.lil-gui .controller.color .display:hover:before{border:1px solid #fff9;border-radius:var(--widget-border-radius);bottom:0;content:" ";display:block;left:0;position:absolute;right:0;top:0}.lil-gui .controller.option .display.focus{background:var(--focus-color)}.lil-gui .controller.option .widget:hover .display{background:var(--hover-color)}.lil-gui .controller.number .slider:hover{background-color:var(--hover-color)}body:not(.lil-gui-dragging) .lil-gui .title:hover{background:var(--title-background-color);opacity:.85}.lil-gui .title:focus{text-decoration:underline var(--focus-color)}.lil-gui input:hover{background:var(--hover-color)}.lil-gui input:active{background:var(--focus-color)}.lil-gui input[type=checkbox]:focus{box-shadow:inset 0 0 0 1px var(--focus-color)}.lil-gui button:hover{background:var(--hover-color);border-color:var(--hover-color)}.lil-gui button:focus{border-color:var(--focus-color)}}'),p=!0),e?e.appendChild(this.domElement):i&&(this.domElement.classList.add("autoPlace"),document.body.appendChild(this.domElement)),s&&this.domElement.style.setProperty("--width",s+"px"),this.domElement.addEventListener("keydown",t=>t.stopPropagation()),this.domElement.addEventListener("keyup",t=>t.stopPropagation());}add(t,e,s,n,r){if(Object(s)===s)return new c(this,t,e,s);const l=t[e];switch(typeof l){case"number":return new d(this,t,e,s,n,r);case"boolean":return new i(this,t,e);case"string":return new u(this,t,e);case"function":return new h(this,t,e)}console.error("gui.add failed\n\tproperty:",e,"\n\tobject:",t,"\n\tvalue:",l);}addColor(t,i,e=1){return new a(this,t,i,e)}addFolder(t){return new g({parent:this,title:t})}load(t,i=!0){return t.controllers&&this.controllers.forEach(i=>{i instanceof h||i._name in t.controllers&&i.load(t.controllers[i._name]);}),i&&t.folders&&this.folders.forEach(i=>{i._title in t.folders&&i.load(t.folders[i._title]);}),this}save(t=!0){const i={controllers:{},folders:{}};return this.controllers.forEach(t=>{if(!(t instanceof h)){if(t._name in i.controllers)throw new Error(`Cannot save GUI with duplicate property "${t._name}"`);i.controllers[t._name]=t.save();}}),t&&this.folders.forEach(t=>{if(t._title in i.folders)throw new Error(`Cannot save GUI with duplicate folder "${t._title}"`);i.folders[t._title]=t.save();}),i}open(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),this.domElement.classList.toggle("closed",this._closed),this}close(){return this.open(!1)}show(t=!0){return this._hidden=!t,this.domElement.style.display=this._hidden?"none":"",this}hide(){return this.show(!1)}openAnimated(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),requestAnimationFrame(()=>{const i=this.$children.clientHeight;this.$children.style.height=i+"px",this.domElement.classList.add("transition");const e=t=>{t.target===this.$children&&(this.$children.style.height="",this.domElement.classList.remove("transition"),this.$children.removeEventListener("transitionend",e));};this.$children.addEventListener("transitionend",e);const s=t?this.$children.scrollHeight:0;this.domElement.classList.toggle("closed",!t),requestAnimationFrame(()=>{this.$children.style.height=s+"px";});}),this}title(t){return this._title=t,this.$title.innerHTML=t,this}reset(t=!0){return (t?this.controllersRecursive():this.controllers).forEach(t=>t.reset()),this}onChange(t){return this._onChange=t,this}_callOnChange(t){this.parent&&this.parent._callOnChange(t),void 0!==this._onChange&&this._onChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(t){this.parent&&this.parent._callOnFinishChange(t),void 0!==this._onFinishChange&&this._onFinishChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}destroy(){this.parent&&(this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.folders.splice(this.parent.folders.indexOf(this),1)),this.domElement.parentElement&&this.domElement.parentElement.removeChild(this.domElement),Array.from(this.children).forEach(t=>t.destroy());}controllersRecursive(){let t=Array.from(this.controllers);return this.folders.forEach(i=>{t=t.concat(i.controllersRecursive());}),t}foldersRecursive(){let t=Array.from(this.folders);return this.folders.forEach(i=>{t=t.concat(i.foldersRecursive());}),t}}
+
+	function html2element(html) {
+	  var template = document.createElement('template');
+	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
+
+	  return template.content.firstChild;
+	} // html2element
+	 // trimStringToLength
+
+	var template = "<div style=\"display: none;\">\n<canvas class=\"editor\"></canvas>\n<div class=\"gui\" style=\"position: absolute; top: 10px; right: 10px; text-align: right;\"></div>\n</div>";
+
+	var DecalTextureUI = /*#__PURE__*/function () {
+	  function DecalTextureUI(source) {
+	    _classCallCheck(this, DecalTextureUI);
+
+	    var obj = this; // Make a node to which everything is appended.
+
+	    obj.node = html2element(template); // Create the canvas to draw and edit the texture on.
+
+	    var canvas = obj.node.querySelector("canvas"); // document.createElement('canvas');
+	    // obj.node.querySelector("div.editor").appendChild(canvas)
+	    // create an additional alphamap texture.
+
+	    obj.texture = new CanvasTexture(canvas);
+	    obj.ctx = canvas.getContext('2d');
+	    var ctx = obj.ctx; // The canvas width and height should be determined based on hte image aspect ratio.
+
+	    ctx.canvas.width = 512; // window.innerWidth;
+
+	    ctx.canvas.height = 512; // window.innerHeight;
+	    // Get the raw image.
+
+	    obj.rawImage = new ImageTexture(ctx, source); // Configure the editor
+
+	    obj.maskUI = new MaskEditor(ctx); // Prescribe scales so that the mask can remain consistent upon screen resize.
+
+	    obj.maskUI.px2unit = function (p) {
+	      return obj.rawImage.px2unit(p);
+	    };
+
+	    obj.maskUI.unit2px = function (p) {
+	      return obj.rawImage.unit2px(p);
+	    }; // Allow for complete redraw.
+
+
+	    obj.maskUI.onpointermove = function () {
+	      obj.render();
+	    }; // Add in the GUI.
+
+
+	    var guiconfig = {
+	      preview: function preview() {
+	        obj.preview();
+	      },
+	      adjust: function adjust() {
+	        obj.render();
+	      },
+	      submit: function submit() {
+	        // When submitting hte preview needs to be drawn, and then the manager needs to be hidden. But the preview twice still doesn't work...
+	        // Would be good to somehow enlarge the clipped are to make the whole canvas area available. Enlarging should be easy, it's more about positioning the clip over the image correctly...
+	        // Would be good if the user could select the center of the decal...
+	        // Make the main texture
+	        guiconfig.preview();
+	        obj.texture.needsUpdate = true;
+	        obj.hide();
+	      }
+	    }; // guiconfig
+	    // Add a gui before the canvas
+
+	    var gui = new g({
+	      container: obj.node.querySelector("div.gui"),
+	      title: "Decal editor"
+	    });
+	    gui.add(guiconfig, "preview");
+	    gui.add(guiconfig, "adjust");
+	    gui.add(guiconfig, "submit");
+	  } // constructor
+
+
+	  _createClass(DecalTextureUI, [{
+	    key: "preview",
+	    value: function preview() {
+	      var obj = this;
+	      var ctx = obj.ctx; // Clear everything
+
+	      ctx.reset();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); /// draw the shape we want to use for clipping
+
+	      obj.maskUI.drawClip(); /// change composite mode to use that shape. Source-over is default
+
+	      ctx.globalCompositeOperation = 'source-in'; /// draw the image to be clipped
+
+	      obj.rawImage.draw();
+	    } // preview
+
+	  }, {
+	    key: "render",
+	    value: function render() {
+	      var obj = this;
+	      var ctx = obj.ctx; // Clear canvas.
+
+	      ctx.reset();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	      obj.rawImage.draw();
+	      obj.maskUI.draw();
+	    } // render
+
+	  }, {
+	    key: "show",
+	    value: function show() {
+	      var obj = this;
+	      obj.node.style.display = "";
+	    } // show
+
+	  }, {
+	    key: "hide",
+	    value: function hide() {
+	      var obj = this;
+	      obj.node.style.display = "none";
+	    } // hide
+
+	  }, {
+	    key: "resize",
+	    value: function resize(w, h) {// Resize the manager given the width and height of the window.
+	    }
+	  }]);
+
+	  return DecalTextureUI;
+	}(); // DecalTextureUI
+
+	var Scale = /*#__PURE__*/function () {
+	  function Scale(range, domain) {
+	    _classCallCheck(this, Scale);
+
+	    this.range = [0, 1];
+	    this.domain = [0, 1];
+	    var obj = this; // Range [px]
+	    // Domain [data unit]
+
+	    obj.range = range ? range : obj.range;
+	    obj.domain = domain ? domain : obj.domain;
+	  }
+
+	  _createClass(Scale, [{
+	    key: "unit2px",
+	    value: function unit2px(v) {
+	      var obj = this;
+	      var domain = obj.domain;
+	      var range = obj.range;
+	      return (v - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]) + range[0];
+	    } // unit2px
+
+	  }, {
+	    key: "px2unit",
+	    value: function px2unit(v) {
+	      var obj = this;
+	      var domain = obj.domain;
+	      var range = obj.range;
+	      return (v - range[0]) / (range[1] - range[0]) * (domain[1] - domain[0]) + domain[0];
+	    } // px2unit
+
+	  }]);
+
+	  return Scale;
+	}(); // Scale
+
+
+	var ImageTexture = /*#__PURE__*/function () {
+	  function ImageTexture(ctx, sourcelink) {
+	    _classCallCheck(this, ImageTexture);
+
+	    this.im = undefined;
+	    this.ar = 1;
+	    var obj = this;
+	    obj.ctx = ctx;
+	    var im = new Image();
+	    im.src = sourcelink;
+
+	    im.onload = function () {
+	      obj.im = im;
+	      obj.resize();
+	      obj.draw();
+	    }; // Define the 2 scales to use for non-dimensionalising drawn points.
+
+
+	    obj._xscale = new Scale();
+	    obj._yscale = new Scale();
+	  } // constructor
+
+
+	  _createClass(ImageTexture, [{
+	    key: "px2unit",
+	    value: function px2unit(p) {
+	      var obj = this;
+	      obj._xscale.range = [0, 0 + obj.ar * obj.im.width];
+	      obj._yscale.range = [0, 0 + obj.ar * obj.im.height];
+	      return [obj._xscale.px2unit(p[0]), obj._yscale.px2unit(p[1])];
+	    } // px2unit
+
+	  }, {
+	    key: "unit2px",
+	    value: function unit2px(p) {
+	      var obj = this;
+	      obj._xscale.range = [0, 0 + obj.ar * obj.im.width];
+	      obj._yscale.range = [0, 0 + obj.ar * obj.im.height];
+	      return [obj._xscale.unit2px(p[0]), obj._yscale.unit2px(p[1])];
+	    } // unit2px
+
+	  }, {
+	    key: "draw",
+	    value: function draw() {
+	      var obj = this;
+	      var ctx = obj.ctx;
+
+	      if (obj.im) {
+	        // Get the current canvas width and height.
+	        var cw = ctx.canvas.width;
+	        var ch = ctx.canvas.height; // Image size.
+
+	        var sw = obj.im.width;
+	        var sh = obj.im.height; // If the canvas is resized here, then everything before this point is thrown away!!
+
+	        ctx.drawImage(obj.im, 0, 0, sw, sh, 0, 0, cw, ch);
+	      } // if
+
+	    } // draw
+
+	  }, {
+	    key: "resize",
+	    value: function resize() {
+	      // The maximum size of the canvas has changed. Adjust the canvas to the image size.
+	      // Set the canvas aspect ratio here.
+	      var obj = this;
+	      var ctx = obj.ctx;
+	      var cw = ctx.canvas.width;
+	      var ch = ctx.canvas.height; // Draw the image.
+
+	      var sw = obj.im.width;
+	      var sh = obj.im.height; // Now calculate the aspect ration so the image fits in.
+
+	      obj.ar = Math.min(cw / sw, ch / sh);
+	      var dw = obj.ar * sw;
+	      var dh = obj.ar * sh;
+	      ctx.canvas.width = dw;
+	      ctx.canvas.height = dh;
+	    } // resize
+
+	  }]);
+
+	  return ImageTexture;
+	}(); // ImageTexture
+
+
+	var MaskEditor = /*#__PURE__*/function () {
+	  // DONE: Points should be stored in non-dimensional image units
+	  // Control the drawing of lines first, and only fill when the object is closed.
+	  // Individual vertices should be adjustable.
+	  // Allow several geometries to be selected.
+	  // Move correction is in image coordinates, but can be prescribed in pixels.
+	  function MaskEditor(ctx) {
+	    _classCallCheck(this, MaskEditor);
+
+	    this.geometries = [[]];
+	    this.closed = false;
+	    this.movecorrection = [0, 0];
+	    this.selectedgeometries = [];
+	    var obj = this;
+	    obj.ctx = ctx; // The canvas chould differentiate between click to add a point, and pointerdown and drag to move existing point around.
+	    //
+	    //ctx.canvas.addEventListener("click", function(event){
+	    //	console.log( obj.retrieveGeometry(event) );
+	    //	obj.addPoint(event);
+	    //})
+	    // Ok, on pointerdown I need to find any relevant geometry. Then, on pointerup I need to decide whether to add point, or not. Then I need a way to delete a point also.
+	    // Configure the interactive adjustment.
+	    // adjustedGeometry are the points that have been mapped to pixels. Internally the values are kept in image coordinates. Therefore thos values are not changed when adjusting this here.
+
+	    var pointerDown = undefined;
+	    var moved = false;
+	    ctx.canvas.addEventListener("pointerdown", function (event) {
+	      // Register the relevant geometry, and the initial clicked point. But how will the redrawing work? For that I need the original image.
+	      pointerDown = event;
+	      moved = false;
+	      obj.applyGeometrySelection(event);
+	    });
+	    ctx.canvas.addEventListener("pointermove", function (event) {
+	      if (pointerDown && distPx(obj.event2canvas(pointerDown), obj.event2canvas(event)) > Math.pow(5, 2)) {
+	        moved = true;
+	        var p0 = obj.px2unit(obj.event2canvas(pointerDown));
+	        var p1 = obj.px2unit(obj.event2canvas(event));
+	        obj.movecorrection = [p1[0] - p0[0], p1[1] - p0[1]];
+	        obj.onpointermove();
+	      } // if
+
+	    }); // pointermove
+	    // At move end the correction has to be applied permanently
+
+	    ctx.canvas.addEventListener("pointerup", function (event) {
+	      if (!moved) {
+	        obj.addPoint(event);
+	      }
+
+	      obj.applyMoveCorrections();
+	      pointerDown = undefined;
+	      moved = false;
+	    }); // pointerup
+
+	    ctx.canvas.addEventListener("pointerout", function (event) {
+	      obj.applyMoveCorrections();
+	      pointerDown = undefined;
+	      moved = false;
+	    }); // pointerout
+	  } // constructor
+	  // DATA INTERFACE
+
+
+	  _createClass(MaskEditor, [{
+	    key: "addPoint",
+	    value: function addPoint(event) {
+	      var obj = this; // The last element of the geometries array is the current array.
+
+	      var current = obj.geometries[obj.geometries.length - 1]; // The event position is in pixel.
+
+	      var px = obj.event2canvas(event); // If the point is close enough to existing points, then fill the area.
+
+	      obj.closed = current.map(function (p) {
+	        return obj.unit2px(p);
+	      }).some(function (p) {
+	        return Math.pow(p[0] - px[0], 2) + Math.pow(p[1] - px[1], 2) < Math.pow(10, 2);
+	      }); // Furthermore, if the area is closed, then a new area drawing should begin with the next click.
+
+	      if (obj.closed) {
+	        current.closed = true;
+	        obj.geometries.push([]);
+	      } else {
+	        // Store values in non-dim units.
+	        var pu = obj.px2unit(px);
+	        current.push(pu);
+	      } // if
+	      // Draw just hte addition
+
+
+	      obj.draw();
+	    } // addPoint
+
+	    /* What kind of interactions do I want to support?
+	    Click - addPoint
+	    Click near point and drag - movePoint
+	    click on poygon and drag - movePolygon
+	    
+	    */
+	    // How am I going to adjust the data? I'm going to change its coordinates directly no?
+
+	  }, {
+	    key: "applyGeometrySelection",
+	    value: function applyGeometrySelection(event) {
+	      var obj = this; // First get the canvas pixel coordinates of the event.
+
+	      var clickpoint = obj.event2canvas(event); // Find the top most geometry that has the event in it. The loop should go from the last to the first geometry,
+	      // Return a series of points to which the drag interaction offset should be applied.
+
+	      var g = obj.geometries.map(function (g) {
+	        return [false];
+	      });
+
+	      var _loop = function _loop(i) {
+	        var points = obj.geometries[i].map(function (p) {
+	          return obj.unit2px(p);
+	        }); // Check if the current point is within the geometry. If it is don't check for other geometries.			
+
+	        if (isPointInside(points, clickpoint)) {
+	          // All the points at once are considered initially, and if any of hte points are close enough to the clicked point, then the selection is narrowed down to that point.
+	          g[i] = [true];
+	        } // if
+	        // Always want to find only the closest point, so even when finding candidates restict to the closest one.
+
+
+	        points.filter(function (p) {
+	          return distPx(clickpoint, p) < Math.pow(10, 2);
+	        }).forEach(function (p, j) {
+	          // g[i] now has an index saying whether the click was within the geometry or not. But what I want to know is whether a distance needs to be calculated or not. And at some point I will want to select several points at once.
+	          // Here I know that the point will definitely be selected instead of the whole geometry. Furthermore, I know that a single point should be selected.
+	          g[i][0] = true;
+	          var current = g[i][1] != undefined ? points[g[i][1]] : p;
+	          var isCloser = distPx(clickpoint, p) <= distPx(clickpoint, current);
+	          g[i][1] = isCloser ? points.indexOf(p) : g[i][1];
+	        }); // forEach
+	        // If some geometry was found on this layer, then stop the process.
+
+	        if (g[i]) {
+	          return "continue";
+	        } // if
+
+	      };
+
+	      for (var i = obj.geometries.length - 1; i > -1; i--) {
+	        var _ret = _loop(i);
+
+	        if (_ret === "continue") continue;
+	      } // for	
+
+
+	      obj.correctionflag = g;
+	    } // applyGeometrySelection
+
+	  }, {
+	    key: "getMoveCorrection",
+	    value: function getMoveCorrection(i, j) {
+	      var obj = this; // First check if the geometry should be corrected, and secondly check if a point in hte geometry should be corrected. If the point is defined it should override the geometry flag.
+
+	      var isGeometry = obj.correctionflag[i][0];
+	      var isPoint = obj.correctionflag[i][1];
+	      var correctionNeeded = isPoint != undefined ? isPoint == j : isGeometry;
+	      return obj.movecorrection.map(function (p) {
+	        return p * correctionNeeded;
+	      });
+	    } // getMoveCorrection
+
+	  }, {
+	    key: "applyMoveCorrections",
+	    value: function applyMoveCorrections() {
+	      // Apply corrections permanently.
+	      var obj = this;
+
+	      var _loop2 = function _loop2(i) {
+	        obj.geometries[i].forEach(function (p, j) {
+	          var corr = obj.getMoveCorrection(i, j);
+	          p[0] += corr[0];
+	          p[1] += corr[1];
+	        });
+	      };
+
+	      for (var i = 0; i < obj.geometries.length; i++) {
+	        _loop2(i);
+	      } // for	
+
+
+	      obj.movecorrection = [0, 0];
+	    } // applyMoveCorrections
+
+	  }, {
+	    key: "onpointermove",
+	    value: function onpointermove() {// dummy functionality
+	    }
+	  }, {
+	    key: "event2canvas",
+	    value: // DATA TRANSFORM PLACEHOLDERS
+	    function event2canvas(event) {
+	      // Get the canvas bounding box.
+	      var obj = this;
+	      var rect = obj.ctx.canvas.getBoundingClientRect();
+	      return [event.clientX - rect.x, event.clientY - rect.y];
+	    } // event2canvas
+
+	  }, {
+	    key: "px2unit",
+	    value: function px2unit(p) {
+	      // Dummy function allowing the points added through clicking to be non-dimensionalised correctly.
+	      return p;
+	    } // px2unit
+
+	  }, {
+	    key: "unit2px",
+	    value: function unit2px(p) {
+	      return p;
+	    } // unit2px
+	    // DRAWING
+
+	  }, {
+	    key: "draw",
+	    value: function draw() {
+	      var obj = this;
+
+	      var _loop3 = function _loop3(i) {
+	        var current = obj.geometries[i];
+	        var points = current.map(function (p, j) {
+	          var corr = obj.getMoveCorrection(i, j);
+	          var pc = [p[0] + corr[0], p[1] + corr[1]];
+	          return obj.unit2px(pc);
+	        });
+	        obj.drawLines(points, current.closed);
+	        obj.drawPoints(points);
+	      };
+
+	      for (var i = 0; i < obj.geometries.length; i++) {
+	        _loop3(i);
+	      } // for		
+
+	    } // draw
+
+	  }, {
+	    key: "drawClip",
+	    value: function drawClip() {
+	      var obj = this;
+	      var ctx = obj.ctx; // Draw the current clip
+
+	      ctx.fillStyle = '#FFFFFF';
+	      ctx.beginPath();
+	      obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      }).forEach(function (closedgeometry) {
+	        var points = closedgeometry.map(function (p) {
+	          return obj.unit2px(p);
+	        });
+	        ctx.moveTo(points[0][0], points[0][1]);
+
+	        for (var i = 0; i < points.length; i++) {
+	          ctx.lineTo(points[i][0], points[i][1]);
+	        } // for
+
+
+	        ctx.fill();
+	      }); // forEach
+
+	      ctx.clip();
+	    } // drawClip
+
+	  }, {
+	    key: "drawLines",
+	    value: function drawLines(points, closed) {
+	      var ctx = this.ctx; // Iterate through points, and draw them.
+
+	      if (points.length > 1) {
+	        ctx.fillStyle = '#000000';
+	        ctx.lineWidth = 2;
+	        ctx.moveTo(points[0][0], points[0][1]);
+	        ctx.beginPath();
+
+	        for (var i = 0; i < points.length; i++) {
+	          ctx.lineTo(points[i][0], points[i][1]);
+	        } // for
+
+
+	        if (closed) {
+	          ctx.closePath();
+	          ctx.fill();
+	        } // if
+
+
+	        ctx.stroke();
+	      }
+	    } // drawLines
+
+	  }, {
+	    key: "drawPoints",
+	    value: function drawPoints(points) {
+	      // Draw points on top of the lines. Point circles not used in the mask itself.
+	      var obj = this;
+
+	      for (var i = 0; i < points.length; i++) {
+	        obj.drawNode(points[i]);
+	      } // for
+
+	    } // drawPoints
+
+	  }, {
+	    key: "drawNode",
+	    value: function drawNode(p) {
+	      var obj = this;
+	      var ctx = obj.ctx; // ctx.arc(x,y,r,sAngle,eAngle,counterclockwise);		
+
+	      ctx.beginPath();
+	      ctx.fillStyle = '#000000';
+	      ctx.arc(p[0], p[1], 5, 0 * Math.PI, 2 * Math.PI);
+	      ctx.fill();
+	      ctx.closePath(); // ctx.arc(x,y,r,sAngle,eAngle,counterclockwise);		
+
+	      ctx.beginPath();
+	      ctx.fillStyle = '#FFFFFF';
+	      ctx.arc(p[0], p[1], 3, 0 * Math.PI, 2 * Math.PI);
+	      ctx.fill();
+	      ctx.closePath();
+	    } // drawPoint
+
+	  }, {
+	    key: "maskRectangle",
+	    value: function maskRectangle() {
+	      var obj = this; // Loop over geometries and find min and max in pixels.
+
+	      var x = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+	      var y = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+	      obj.geometries.forEach(function (geometry) {
+	        var points = geometry.map(function (p) {
+	          return obj.unit2px(p);
+	        });
+	        points.forEach(function (point) {
+	          x[0] = x[0] < point[0] ? x[0] : point[0];
+	          x[1] = x[1] > point[0] ? x[1] : point[0];
+	          y[0] = y[0] < point[1] ? y[0] : point[1];
+	          y[1] = y[1] > point[1] ? y[1] : point[1];
+	        }); // forEach
+	      }); // forEach
+
+	      return {
+	        x: x[0],
+	        y: y[0],
+	        w: x[1] - x[0],
+	        h: y[1] - y[0]
+	      };
+	    } // maskRectangle
+
+	  }]);
+
+	  return MaskEditor;
+	}(); // MaskEditor
+
+
+	function distPx(p0, p1) {
+	  // Calculate the pixel distance of 2 points.
+	  return Math.pow(p0[0] - p1[0], 2) + Math.pow(p0[1] - p1[1], 2);
+	} // distPx
+
+
+	function isPointInside(boundary, point) {
+
+	  var isInside = false;
+	  var n = boundary.length;
+
+	  if (n > 2) {
+	    for (var i = 1; i < n; i++) {
+	      // Check whether this edge is being passed when moving from the point to the right. If it passes an even number of edges it's outside, otherwise it's inside.
+	      var _p = passesEdge(boundary[i - 1], boundary[i], point);
+
+	      isInside = _p ? !isInside : isInside;
+	    } // for
+	    // Need to check the same number of edge segments as vertex points. The last edge should be the last and the first point.
+
+
+	    var p = passesEdge(boundary[n - 1], boundary[0], point);
+	    isInside = p ? !isInside : isInside;
+	  } // if
+
+
+	  return isInside;
+	} // isPointInside
+	// A ray casting method to check whether a point is within a polygon or not.
+
+
+	function passesEdge(p0, p1, point) {
+	  // One point needs to be above, while the other needs to be below -> the above conditions must be different.
+	  if (p0[1] > point[1] !== p1[1] > point[1]) {
+	    // One is above, and the other below. Now find if the x are positioned so that the ray passes through. Essentially interpolate the x at the y of the point, and see if it is larger.
+	    var x = (p1[0] - p0[0]) / (p1[1] - p0[1]) * (point[1] - p0[1]) + p0[0];
+	    return x > point[0];
+	  } else {
+	    return false;
+	  } // if
+
+	} // checkIntersect
+
+	/*
+	One main idea is that the decal is added to the scene immediately upon creation. The pointer interaction merely selects a new position for the decal to be added to, and the buffer is only updated in the background.
+	*/
+
+	var Decal = /*#__PURE__*/function () {
+	  function Decal(assetsource, camera, admissibleTargetGeometries) {
+	    _classCallCheck(this, Decal); // Camera is required to work with the raypointer.
+
+
+	    var obj = this;
+	    obj.assetname = assetsource; // DECAL HELPER
+	    // Help position the decal. Should respond to domain size?
+
+	    obj.orientationHelper = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshNormalMaterial());
+	    obj.orientationHelper.visible = false; // DECAL MESH
+	    // The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
+	    // Rename to DecalTextureEditor?
+
+	    obj.editor = new DecalTextureUI(assetsource); // Now make the mesh object itself.
+
+	    obj.decal = new DecalMesh(obj.editor.texture, obj.editor.alphatexture); // RAYPOINTER
+	    // The user interaction for the initial positioning.
+
+	    obj.raypointer = new DecalPointerRay(camera, admissibleTargetGeometries);
+	    obj.raypointer.decals = [obj.decal];
+
+	    obj.raypointer.positionInteraction = function (target) {
+	      obj.position(target);
+	    }; // positionInteraction
+
+	  } // constructor
+
+
+	  _createClass(Decal, [{
+	    key: "position",
+	    value: function position(target) {
+	      // Target is the output of raycaster.checkIntersection();
+	      var obj = this; // Reposition the orientation helper. Keep the previous rotation setting!
+
+	      var rotation = obj.orientationHelper.rotation.clone();
+	      obj.orientationHelper.position.copy(obj.raypointer.getLinePoint(0));
+	      obj.orientationHelper.lookAt(obj.raypointer.getLinePoint(1));
+	      obj.orientationHelper.rotation.z = rotation.z; // obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+
+	      obj.decal.support = target.object;
+	      obj.decal.position.copy(obj.orientationHelper.position);
+	      obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	      obj.decal.scale = 1;
+	      obj.decal.transform();
+	    } // position
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(gui) {
+	      // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+	      // I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
+	      var obj = this;
+	      var decalEditorItem = gui.addFolder("Decal: ".concat(obj.assetname));
+	      var decalEditorItemConfig = {
+	        editor: function editor() {
+	          obj.editor.show();
+	        },
+	        unpaste: function unpaste() {
+	          obj.unpaste();
+	        },
+	        rotation: 0,
+	        size: 1
+	      };
+	      var rc = decalEditorItem.add(decalEditorItemConfig, "rotation", -15, 15);
+	      var sc = decalEditorItem.add(decalEditorItemConfig, "size", 0.9, 1.1);
+	      decalEditorItem.add(decalEditorItemConfig, "editor");
+	      decalEditorItem.add(decalEditorItemConfig, "unpaste"); // Need to know the controller, config, property, callback
+
+	      function applyIncrementalBehavior(controller, config, property, callback) {
+	        var timer = undefined;
+	        var rate = undefined;
+
+	        function increment(v, callback) {
+	          if (rate == v) {
+	            callback(v);
+	            timer = setTimeout(function () {
+	              increment(v, callback);
+	            }, 200);
+	          } // if
+
+	        } // increment
+
+
+	        controller.onChange(function (v) {
+	          clearTimeout(timer);
+	          rate = v;
+	          increment(v, callback);
+	        }).onFinishChange(function () {
+	          clearTimeout(timer);
+	          rate = undefined;
+	          config[property] = (controller._max + controller._min) / 2;
+	          controller.updateDisplay();
+	        }); // events
+	      } // applyIncrementalBehavior
+
+
+	      applyIncrementalBehavior(rc, decalEditorItemConfig, "rotation", function (phi) {
+	        obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
+	        obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	        obj.decal.transform();
+	      });
+	      applyIncrementalBehavior(sc, decalEditorItemConfig, "size", function (k) {
+	        obj.decal.scale *= k;
+	        obj.decal.transform();
+	      });
+	      return decalEditorItem;
+	    } // addGUI
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      // Helper to add this decal with all its ancilliary geometries to the scene.
+	      var obj = this;
+	      sceneWebGL.add(obj.orientationHelper);
+	      sceneWebGL.add(obj.raypointer.line);
+	      sceneWebGL.add(obj.decal.mesh);
+	    } // addTo
+
+	  }, {
+	    key: "unpaste",
+	    value: function unpaste() {
+	      // In case the user wants to unstick the decal, they really only want to erase the buffer geometry.
+	      var obj = this;
+	      obj.decal.mesh.geometry.copy(new BufferGeometry());
+	    } // unpaste
+
+	  }, {
+	    key: "removeCompletely",
+	    value: function removeCompletely(sceneWebGL) {
+	      var obj = this; // Note that this removes everything, but maybe what the user wanted was to just remove the mesh.
+
+	      sceneWebGL.remove(obj.orientationHelper);
+	      sceneWebGL.remove(obj.raypointer.line);
+	      sceneWebGL.remove(obj.decal.mesh);
+	    }
 	  }]);
 
 	  return Decal;
 	}(); // Decal
 
-	var gui; // Scene items
+	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
-	var camera, scene, renderer, controls;
+	function createCommonjsModule(fn) {
+	  var module = { exports: {} };
+		return fn(module, module.exports), module.exports;
+	}
+
+	var stats_min = createCommonjsModule(function (module, exports) {
+	// stats.js - http://github.com/mrdoob/stats.js
+	(function(f,e){module.exports=e();})(commonjsGlobal,function(){var f=function(){function e(a){c.appendChild(a.dom);return a}function u(a){for(var d=0;d<c.children.length;d++)c.children[d].style.display=d===a?"block":"none";l=a;}var l=0,c=document.createElement("div");c.style.cssText="position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click",function(a){a.preventDefault();
+	u(++l%c.children.length);},!1);var k=(performance||Date).now(),g=k,a=0,r=e(new f.Panel("FPS","#0ff","#002")),h=e(new f.Panel("MS","#0f0","#020"));if(self.performance&&self.performance.memory)var t=e(new f.Panel("MB","#f08","#201"));u(0);return {REVISION:16,dom:c,addPanel:e,showPanel:u,begin:function(){k=(performance||Date).now();},end:function(){a++;var c=(performance||Date).now();h.update(c-k,200);if(c>g+1E3&&(r.update(1E3*a/(c-g),100),g=c,a=0,t)){var d=performance.memory;t.update(d.usedJSHeapSize/
+	1048576,d.jsHeapSizeLimit/1048576);}return c},update:function(){k=this.end();},domElement:c,setMode:u}};f.Panel=function(e,f,l){var c=Infinity,k=0,g=Math.round,a=g(window.devicePixelRatio||1),r=80*a,h=48*a,t=3*a,v=2*a,d=3*a,m=15*a,n=74*a,p=30*a,q=document.createElement("canvas");q.width=r;q.height=h;q.style.cssText="width:80px;height:48px";var b=q.getContext("2d");b.font="bold "+9*a+"px Helvetica,Arial,sans-serif";b.textBaseline="top";b.fillStyle=l;b.fillRect(0,0,r,h);b.fillStyle=f;b.fillText(e,t,v);
+	b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
+	});
+
+	var camera, arcballcontrols;
+	var sceneWebGL, rendererWebGL; // GUI items
+
+	var elementsGUI;
+	var stats;
 	var focusInitialPoint = new Vector3(0.345, 100.166, 0.127);
 	var cameraInitialPoint = new Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1); // Colorbar
 
 	new Color();
 	var colorbar = new ColorBar(0.14, 0.44);
-	colorbar.colormap = "d3Spectral"; // SETUP THE GEOMETRY AND INTERSECT ITEMS.
-
-	var raypointer; // DECAL HELPERS
-
-	var decalOrientationHelper = new Mesh(new BoxGeometry(1, 1, 10), new MeshNormalMaterial());
-	decalOrientationHelper.visible = false;
-	var decals = []; // different Decal instances
+	colorbar.colormap = "d3Spectral"; // Some helpers for decals.
 
 	var decalGeometries = []; // Geometries that can have a decal added on them.
 
-	var selectedDecal; // Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
-	// Check first on-the-go interactions.
-	// Parameters from the UI - repackage into class?
-
-	var params = {
-	  minScale: 0.10,
-	  maxScale: 0.20,
-	  clear: function clear() {
-	    removeDecals();
-	  }
-	}; // Decal is added through the GUI.
-
-	var oilFlowDecal = new Decal();
-	decals.push(oilFlowDecal);
 	init();
 	animate();
 
 	function init() {
 	  // FOUNDATIONS
 	  setupScene();
-	  addArcballControls(); // Add in the wing.
-
-	  addWingGeometry(); // RAYCASTER
-
-	  addAimingRay(); // mouse helper helps orinetate the decal onto the suface.
-
-	  scene.add(decalOrientationHelper); // Add the decal mesh to the scene.
-
-	  scene.add(oilFlowDecal.mesh);
-	  window.addEventListener('resize', onWindowResize);
+	  addArcballControls();
 	  setupHUD();
+	  console.log(arcballcontrols); // Add in the wing.
+
+	  addWingGeometry(); // Add in a decal
+
+	  addDecal();
+	  window.addEventListener('resize', onWindowResize);
+	  console.log(sceneWebGL);
 	} // init
-	// INTERACTIVITY
-
-
-	function positionDecal(target) {
-	  // Reposition the orientation helper. Or maybe this can be done in addDecal?
-	  decalOrientationHelper.position.copy(raypointer.getLinePoint(0));
-	  decalOrientationHelper.lookAt(raypointer.getLinePoint(1));
-	  decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
-	  oilFlowDecal.support = target.object;
-	  oilFlowDecal.position.copy(decalOrientationHelper.position);
-	  oilFlowDecal.orientation.copy(decalOrientationHelper.rotation);
-	  oilFlowDecal.scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
-	  oilFlowDecal.transform();
-	  /*
-	  // The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
-	  
-	  for(let i=0; i<decals.length; i++){
-	  	if(decals[i].active){
-	  		decals[i].pasteOn(target);
-	  	} // if
-	  } // for
-	  */
-	} // positionDecal
-
-
-	function removeDecals() {
-	  decals.forEach(function (d) {
-	    scene.remove(d.mesh);
-	  }); // forEach
-
-	  decals.length = 0;
-	}
-
-	function addAimingRay() {
-	  // Create the raycaster.
-
-	  /*
-	  BEHAVIOR:
-	  - click and drag should support OrbitControls without pasting the decal.
-	  - so store moved as before, and only past on pointerup?
-	  */
-	  raypointer = new PointerRay(camera);
-	  scene.add(raypointer.line); // Disable the pointer long press events if the user is navigating the domain.
-
-	  controls.addEventListener('change', function () {
-	    raypointer.enabled = false;
-	  }); // change
-
-	  console.log(raypointer);
-
-	  raypointer.pointerdown = function (event) {
-	    // How do we deselect a decal? Another longpress, or when another decal is selected.
-	    var decalMeshes = decals.map(function (d) {
-	      return d.mesh;
-	    });
-	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalMeshes);
-	    var targetDecal = decals[decalMeshes.indexOf(target.object)];
-
-	    if (target) {
-	      decals.forEach(function (decal) {
-	        decal.mesh.material.color.setHex(0xffffff);
-	      }); // forEach
-	      // If target object is the current selected decal, then it should be turned off.
-
-	      var active = selectedDecal ? selectedDecal.mesh === target.object : false;
-	      target.object.material.color.setHex(active ? 0xffffff : 0xff00ff);
-	      selectedDecal = active ? undefined : targetDecal;
-	    }
-	  }; // pointerdown
-
-
-	  raypointer.pointerup = function (event) {
-	    var target = raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
-
-	    if (target) {
-	      positionDecal(target);
-	    }
-	  }; // pointerup
-
-
-	  raypointer.pointermove = function (event) {
-	    raypointer.checkIntersection(event.clientX, event.clientY, decalGeometries);
-	  }; // pointermove
-
-	} // addAimingRay
 	// SCENE.
 
 
 	function setupScene() {
-	  /* SCENE, CAMERA, and LIGHT setup.
-	  camera inputs: view angle, aspect ratio, near, far.
-	  desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	  */
+	  // CAMERA
 	  camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 20000);
-	  scene = new Scene(); // With the normal material the light is not needed - but will be needed later.
+	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z); // SCENES
 
-	  /*
-	  light = new THREE.DirectionalLight( 0xffffff, 1 );
-	  light.position.set( 1, 1, 1 ).normalize();
-	  scene.add( light );
-	  */
-	  // The lighting has a major impact on the decals!!
+	  sceneWebGL = new Scene();
+	  sceneWebGL.name = "sceneWebGL"; // LIGHTS - ambient light seems to be sufficient.
 
-	  scene.add(new AmbientLight(0xffffff));
-	  var dirLight1 = new DirectionalLight(0xffffff, 1);
-	  dirLight1.position.set(1, 0.75, 0.5);
-	  scene.add(dirLight1);
-	  var dirLight2 = new DirectionalLight(0xffffff, 1);
-	  dirLight2.position.set(-1, 0.75, -0.5);
-	  scene.add(dirLight2); // SETUP THE ACTUAL LOOP
-	  // renderer.domElement is created in renderer.
+	  var ambientLight = new AmbientLight(0xaaaaaa);
+	  sceneWebGL.add(ambientLight); // RENDERERS
 
-	  renderer = new WebGLRenderer({
+	  rendererWebGL = new WebGLRenderer({
+	    alpha: true,
 	    antialias: true
 	  });
-	  renderer.setSize(window.innerWidth, window.innerHeight); // renderer.setAnimationLoop( animation );
+	  rendererWebGL.setClearColor(0xFFFFFF, 0);
+	  rendererWebGL.setPixelRatio(window.devicePixelRatio);
+	  rendererWebGL.setSize(window.innerWidth, window.innerHeight);
+	  rendererWebGL.shadowMap.enabled = true;
+	  rendererWebGL.shadowMap.type = PCFSoftShadowMap; // default THREE.PCFShadowMap
 
-	  document.body.appendChild(renderer.domElement);
+	  rendererWebGL.domElement.style.zIndex = 1;
+	  rendererWebGL.name = "rendererWebGL"; // APPEND RENDERES
+
+	  document.getElementById('webgl').appendChild(rendererWebGL.domElement);
 	} // setupScene
+	// DECALS
+	// There should be a single add decal function that takes in the image URL, and takes care of everything else.
+
+
+	function addDecal() {
+	  // DECAL: make the asset url an input.
+	  var decalobj = new Decal('assets/20220125_143807_gray.jpg', camera, decalGeometries);
+	  decalobj.addTo(sceneWebGL); // Disable the pointer long press events if the user is navigating the domain.
+
+	  arcballcontrols.addEventListener('change', function () {
+	    decalobj.raypointer.enabled = false;
+	  }); // change
+	  // Add teh decal gui to the overall gui.
+
+	  decalobj.addGUI(elementsGUI); // And append the nodal to the session.
+
+	  document.body.appendChild(decalobj.editor.node);
+	} // addDecal
+	// GEOMETRY
 
 
 	function addWingGeometry() {
@@ -36623,7 +37113,7 @@
 	  var m = new ContouredMesh("deltawing", dataPromise, colorbar.uniforms);
 	  m.created.then(function (mesh) {
 	    mesh.name = "Delta wing";
-	    scene.add(mesh);
+	    sceneWebGL.add(mesh);
 	    decalGeometries.push(mesh); // Subscribe the mesh material to the colorbar for future changes.
 
 	    function updateMeshColorbarTexture(mesh) {
@@ -36655,79 +37145,89 @@
 	    } // remove
 	    folder.add( guiconfig, "remove" );      // button
 	    */
+	    // var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
+	    // scene.add( vnh );
+	    // console.log(mesh)
 	  }); // then
 	} // addWingGeometry
 
 
 	function setupHUD() {
-	  gui = new InterfaceDecals();
-	  document.body.appendChild(gui.node);
-	  /* What should the hud DO?
-	  	for now try to see how on-the-go interactions would work: seems to be adequate.
-	  	
-	  	how could I select a decal to be adjusted? For annotations I can just click on them. Do I want to be able to put decals on-top of decals?
-	  	
-	  	
-	  */
+	  var template = "\n\t<div style=\"position: fixed;\">\n\t  <div class=\"stats\"></div>\n\t  <div class=\"controls\" style=\"position: fixed; top: 10px; float: right; right: 10px;\"></div>\n\t</div>\n\t";
+	  var container = html2element(template);
+	  document.body.appendChild(container); // Add the Stats object.
 
-	  gui.rotation.node.addEventListener("input", function (e) {
-	    if (selectedDecal) {
-	      selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-	      selectedDecal.transform();
-	    } // if
+	  stats = new stats_min();
+	  stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
-	  }); // rotation.addEventListener
+	  container.querySelector("div.stats").appendChild(stats.dom); // The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
+	  // MAYBE THIS GUI SHOULD BE WRAPPED UP?
 
-	  gui.size.node.addEventListener("input", function (e) {
-	    /*
-	    The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
-	    */
-	    if (selectedDecal) {
-	      selectedDecal.scale += gui.size.value / 10;
-	      selectedDecal.transform();
-	    } // if
+	  var gui = new g({
+	    container: container.querySelector("div.controls"),
+	    title: "Session controls"
+	  });
+	  elementsGUI = gui.addFolder("Elements");
+	  var addElementGUI = gui.addFolder("Add element");
 
-	  }); // rotation.addEventListener
-	  // The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
+	  var addElementConfig = {
+	    type: '',
+	    name: 'type in asset address',
+	    add: function add(el) {
+	      // Evaluate the current config and clear it.
+	      switch (addElementConfig.type) {
+	        case "Image":
+	          // addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+	          break;
 
-	  gui.eraser.node.onclick = function () {
-	    if (selectedDecal) {
-	      scene.remove(selectedDecal.mesh);
-	      decals.splice(decals.indexOf(selectedDecal), 1);
-	    } // if
+	        case "Video":
+	          // addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	          break;
 
-	  }; // onclick
+	        case "Geometry":
+	          // addWingGeometry();
+	          break;
 
+	        case "Decal":
+	          addDecal();
+	      }
+	    }
+	  };
+	  addElementGUI.add(addElementConfig, "type", ['', 'Image', 'Video', 'Geometry', 'Decal']); // dropdown
+
+	  addElementGUI.add(addElementConfig, "name"); // text field
+
+	  addElementGUI.add(addElementConfig, "add"); // button
 	} // setupHUD
 	// CONTROLS
 
 
 	function addArcballControls() {
-	  controls = new ArcballControls(camera, renderer.domElement, scene);
-	  controls.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+	  arcballcontrols = new ArcballControls(camera, document.getElementById('css'), sceneWebGL);
+	  arcballcontrols.focus(focusInitialPoint, 1, 1);
+	  arcballcontrols.activateGizmos(false); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
-	  controls.update();
+	  arcballcontrols.update();
 	} // addArcballControls
 
 
 	function onWindowResize() {
 	  camera.aspect = window.innerWidth / window.innerHeight;
 	  camera.updateProjectionMatrix();
-	  renderer.setSize(window.innerWidth, window.innerHeight);
+	  rendererWebGL.setSize(window.innerWidth, window.innerHeight);
 	} // onWindowResize
 
 
 	function animate() {
 	  requestAnimationFrame(animate);
-	  controls.update();
-	  gui.stats.update();
+	  stats.update();
 	  render();
 	} // animate
 
 
 	function render() {
-	  renderer.render(scene, camera);
+	  rendererWebGL.render(sceneWebGL, camera);
 	} // render
 
 }());

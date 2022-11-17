@@ -116,14 +116,14 @@ const fragmentShader = `
 	void main() 
 	{
 		// Value mapping limits stored at the end of thresholds.
-		float minmach = u_thresholds[253];
-		float maxmach = u_thresholds[254];
+		float min_mach = u_thresholds[253];
+		float max_mach = u_thresholds[254];
 		
 		vec4 aColor = vec4(1.0,1.0,1.0,1.0);
 		vec4 isoColor = vec4(1.0,1.0,1.0,1.0);
 		float mixRatio = 0.0;
 		
-		aColor = sampleColorBar( u_colorbar, v_mach, minmach,maxmach );
+		aColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );
 		if( u_isolines_flag || u_n_thresholds > 0 ){		
 		
 			// Determine the thresholds this pixel is between.
@@ -131,7 +131,7 @@ const fragmentShader = `
 			
 			// Only need to find the lower bound.
 			if( u_contours_flag ){
-				aColor = sampleColorBar( u_colorbar, bounds[0], minmach,maxmach );
+				aColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );
 			}
 			
 			// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;

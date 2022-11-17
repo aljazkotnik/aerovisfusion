@@ -41,25 +41,38 @@ Other approach is the Octtree. this would be required for internal passages. No 
 
 
 
+// THREE basics
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
 
-import InterfaceDecals from "./GUI/InterfaceDecals.js";
+// Scene elements
 import ColorBar from "./GUI/ColorBar.js";
 import ContouredMesh from "./components/ContouredMesh.js";
-import PointerRay from "./components/PointerRay.js";
 import Decal from "./components/Decal.js";
 
 
-// The gui - statse need to be updated as animated.
-var gui;
+// Debugging
+import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper.js";
+
+// GUI
+import { html2element } from "./helpers.js";
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import Stats from "stats.js";
+
+
+
 
 
 // Scene items
-var camera, scene, light, renderer, controls;
-var viewvec = new THREE.Vector3(0,0,-1);
+var camera, arcballcontrols, transformcontrols;
+var sceneWebGL, rendererWebGL;
+
+
+// GUI items
+var elementsGUI;
+var stats;
 
 
 /*
@@ -81,42 +94,12 @@ const colorbar = new ColorBar(0.14, 0.44);
 colorbar.colormap = "d3Spectral";
 
 
-// SETUP THE GEOMETRY AND INTERSECT ITEMS.
-var raypointer;
 
 
-// DECAL HELPERS
-const decalOrientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), 
-                                               new THREE.MeshNormalMaterial() );
-decalOrientationHelper.visible = false;
-	
-const decals = []; // different Decal instances
+// Some helpers for decals.
 const decalGeometries = []; // Geometries that can have a decal added on them.
-let selectedDecal;
 
 
-
-// Is the decal just an image? Can I draw it on the 2D canvas to manipulate it? In that case maybe the interaction can be 2 stage - oversize, and position within?
-
-// Check first on-the-go interactions.
-
-
-
-// Parameters from the UI - repackage into class?
-const params = {
-	minScale: 0.10,
-	maxScale: 0.20,
-	clear: function () {
-		removeDecals();
-	}
-};
-
-
-
-
-// Decal is added through the GUI.
-const oilFlowDecal = new Decal();
-decals.push( oilFlowDecal )
 
 
 init();
@@ -129,200 +112,92 @@ function init() {
 	// FOUNDATIONS
 	setupScene();
 	addArcballControls();
+	setupHUD();
 	
-	
-	
+	console.log(arcballcontrols)
 	
 	// Add in the wing.
 	addWingGeometry()
 	
 	
-	
-	// RAYCASTER
-	addAimingRay();
-	
-
-	// mouse helper helps orinetate the decal onto the suface.
-	scene.add( decalOrientationHelper );
-	
-	// Add the decal mesh to the scene.
-	scene.add( oilFlowDecal.mesh );
-	
-	
+	// Add in a decal
+	addDecal();
 	
 
 	window.addEventListener( 'resize', onWindowResize );
-	
-	
-	
-	setupHUD();
-	
-	
+	console.log(sceneWebGL)
 
 } // init
-
-
-// INTERACTIVITY
-function positionDecal(target) {
-	
-	// Reposition the orientation helper. Or maybe this can be done in addDecal?
-	decalOrientationHelper.position.copy( raypointer.getLinePoint(0) );
-	decalOrientationHelper.lookAt( raypointer.getLinePoint(1) );
-	
-	decalOrientationHelper.rotation.z = Math.random() * 2 * Math.PI;
-	
-	oilFlowDecal.support = target.object;
-	oilFlowDecal.position.copy( decalOrientationHelper.position )
-	oilFlowDecal.orientation.copy( decalOrientationHelper.rotation )
-	oilFlowDecal.scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
-	
-	oilFlowDecal.transform()
-	
-	
-	
-	/*
-	// The GUI has various decals as elements, and the user must select the on ethat is currently active. Here, the currently active one is selected to be positioned.
-	
-	for(let i=0; i<decals.length; i++){
-		if(decals[i].active){
-			decals[i].pasteOn(target);
-		} // if
-	} // for
-	*/
-
-} // positionDecal
-
-function removeDecals() {
-
-	decals.forEach( function ( d ) {
-		scene.remove( d.mesh );
-	}); // forEach
-
-	decals.length = 0;
-
-}; // removeDecals
-
-
-
-
-function addAimingRay(){
-		
-	// Create the raycaster.
-	/*
-	BEHAVIOR:
-	- click and drag should support OrbitControls without pasting the decal.
-	- so store moved as before, and only past on pointerup?
-	*/
-	
-	raypointer = new PointerRay( camera );
-	scene.add( raypointer.line )
-	
-	// Disable the pointer long press events if the user is navigating the domain.
-	controls.addEventListener( 'change', function (){
-	   raypointer.enabled = false;
-	}); // change
-	
-	console.log(raypointer)
-	
-	raypointer.pointerdown = function(event){
-		// How do we deselect a decal? Another longpress, or when another decal is selected.
-		let decalMeshes = decals.map(d=>d.mesh);
-		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalMeshes );
-		let targetDecal = decals[decalMeshes.indexOf(target.object)];
-		
-		if ( target ){
-			decals.forEach(decal=>{
-				decal.mesh.material.color.setHex(0xffffff);
-			}) // forEach
-			
-			// If target object is the current selected decal, then it should be turned off.
-			let active = selectedDecal ? selectedDecal.mesh === target.object : false;
-			target.object.material.color.setHex( active ? 0xffffff : 0xff00ff);
-			selectedDecal = active ? undefined : targetDecal;
-		}; // if
-	} // pointerdown
-	
-	raypointer.pointerup = function(event){
-		let target = raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
-		if ( target ){
-			positionDecal( target );
-		}; // if
-	} // pointerup
-	
-	raypointer.pointermove = function(event){
-		raypointer.checkIntersection( event.clientX, event.clientY, decalGeometries );
-	} // pointermove
-	
-	
-} // addAimingRay
-
-
-
-
-
-
-
-
-
-
-function addBoundingBox(object){
-	// This is a world oriented bounding box.
-	const box = new THREE.BoxHelper(object, 0xffff00); 
-	scene.add( box );
-	
-} // addBoundingBox
 
 
 // SCENE.
 function setupScene(){
 	
-		/* SCENE, CAMERA, and LIGHT setup.
-	camera inputs: view angle, aspect ratio, near, far.
-	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	*/
+	// CAMERA
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
+	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	
-	scene = new THREE.Scene();
-
-	// With the normal material the light is not needed - but will be needed later.
-	/*
-	light = new THREE.DirectionalLight( 0xffffff, 1 );
-	light.position.set( 1, 1, 1 ).normalize();
-	scene.add( light );
-	*/
-	// The lighting has a major impact on the decals!!
-	scene.add( new THREE.AmbientLight( 0xffffff ) );
-
-	const dirLight1 = new THREE.DirectionalLight( 0xffffff, 1 );
-	dirLight1.position.set( 1, 0.75, 0.5 );
-	scene.add( dirLight1 );
-
-	const dirLight2 = new THREE.DirectionalLight( 0xffffff, 1 );
-	dirLight2.position.set( - 1, 0.75, - 0.5 );
-	scene.add( dirLight2 );
+	// SCENES
+	sceneWebGL = new THREE.Scene();
+	sceneWebGL.name = "sceneWebGL";
 	
+	
+	// LIGHTS - ambient light seems to be sufficient.
+	var ambientLight = new THREE.AmbientLight( 0xaaaaaa );
+	sceneWebGL.add( ambientLight );
 
 	
-	// SETUP THE ACTUAL LOOP
-	// renderer.domElement is created in renderer.
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	// renderer.setAnimationLoop( animation );
-	document.body.appendChild( renderer.domElement );
+	
+    // RENDERERS
+    rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    rendererWebGL.setClearColor( 0xFFFFFF, 0 );
+    rendererWebGL.setPixelRatio( window.devicePixelRatio );
+    rendererWebGL.setSize( window.innerWidth, window.innerHeight );
+    rendererWebGL.shadowMap.enabled = true;
+    rendererWebGL.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+	rendererWebGL.domElement.style.zIndex = 1;
+    rendererWebGL.name = "rendererWebGL";
+	
+	
+	// APPEND RENDERES
+	document.getElementById('webgl').appendChild( rendererWebGL.domElement );
 	
 } // setupScene
 
-function adjustView(position){
-	// Is it the controls target that sets the view??
-	controls.enabled = false;
-
-	camera.position.set( position[0], position[1], position[2] );
-	camera.lookAt( controls.target );
-
-	controls.enabled = true;
-} // adjustView
 
 
+
+
+// DECALS
+// There should be a single add decal function that takes in the image URL, and takes care of everything else.
+function addDecal(){
+	
+	// DECAL: make the asset url an input.
+	const decalobj = new Decal( 'assets/20220125_143807_gray.jpg', camera, decalGeometries );
+	decalobj.addTo( sceneWebGL )
+	
+	
+	// Disable the pointer long press events if the user is navigating the domain.
+	arcballcontrols.addEventListener( 'change', function (){
+	   decalobj.raypointer.enabled = false;
+	}); // change
+	
+	
+	// Add teh decal gui to the overall gui.
+	decalobj.addGUI(elementsGUI);
+	
+	
+	// And append the nodal to the session.
+	document.body.appendChild( decalobj.editor.node );
+	
+} // addDecal
+
+
+
+
+
+
+// GEOMETRY
 function addWingGeometry(){
 	
 	
@@ -346,7 +221,7 @@ function addWingGeometry(){
 	
 	m.created.then(mesh=>{
 		mesh.name = "Delta wing";
-		scene.add( mesh );
+		sceneWebGL.add( mesh );
 		decalGeometries.push( mesh );
 		
 		// Subscribe the mesh material to the colorbar for future changes.
@@ -380,10 +255,11 @@ function addWingGeometry(){
 		folder.add( guiconfig, "remove" );      // button
 		*/
 	
-		
+	
+		// var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
+		// scene.add( vnh );
+		// console.log(mesh)
 	}) // then
-	
-	
 } // addWingGeometry
 
 
@@ -398,52 +274,61 @@ function addWingGeometry(){
 
 function setupHUD(){
 	
-	gui = new InterfaceDecals();
-	document.body.appendChild( gui.node );
+	let template = `
+	<div style="position: fixed;">
+	  <div class="stats"></div>
+	  <div class="controls" style="position: fixed; top: 10px; float: right; right: 10px;"></div>
+	</div>
+	`;
+	
+	const container = html2element(template);
+	document.body.appendChild( container );
+	
+	// Add the Stats object.
+	stats = new Stats();
+	stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+	container.querySelector("div.stats").appendChild( stats.dom );
+	
+	// The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
 	
 	
-	/* What should the hud DO?
-		for now try to see how on-the-go interactions would work: seems to be adequate.
-		
-		how could I select a decal to be adjusted? For annotations I can just click on them. Do I want to be able to put decals on-top of decals?
-		
-		
-	*/
-	
-	
-	gui.rotation.node.addEventListener("input", function(e){
-	
-		if(selectedDecal){
-			selectedDecal.orientation.z += gui.rotation.value / 360 * 2 * Math.PI;
-			selectedDecal.transform();
-		} // if
-	
-	}) // rotation.addEventListener
-	
-	
-	
-	
-	gui.size.node.addEventListener("input", function(e){
-		/*
-		The scaling applies to the entire decal, even to the parts that are not visible. If the decal part is skewed on the image itself then the scaling will visually offset the decal on the model.
-		*/
-		if(selectedDecal){			
-			selectedDecal.scale += gui.size.value/10;
-			selectedDecal.transform();
-		} // if
-	
-	}) // rotation.addEventListener
-	
-	
-	
-	// The eraser is a toggle button, but in this demo it's required to erase single decals only - therefore it does not need to be toggled on/off.
-	gui.eraser.node.onclick = function(){
-		if(selectedDecal){
-			scene.remove(selectedDecal.mesh);
-			decals.splice( decals.indexOf(selectedDecal), 1);
-		} // if
-	} // onclick
-	
+	// MAYBE THIS GUI SHOULD BE WRAPPED UP?
+	const gui = new GUI({
+		container: container.querySelector("div.controls"),
+		title: "Session controls"
+	});
+	elementsGUI = gui.addFolder("Elements");
+	const addElementGUI = gui.addFolder("Add element");
+	var allTransformControllers = [];
+
+	// The button should open a modal, or append a selection to the GUI to configure the element to be added.
+	const addElementConfig = {
+		type: '',
+		name: 'type in asset address',
+		add: function(el){
+			// Evaluate the current config and clear it.
+			
+			switch( addElementConfig.type ){
+				case "Image":
+					// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+					break;
+				case "Video":
+					// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+					break;
+				case "Geometry":
+					// addWingGeometry();
+					break;
+				case "Decal":
+					addDecal();
+				default:
+			}; // switch
+		}
+	}
+
+
+	addElementGUI.add( addElementConfig, "type", ['','Image','Video','Geometry','Decal'] ) // dropdown
+	addElementGUI.add( addElementConfig, "name" ); 	// text field
+	addElementGUI.add( addElementConfig, "add" ); 	// button
 	
 	
 } // setupHUD
@@ -462,38 +347,35 @@ function setupHUD(){
 // CONTROLS
 function addArcballControls(){
 	
-	controls = new ArcballControls( camera, renderer.domElement, scene );
-	controls.focus( focusInitialPoint, 1, 1 );
-	
+	arcballcontrols = new ArcballControls( camera, document.getElementById( 'css' ), sceneWebGL );
+	arcballcontrols.focus( focusInitialPoint, 1, 1 );
+	arcballcontrols.activateGizmos(false);
 	
 	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
-	controls.update();
-	
-	
-	
-	
-	
+	arcballcontrols.update();
+
 } // addArcballControls
+
+
+
 
 
 function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	rendererWebGL.setSize( window.innerWidth, window.innerHeight );
 } // onWindowResize
-
 
 function animate() {
 	requestAnimationFrame( animate );
-	controls.update();
-	gui.stats.update();
+	stats.update();
 	render();
 } // animate
 
 function render() {	
-	renderer.render( scene, camera );
+	rendererWebGL.render( sceneWebGL, camera );
 } // render
 
 

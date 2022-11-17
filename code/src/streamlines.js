@@ -42,34 +42,67 @@ Other approach is the Octtree. this would be required for internal passages. No 
 
 
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 
+// Scene elements
 import ColorBar from "./GUI/ColorBar.js";
-import {text2csv, csvStreamline2jsonStreamline} from "./helpers.js"
-// import { MeshLine, MeshLineMaterial, MeshLineRaycast } from "three.meshline";
+import ContouredMesh from "./components/ContouredMesh.js";
+import {text2csv, csvStreamline2jsonStreamline} from "./helpers.js";
+
+
+
+// GUI
+import { html2element } from "./helpers.js";
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import Stats from "stats.js";
+
+
 
 // Scene items
-var camera, scene, light, renderer, controls;
-var viewvec = new THREE.Vector3(0,0,-1);
-const domainMidPoint = new THREE.Vector3(0.5, 100.5, 0);
+var camera, arcballcontrols, transformcontrols;
+var sceneWebGL, rendererWebGL;
+
+
+// GUI items
+var elementsGUI;
+var stats;
+
+
+/*
+wing domain roughly = {
+	x = [0, 0.7]
+	y = [100.1, 100.4]
+	z = [0, 0.3]
+}
+*/
+const domainMidPoint = new THREE.Vector3(0.4, 100.5, 0);
+const focusInitialPoint = new THREE.Vector3(0.345, 100.166, 0.127);
+const cameraInitialPoint = new THREE.Vector3(focusInitialPoint.x, focusInitialPoint.y, focusInitialPoint.z + 1);
+
+
+
+// Colorbar
 const color = new THREE.Color();
 const colorbar = new ColorBar(0.14, 0.44);
+colorbar.colormap = "d3Spectral";
+
+
 
 
 
 // Arrays holding hte items.
 // var streamlines = [];
+var streamlineLoadPromise;
 var lineShaderStreamlines = [];
 var streamlinegeometry, streamlinematerial;
-
+var streamlineOn = true;
 
 
 // Create a cyclic IntegrationTime clock - not cyclic before time should be linear;
 // So instead there should be a remainder that gets transformed.
 const t0 = performance.now();
 const IntegrationSpan = [-0.009302791000000, 0.014919188];
-const CycleDuration = 4*1e3; // [ms];
+const CycleDuration = 20*1e3; // [ms];
 
 // Let's say that it should span the integration domain in
 function CurrentIntegrationTime(){
@@ -93,12 +126,10 @@ function init() {
 	
 
 	setupScene();
+	addArcballControls();
+	setupHUD();
 	
-	
-	
-	// Add the controls - change this to trackbal?
-	addOrbitControls();
-	// addTrackballControls();
+
 	
 
 	// Data domain viewframe.
@@ -117,59 +148,55 @@ function init() {
 	// Add the streamlines.
 	addShaderStreamlines();
 	
-	
-	
-	
-	
-	
-	// Bringing this lookAt to the end fixed the camera misdirection initialisation.
-	// With trackball controls lookAt no longer works.
-	adjustView([0.43, 99, 1.2])
+
 
 	window.addEventListener( 'resize', onWindowResize );
 } // init
 
 
-
+// SCENE.
 function setupScene(){
 	
-	/* SCENE, CAMERA, and LIGHT setup.
-	camera inputs: view angle, aspect ratio, near, far.
-	desired domain to show = x: [0, 0.6], y: [100, 100.4], z: [0, 0.25].
-	*/
+	// CAMERA
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20000 );
+	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	
-	scene = new THREE.Scene();
+	// SCENES
+	sceneWebGL = new THREE.Scene();
+	sceneWebGL.name = "sceneWebGL";
+	
+	
+	// LIGHTS - ambient light seems to be sufficient.
+	var ambientLight = new THREE.AmbientLight( 0xaaaaaa );
+	sceneWebGL.add( ambientLight );
 
-	// With the normal material the light is not needed - but will be needed later.
-	light = new THREE.DirectionalLight( 0xffffff, 1 );
-	light.position.set( 1, 1, 1 ).normalize();
-	scene.add( light );
 	
 	
-	// SETUP THE ACTUAL LOOP
-	// renderer.domElement is created in renderer.
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	// renderer.setAnimationLoop( animation );
-	document.body.appendChild( renderer.domElement );
+    // RENDERERS
+    rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    rendererWebGL.setClearColor( 0xFFFFFF, 0 );
+    rendererWebGL.setPixelRatio( window.devicePixelRatio );
+    rendererWebGL.setSize( window.innerWidth, window.innerHeight );
+    rendererWebGL.shadowMap.enabled = true;
+    rendererWebGL.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+	rendererWebGL.domElement.style.zIndex = 1;
+    rendererWebGL.name = "rendererWebGL";
 	
+	
+	// APPEND RENDERES
+	document.getElementById('webgl').appendChild( rendererWebGL.domElement );
 	
 } // setupScene
 
-function adjustView(position){
-	// Is it the controls target that sets the view??
-	controls.enabled = false;
 
-	camera.position.set( position[0], position[1], position[2] );
-	camera.lookAt( controls.target );
 
-	controls.enabled = true;
-} // adjustView
 
+
+
+// GEOMETRY
 function addWingGeometry(){
-	const wingmaterial = new THREE.MeshBasicMaterial( { color: 0x0FC3D6 } );
-	wingmaterial.side = THREE.DoubleSide;
+	
+	
 	
 	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
 	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
@@ -178,38 +205,61 @@ function addWingGeometry(){
 	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
 	  .then(res=>res.arrayBuffer())
 	  .then(ab=>{return new Uint32Array(ab)}); // uint32
-	
-	Promise.all([verticesPromise, indicesPromise]).then(a=>{
-		
-		
-		
-		
-		
-		const geometry = new THREE.BufferGeometry();
-		// create a simple square shape. We duplicate the top left and bottom right
-		// vertices because each vertex needs to appear once per triangle.
-		/*
-		const vertices = new Float32Array( [
-			domainMidPoint.x-1.0, domainMidPoint.y-1.0,  domainMidPoint.z+1.0,
-			domainMidPoint.x+1.0, domainMidPoint.y-1.0,  domainMidPoint.z+1.0,
-			domainMidPoint.x+1.0, domainMidPoint.y+1.0,  domainMidPoint.z+1.0,
+	let valuePromise = fetch("./assets/deltawing/wing/mach.bin")
+	  .then(res=>res.arrayBuffer())
+	  .then(ab=>{return new Float32Array(ab)}); // float32
+	  
+	  
+	const dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
+	  
 
-			domainMidPoint.x+1.0, domainMidPoint.y+1.0,  domainMidPoint.z+1.0,
-			domainMidPoint.x-1.0, domainMidPoint.y+1.0,  domainMidPoint.z+1.0,
-			domainMidPoint.x-1.0, domainMidPoint.y-1.0,  domainMidPoint.z+1.0
-		] );
+	const m = new ContouredMesh( "deltawing", dataPromise, colorbar.uniforms );
+	
+	m.created.then(mesh=>{
+		mesh.name = "Delta wing";
+		sceneWebGL.add( mesh );
+		
+		// Subscribe the mesh material to the colorbar for future changes.
+		function updateMeshColorbarTexture(mesh){
+			/* Uniforms controlled by the colorbar GUI:
+			obj.uniforms = {
+				u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+				u_thresholds: {value: initialThresholds },
+				u_n_thresholds: {value: obj.n },
+				u_isolines_flag: {value: false },
+				u_contours_flag: {value: true }
+			};
+			*/
+			mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
+		} // updateMeshColorbarTexture
+		colorbar.subscribers.push([mesh, updateMeshColorbarTexture]);
+		
+		
+		/*
+		// Add GUI controllers.
+		const guiconfig = m.config;
+		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(guiconfig.name , 27) );
+		
+		folder.add( guiconfig, "visible" ); 	   // boolean
+		
+		
+		guiconfig.remove = function(){
+			folder.destroy();
+			sceneWebGL.remove( mesh );
+		} // remove
+		folder.add( guiconfig, "remove" );      // button
 		*/
-		
-		geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
-		geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
-		const mesh = new THREE.Mesh( geometry, wingmaterial );
-		
-		
-		scene.add( mesh );
-	}) // Promise.all
 	
 	
+		// var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
+		// scene.add( vnh );
+		// console.log(mesh)
+	}) // then
 } // addWingGeometry
+
+
+
+
 
 
 
@@ -222,20 +272,40 @@ function addShaderStreamlines(){
 	var vertexShader = `
       precision mediump float;
       precision mediump int;
-      attribute vec4 color;
-      varying vec4 vColor;
+      
+	  attribute float a_mach;
+	  varying float v_mach;
+	  
       void main()    {
-        vColor = color;
+		v_mach = a_mach;
         gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
       }
     `;
     var fragmentShader = `
       precision mediump float;
       precision mediump int;
-      varying vec4 vColor;
-      void main()    {
-        vec4 color = vec4( vColor );
-        gl_FragColor = color;
+      
+	  uniform float u_thresholds[255];
+	  uniform sampler2D u_colorbar;
+	  
+	  varying float v_mach;
+	  
+	  
+	  vec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)
+	  {
+		// The (f-a)/(b-a) term controls how colors are mapped to values.
+		return texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );
+	  }
+	  
+	  
+      void main()    
+	  {
+		  
+		// Value mapping limits stored at the end of thresholds.
+		float min_mach = u_thresholds[253];
+		float max_mach = u_thresholds[254];
+		  
+        gl_FragColor = sampleColorBar( u_colorbar, v_mach, min_mach, max_mach );;
       }
     `;
 	
@@ -243,6 +313,7 @@ function addShaderStreamlines(){
 	// STREAMLINES
 	streamlinegeometry = new THREE.BufferGeometry();
 	streamlinematerial = new THREE.ShaderMaterial({
+	  uniforms: colorbar.uniforms,
       vertexShader: vertexShader,
       fragmentShader: fragmentShader
     });
@@ -254,10 +325,11 @@ function addShaderStreamlines(){
 	
 	// streamlinematerial = new THREE.LineBasicMaterial( { color: 0xff0000, dashSize: 3, gapSize: 1 } );
 	
-	fetch("./assets/deltawing/streamlines/streamlines_suction_side_min.csv")
+	streamlineLoadPromise = fetch("./assets/deltawing/streamlines/streamlines_suction_side_min.csv")
 	  .then(res=>res.text())
-	  .then(t=>csvStreamline2jsonStreamline( text2csv(t) ))
-	  .then(sa=>{
+	  .then(t=>csvStreamline2jsonStreamline( text2csv(t) ));
+	
+	streamlineLoadPromise.then(sa=>{
 		  sa.forEach((s,i)=>{
 			  // Interpolate using THREE.CatmullRomCurve3 to create more points?
 			  
@@ -270,6 +342,9 @@ function addShaderStreamlines(){
 		  
 		  // console.log(lineShaderStreamlines)
 	  }) // then
+	
+	console.log(addRandomShaderLine)
+	console.log(toggleStreamlines)
 } // addShaderStreamlines
 
 function addShaderLine(points){
@@ -277,14 +352,11 @@ function addShaderLine(points){
 	// Convert the array of json objects into values for the float array.
 	let times = [];
 	let vals = [];
-	let colors = [];
+	let mach = [];
 	points.forEach((p,i)=>{
 		// Collect the points
 		vals.push(p["Points:0"], p["Points:1"], p["Points:2"]);
-		
-		// Populate the colors. Maybe for now just create colors?
-		color.set( colorbar.getColor( p["Mach"] ) );
-		colors.push( color.r, color.g, color.b, 1 );
+		mach.push(p["Mach"])
 		
 		// Populate the time.
 		times.push( p["IntegrationTime"] );
@@ -293,16 +365,13 @@ function addShaderLine(points){
 	
 	
 	let positions = new Float32Array(vals);
-
+    let a_mach = new Float32Array(mach);
 
 	let geometry = streamlinegeometry.clone();   
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+	geometry.setAttribute("a_mach", new THREE.BufferAttribute(a_mach, 1));
     // geometry.setDrawRange(0, 0);
 
-	
-	// Colors indicated the age of the line. Keep this for now.
-    // var colors = new Array( points.length*4 ).fill(1);
-    geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 4, true));
 
 
     let line = new THREE.Line(geometry, streamlinematerial.clone());
@@ -310,7 +379,7 @@ function addShaderLine(points){
 	line.times = times.reverse(); // reverse so checking for last element under time.
   
     lineShaderStreamlines.push(line);
-    scene.add(line)
+    sceneWebGL.add(line)
 } // addShaderLine
 
 function updateShaderLine(t){
@@ -383,31 +452,132 @@ function addControlLine(points){
 
 
 
+function addRandomShaderLine(){
+	streamlineLoadPromise.then(sa=>{
+		const i = 1159; // Math.floor( Math.random()*(sa.length-1) );
+		const points = sa[i];
+		
+		let vals = [];
+		points.forEach((p,i)=>{
+			// Collect the points
+			vals.push(p["Points:0"], p["Points:1"], p["Points:2"]);
+		}) // forEach
+		
+		
+		let positions = new Float32Array(vals);
+		let geometry = streamlinegeometry.clone();   
+		geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+		
+		
+		
+		var	material = new THREE.LineBasicMaterial( { color: 0xff00ff, vertexColors: true } );
+		
+		
+		
+		let line = new THREE.Line(geometry, material);
+		sceneWebGL.add(line)
+		console.log(`Line: ${ i }`, line)
+	})
+} // addRandomShaderLine
+
+
+function toggleStreamlines(){
+	streamlineOn = streamlineOn ? false : true;
+	if(streamlineOn){
+		lineShaderStreamlines.forEach(line=>{
+			sceneWebGL.add(line)
+		})
+	} else {
+		lineShaderStreamlines.forEach(line=>{
+			sceneWebGL.remove(line)
+		})
+	}
+} // toggleStreamlines
+
+
 
 // Make the colormap.
 
 
 
 
+// GUI
+function setupHUD(){
+	
+	let template = `
+	<div style="position: fixed;">
+	  <div class="stats"></div>
+	  <div class="controls" style="position: fixed; top: 10px; float: right; right: 10px;"></div>
+	</div>
+	`;
+	
+	const container = html2element(template);
+	document.body.appendChild( container );
+	
+	// Add the Stats object.
+	stats = new Stats();
+	stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+	container.querySelector("div.stats").appendChild( stats.dom );
+	
+	// The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
+	
+	
+	// MAYBE THIS GUI SHOULD BE WRAPPED UP?
+	const gui = new GUI({
+		container: container.querySelector("div.controls"),
+		title: "Session controls"
+	});
+	elementsGUI = gui.addFolder("Elements");
+	const addElementGUI = gui.addFolder("Add element");
+	var allTransformControllers = [];
+
+	// The button should open a modal, or append a selection to the GUI to configure the element to be added.
+	const addElementConfig = {
+		type: '',
+		name: 'type in asset address',
+		add: function(el){
+			// Evaluate the current config and clear it.
+			
+			switch( addElementConfig.type ){
+				case "Image":
+					// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+					break;
+				case "Video":
+					// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+					break;
+				case "Geometry":
+					// addWingGeometry();
+					break;
+				case "Decal":
+					addDecal();
+				default:
+			}; // switch
+		}
+	}
+
+
+	addElementGUI.add( addElementConfig, "type", ['','Image','Video','Geometry','Decal'] ) // dropdown
+	addElementGUI.add( addElementConfig, "name" ); 	// text field
+	addElementGUI.add( addElementConfig, "add" ); 	// button
+	
+	
+} // setupHUD
+
+
 
 
 // CONTROLS
-function addOrbitControls(){
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.addEventListener( 'change', render );
-	controls.target.set( domainMidPoint.x, domainMidPoint.y, domainMidPoint.z )
-} // addOrbitControls
-
-
-function addTrackballControls(){
-	controls = new TrackballControls( camera, renderer.domElement );
-
-	controls.rotateSpeed = 1.0;
-	controls.zoomSpeed = 1.2;
-	controls.panSpeed = 0.8;
+function addArcballControls(){
 	
-	// controls.addEventListener( 'change', render );
-} // addTrackballControls
+	arcballcontrols = new ArcballControls( camera, document.getElementById( 'css' ), sceneWebGL );
+	arcballcontrols.focus( focusInitialPoint, 1, 1 );
+	arcballcontrols.activateGizmos(false);
+	
+	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
+	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
+	arcballcontrols.update();
+
+} // addArcballControls
 
 
 
@@ -421,7 +591,7 @@ function onWindowResize() {
 
 function animate() {
 	requestAnimationFrame( animate );
-	controls.update();
+	stats.update();
 	render();
 } // animate
 
@@ -430,7 +600,7 @@ function render() {
 	let t = CurrentIntegrationTime();
 	updateShaderLine(t)
 
-	renderer.render( scene, camera );
+	rendererWebGL.render( sceneWebGL, camera );
 } // render
 
 
