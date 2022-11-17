@@ -35516,65 +35516,6 @@
 	  }
 	};
 
-	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
-
-	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
-
-	var ContouredMesh = function ContouredMesh(id, dataPromise, uniforms) {
-	  _classCallCheck(this, ContouredMesh);
-
-	  var obj = this;
-	  obj.config = {
-	    name: id,
-	    visible: true,
-	    remove: function remove() {}
-	  };
-	  /*
-	  The data promises should each return an array containing only hte relevant data. 
-	  dataPromise.then(a=>{
-	  	a[0] = vertices
-	  	a[1] = indices
-	  	a[2] = values
-	  })
-	  
-	  
-	  Uniforms are expected (by the shaders), to have the following form.
-	  
-	  const uniforms = {
-	  	u_colorbar: { type: "t", value: new THREE.CanvasTexture( colorbar.canvas ) },
-	  	u_thresholds: {value: initialThresholds },
-	  	u_n_thresholds: {value: n },
-	  	u_isolines_flag: {value: false },
-	  };
-	  */
-
-	  obj.created = dataPromise.then(function (a) {
-	    var distinctContouringMaterial = new ShaderMaterial({
-	      uniforms: uniforms,
-	      vertexShader: vertexShader,
-	      fragmentShader: fragmentShader,
-	      side: DoubleSide
-	    }); // distinctContouringMaterial
-	    // Create teh geometry basics.
-
-	    var geometry = new BufferGeometry();
-	    geometry.setAttribute('position', new BufferAttribute(a[0], 3));
-	    geometry.setIndex(new BufferAttribute(a[1], 1));
-	    geometry.computeVertexNormals(); // Add flow attributes.
-
-	    geometry.setAttribute('a_mach', new BufferAttribute(a[2], 1));
-	    var mesh = new Mesh(geometry, distinctContouringMaterial);
-	    mesh.name = "Colour contours"; // Add a wireframe on top.
-	    //var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
-	    //var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-	    //var wireframe = new THREE.LineSegments( geo, mat );
-	    //mesh.add( wireframe );
-
-	    return mesh;
-	  }); // Promise.all
-	} // constructor
-	; // ContouredMesh
-
 	function html2element(html) {
 	  var template = document.createElement('template');
 	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
@@ -35653,7 +35594,139 @@
 	    return line.length > 1;
 	  });
 	} // csvStreamline2jsonStreamline
-	 // trimStringToLength
+
+
+	function trimStringToLength(s, n) {
+	  // n has to be > 3.
+	  return s.length > n ? "..." + s.slice(-(n - 3)) : s;
+	} // trimStringToLength
+
+	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
+
+	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
+
+	/* Uniforms controlled by the colorbar GUI:
+	obj.uniforms = {
+		u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+		u_thresholds: {value: initialThresholds },
+		u_n_thresholds: {value: obj.n },
+		u_isolines_flag: {value: false },
+		u_contours_flag: {value: true }
+	};
+	*/
+
+	var ContouredMesh = /*#__PURE__*/function () {
+	  function ContouredMesh(configFilename, uniforms) {
+	    _classCallCheck(this, ContouredMesh);
+
+	    var obj = this;
+	    obj.config = {
+	      source: configFilename,
+	      visible: true,
+	      remove: function remove() {}
+	    };
+	    obj.configPromise = fetch(configFilename).then(function (res) {
+	      return res.json();
+	    });
+	    /*
+	    The data promises should each return an array containing only hte relevant data. 
+	    dataPromise.then(a=>{
+	    	a[0] = vertices
+	    	a[1] = indices
+	    	a[2] = values
+	    })
+	    
+	    
+	    Uniforms are expected (by the shaders), to have the following form.
+	    
+	    const uniforms = {
+	    	u_colorbar: { type: "t", value: new THREE.CanvasTexture( colorbar.canvas ) },
+	    	u_thresholds: {value: initialThresholds },
+	    	u_n_thresholds: {value: n },
+	    	u_isolines_flag: {value: false },
+	    };
+	    */
+
+	    obj.dataPromise = obj.configPromise.then(function (json) {
+	      // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+	      var verticesPromise = fetch(json.vertices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      var indicesPromise = fetch(json.indices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Uint32Array(ab);
+	      }); // uint32
+
+	      var valuePromise = fetch(json.values).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
+	        var distinctContouringMaterial = new ShaderMaterial({
+	          uniforms: uniforms,
+	          vertexShader: vertexShader,
+	          fragmentShader: fragmentShader,
+	          side: DoubleSide
+	        }); // distinctContouringMaterial
+	        // Create teh geometry basics.
+
+	        var geometry = new BufferGeometry();
+	        geometry.setAttribute('position', new BufferAttribute(a[0], 3));
+	        geometry.setIndex(new BufferAttribute(a[1], 1));
+	        geometry.computeVertexNormals(); // Add flow attributes.
+
+	        geometry.setAttribute('a_mach', new BufferAttribute(a[2], 1));
+	        var mesh = new Mesh(geometry, distinctContouringMaterial);
+	        mesh.name = json.name ? json.name : "Colour contours"; // Add a wireframe on top.
+	        //var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
+	        //var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+	        //var wireframe = new THREE.LineSegments( geo, mat );
+	        //mesh.add( wireframe );
+
+	        return mesh;
+	      }); // Promise.all
+	    }); // then
+	  } // constructor
+
+
+	  _createClass(ContouredMesh, [{
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      var obj = this;
+	      obj.dataPromise.then(function (mesh) {
+	        sceneWebGL.add(mesh);
+	      }); // then
+
+	      obj.config.remove = function () {
+	        obj.gui.destroy();
+	        obj.dataPromise.then(function (mesh) {
+	          sceneWebGL.remove(mesh);
+	        }); // then
+	      }; // remove
+
+	    } // addTo
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(elementsGUI) {
+	      var obj = this; // Add GUI controllers.
+
+	      var folder = elementsGUI.addFolder("Geometry: " + trimStringToLength(obj.config.source, 27));
+	      folder.add(obj.config, "visible"); // boolean
+
+	      folder.add(obj.config, "remove"); // button
+	    } // addGUI
+
+	  }]);
+
+	  return ContouredMesh;
+	}(); // ContouredMesh
 
 	/**
 	 * lil-gui

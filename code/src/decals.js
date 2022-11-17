@@ -201,64 +201,23 @@ function addDecal(){
 function addWingGeometry(){
 	
 	
+	const m = new ContouredMesh( "./assets/deltawing/wing/config_deltawing.json", colorbar.uniforms );
 	
-	// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
-	let verticesPromise = fetch("./assets/deltawing/wing/vertices.bin")
-	  .then(res=>res.arrayBuffer())
-	  .then(ab=>{return new Float32Array(ab)}); // float32
-	let indicesPromise = fetch("./assets/deltawing/wing/indices.bin")
-	  .then(res=>res.arrayBuffer())
-	  .then(ab=>{return new Uint32Array(ab)}); // uint32
-	let valuePromise = fetch("./assets/deltawing/wing/mach.bin")
-	  .then(res=>res.arrayBuffer())
-	  .then(ab=>{return new Float32Array(ab)}); // float32
-	  
-	  
-	const dataPromise = Promise.all([verticesPromise, indicesPromise, valuePromise]);
-	  
-
-	const m = new ContouredMesh( "deltawing", dataPromise, colorbar.uniforms );
 	
-	m.created.then(mesh=>{
-		mesh.name = "Delta wing";
-		sceneWebGL.add( mesh );
+	m.addTo( sceneWebGL );
+	m.addGUI( elementsGUI )
+	
+	m.dataPromise.then(mesh=>{
+		
+		// To allow decals to be placed on it.
 		decalGeometries.push( mesh );
 		
 		// Subscribe the mesh material to the colorbar for future changes.
-		function updateMeshColorbarTexture(mesh){
-			/* Uniforms controlled by the colorbar GUI:
-			obj.uniforms = {
-				u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
-				u_thresholds: {value: initialThresholds },
-				u_n_thresholds: {value: obj.n },
-				u_isolines_flag: {value: false },
-				u_contours_flag: {value: true }
-			};
-			*/
-			mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
-		} // updateMeshColorbarTexture
-		colorbar.subscribers.push([mesh, updateMeshColorbarTexture]);
-		
-		
-		/*
-		// Add GUI controllers.
-		const guiconfig = m.config;
-		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(guiconfig.name , 27) );
-		
-		folder.add( guiconfig, "visible" ); 	   // boolean
-		
-		
-		guiconfig.remove = function(){
-			folder.destroy();
-			sceneWebGL.remove( mesh );
-		} // remove
-		folder.add( guiconfig, "remove" );      // button
-		*/
-	
-	
-		// var vnh = new VertexNormalsHelper( mesh, 1, 0xff0000 );
-		// scene.add( vnh );
-		// console.log(mesh)
+		colorbar.subscribers.push([m, function(){
+			m.dataPromise.then(mesh=>{
+				mesh.material.uniforms.u_colorbar.value.needsUpdate = true;
+			})
+		}]);
 	}) // then
 } // addWingGeometry
 

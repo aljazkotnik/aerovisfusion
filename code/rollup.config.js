@@ -28,95 +28,13 @@ export default [
 		]
 	},
 	
-	{
-		input: 'src/streamlines.js',
-		output: {
-			name: 'streamlines',
-			file: pkg.streamlines,
-			format: 'iife',
-			sourcemap: true
-		},
-		plugins: [
-			resolve(), // so Rollup can find `ms`
-			babel({
-			  exclude: "node_modules/**"
-			}),
-			commonjs(), // so Rollup can convert `ms` to an ES module
-			replace({preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify( 'development' )}), // This fixed module loading!!
-			babel({
-			  exclude: "node_modules/**"
-			})
-		]
-	},
+
 	
 	{
-		input: 'src/decals.js',
+		input: 'src/combined.js',
 		output: {
-			name: 'decals',
-			file: pkg.decals,
-			format: 'iife',
-			sourcemap: true
-		},
-		plugins: [
-			resolve(), // so Rollup can find `ms`
-			babel({
-			  exclude: "node_modules/**"
-			}),
-			commonjs(), // so Rollup can convert `ms` to an ES module
-			replace({preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify( 'development' )}), // This fixed module loading!!
-			babel({
-			  exclude: "node_modules/**"
-			})
-		]
-	},
-	
-	{
-		input: 'src/images.js',
-		output: {
-			name: 'images',
-			file: pkg.images,
-			format: 'iife',
-			sourcemap: true
-		},
-		plugins: [
-			resolve(), // so Rollup can find `ms`
-			babel({
-			  exclude: "node_modules/**"
-			}),
-			commonjs(), // so Rollup can convert `ms` to an ES module
-			replace({preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify( 'development' )}), // This fixed module loading!!
-			babel({
-			  exclude: "node_modules/**"
-			})
-		]
-	},
-	
-	{
-		input: 'src/sandbox.js',
-		output: {
-			name: 'sandbox',
-			file: "./dist/sandbox.js",
-			format: 'iife',
-			sourcemap: true
-		},
-		plugins: [
-			resolve(), // so Rollup can find `ms`
-			babel({
-			  exclude: "node_modules/**"
-			}),
-			commonjs(), // so Rollup can convert `ms` to an ES module
-			replace({preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify( 'development' )}), // This fixed module loading!!
-			babel({
-			  exclude: "node_modules/**"
-			})
-		]
-	},
-	
-	{
-		input: 'src/marchingcubes.js',
-		output: {
-			name: 'marchingcubes',
-			file: "./dist/marchingcubes.js",
+			name: 'combined',
+			file: pkg.combined,
 			format: 'iife',
 			sourcemap: true
 		},

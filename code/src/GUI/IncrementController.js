@@ -34,3 +34,28 @@ export default class IncrementController{
 	  return ((Number(obj.node.querySelector("input").value) +  1)/2 )*(obj.b - obj.a) + obj.a;
   } // get value
 } // IncrementController
+
+
+
+// Apply incremental behavior to a lil-gui controller.
+export function applyIncrementalBehavior(controller, config, property, callback){
+	let timer = undefined;
+	let rate = undefined;
+	function increment(v, callback){
+		if(rate == v){
+			callback(v);
+			timer = setTimeout(function(){increment(v, callback)},200)
+		} // if
+	} // increment
+
+	controller.onChange(function(v){
+		clearTimeout(timer);
+		rate = v;
+		increment(v, callback)
+	}).onFinishChange(function(){
+		clearTimeout(timer);
+		rate = undefined;
+		config[property] = ( controller._max + controller._min ) / 2;
+		controller.updateDisplay();
+	}) // events
+} // applyIncrementalBehavior

@@ -35341,64 +35341,137 @@
 	  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 	}
 
+	function trimStringToLength(s, n) {
+	  // n has to be > 3.
+	  return s.length > n ? "..." + s.slice(-(n - 3)) : s;
+	} // trimStringToLength
+
 	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
 
 	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
 
-	var ContouredMesh = function ContouredMesh(id, dataPromise, uniforms) {
-	  _classCallCheck(this, ContouredMesh);
+	/* Uniforms controlled by the colorbar GUI:
+	obj.uniforms = {
+		u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+		u_thresholds: {value: initialThresholds },
+		u_n_thresholds: {value: obj.n },
+		u_isolines_flag: {value: false },
+		u_contours_flag: {value: true }
+	};
+	*/
 
-	  var obj = this;
-	  obj.config = {
-	    name: id,
-	    visible: true,
-	    remove: function remove() {}
-	  };
-	  /*
-	  The data promises should each return an array containing only hte relevant data. 
-	  dataPromise.then(a=>{
-	  	a[0] = vertices
-	  	a[1] = indices
-	  	a[2] = values
-	  })
-	  
-	  
-	  Uniforms are expected (by the shaders), to have the following form.
-	  
-	  const uniforms = {
-	  	u_colorbar: { type: "t", value: new THREE.CanvasTexture( colorbar.canvas ) },
-	  	u_thresholds: {value: initialThresholds },
-	  	u_n_thresholds: {value: n },
-	  	u_isolines_flag: {value: false },
-	  };
-	  */
+	var ContouredMesh = /*#__PURE__*/function () {
+	  function ContouredMesh(configFilename, uniforms) {
+	    _classCallCheck(this, ContouredMesh);
 
-	  obj.created = dataPromise.then(function (a) {
-	    var distinctContouringMaterial = new ShaderMaterial({
-	      uniforms: uniforms,
-	      vertexShader: vertexShader,
-	      fragmentShader: fragmentShader,
-	      side: DoubleSide
-	    }); // distinctContouringMaterial
-	    // Create teh geometry basics.
+	    var obj = this;
+	    obj.config = {
+	      source: configFilename,
+	      visible: true,
+	      remove: function remove() {}
+	    };
+	    obj.configPromise = fetch(configFilename).then(function (res) {
+	      return res.json();
+	    });
+	    /*
+	    The data promises should each return an array containing only hte relevant data. 
+	    dataPromise.then(a=>{
+	    	a[0] = vertices
+	    	a[1] = indices
+	    	a[2] = values
+	    })
+	    
+	    
+	    Uniforms are expected (by the shaders), to have the following form.
+	    
+	    const uniforms = {
+	    	u_colorbar: { type: "t", value: new THREE.CanvasTexture( colorbar.canvas ) },
+	    	u_thresholds: {value: initialThresholds },
+	    	u_n_thresholds: {value: n },
+	    	u_isolines_flag: {value: false },
+	    };
+	    */
 
-	    var geometry = new BufferGeometry();
-	    geometry.setAttribute('position', new BufferAttribute(a[0], 3));
-	    geometry.setIndex(new BufferAttribute(a[1], 1));
-	    geometry.computeVertexNormals(); // Add flow attributes.
+	    obj.dataPromise = obj.configPromise.then(function (json) {
+	      // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+	      var verticesPromise = fetch(json.vertices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
 
-	    geometry.setAttribute('a_mach', new BufferAttribute(a[2], 1));
-	    var mesh = new Mesh(geometry, distinctContouringMaterial);
-	    mesh.name = "Colour contours"; // Add a wireframe on top.
-	    //var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
-	    //var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-	    //var wireframe = new THREE.LineSegments( geo, mat );
-	    //mesh.add( wireframe );
+	      var indicesPromise = fetch(json.indices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Uint32Array(ab);
+	      }); // uint32
 
-	    return mesh;
-	  }); // Promise.all
-	} // constructor
-	; // ContouredMesh
+	      var valuePromise = fetch(json.values).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
+	        var distinctContouringMaterial = new ShaderMaterial({
+	          uniforms: uniforms,
+	          vertexShader: vertexShader,
+	          fragmentShader: fragmentShader,
+	          side: DoubleSide
+	        }); // distinctContouringMaterial
+	        // Create teh geometry basics.
+
+	        var geometry = new BufferGeometry();
+	        geometry.setAttribute('position', new BufferAttribute(a[0], 3));
+	        geometry.setIndex(new BufferAttribute(a[1], 1));
+	        geometry.computeVertexNormals(); // Add flow attributes.
+
+	        geometry.setAttribute('a_mach', new BufferAttribute(a[2], 1));
+	        var mesh = new Mesh(geometry, distinctContouringMaterial);
+	        mesh.name = json.name ? json.name : "Colour contours"; // Add a wireframe on top.
+	        //var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
+	        //var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+	        //var wireframe = new THREE.LineSegments( geo, mat );
+	        //mesh.add( wireframe );
+
+	        return mesh;
+	      }); // Promise.all
+	    }); // then
+	  } // constructor
+
+
+	  _createClass(ContouredMesh, [{
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      var obj = this;
+	      obj.dataPromise.then(function (mesh) {
+	        sceneWebGL.add(mesh);
+	      }); // then
+
+	      obj.config.remove = function () {
+	        obj.gui.destroy();
+	        obj.dataPromise.then(function (mesh) {
+	          sceneWebGL.remove(mesh);
+	        }); // then
+	      }; // remove
+
+	    } // addTo
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(elementsGUI) {
+	      var obj = this; // Add GUI controllers.
+
+	      var folder = elementsGUI.addFolder("Geometry: " + trimStringToLength(obj.config.source, 27));
+	      folder.add(obj.config, "visible"); // boolean
+
+	      folder.add(obj.config, "remove"); // button
+	    } // addGUI
+
+	  }]);
+
+	  return ContouredMesh;
+	}(); // ContouredMesh
 
 	//                 7-------6          x---6---x
 	//                /|      /|     11  7|      5|  10
@@ -35542,60 +35615,78 @@
 	};
 
 	var IsoSurface = /*#__PURE__*/function () {
-	  function IsoSurface(loadDataPromise) {
+	  function IsoSurface(configFilename) {
 	    _classCallCheck(this, IsoSurface);
 
-	    this.data = void 0;
-	    this.thresholdInput = void 0;
-	    this.mesh = void 0;
-	    var obj = this; // First create teh UI element
+	    this.a = 0;
+	    this.b = 1;
+	    this.step = 0.05;
+	    this.value = 0;
+	    var obj = this;
+	    obj.config = {
+	      visible: true,
+	      source: configFilename,
+	      threshold: 0.30545,
+	      remove: function remove() {}
+	    }; // config
 
-	    obj.thresholdInput = document.createElement("input");
-	    obj.thresholdInput.type = "range";
-	    obj.thresholdInput.min = 0;
-	    obj.thresholdInput.max = 1;
-	    obj.thresholdInput.step = 0.05;
-	    obj.thresholdInput.value = 0; // How to load in actual data now. 
+	    obj.configPromise = fetch(configFilename).then(function (res) {
+	      return res.json();
+	    });
+	    obj.dataPromise = obj.configPromise.then(function (json) {
+	      // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+	      var verticesPromise = fetch(json.vertices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
 
-	    /* 
-	    loadDataPromise expects to receive d = {
-	    	connectivity: data[0],
-	    	vertices: data[1],
-	    	mach: mach
-	    };
-	    */
+	      var indicesPromise = fetch(json.indices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Uint32Array(ab);
+	      }); // uint32
 
-	    obj.data = loadDataPromise.then(function (d) {
-	      // Rebase the UI element.
-	      // This is a botch here to get nice numbers!!
-	      var a = Math.floor(d.mach.domain[0] * 1000) / 1000;
-	      var b = Math.ceil(d.mach.domain[1] * 1000) / 1000;
-	      var step = (b - a) / 100;
-	      obj.thresholdInput.step = step;
-	      obj.thresholdInput.min = a;
-	      obj.thresholdInput.max = a + 100 * step;
-	      obj.thresholdInput.value = 0.30545;
-	      var surface = generateMeshVTK(d, 0.3);
+	      var valuePromise = fetch(json.values).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
+	        // Reformat the data to Thanassis' structure.
+	        obj.updateControlsToValuesRange(a[2]); // Connectivity is expected to be an array of arrays, with each sub-array representing a cube cell with 8 indices.
+
+	        var connectivity = bin2array(a[1], 8); // Vertices are expected to be an array of arrays, each sub-array representing a vertex with three components
+
+	        var vertices = bin2array(a[0], 3);
+	        return {
+	          connectivity: connectivity,
+	          vertices: vertices,
+	          mach: a[2]
+	        }; // return
+	      }); // Promise.all
+	    }); // then
+
+	    obj.meshPromise = obj.dataPromise.then(function (d) {
+	      // Calculate an isosurface using Thanassis' code.
+	      var surface = generateMeshVTK(d, obj.config.threshold); // Material.
+
 	      var material = new MeshBasicMaterial({
-	        color: 0xDCDCDC
-	      }); // gainsboro
-
-	      material.side = DoubleSide;
-	      var geometry = new BufferGeometry(); // const MAX_POINTS = 30000;
-	      // const positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
+	        color: 0xDCDCDC,
+	        side: DoubleSide
+	      }); // Geometry
 
 	      var positions = Float32Array.from(surface.verts);
+	      var indices = Uint32Array.from(surface.indices);
+	      var geometry = new BufferGeometry();
 	      geometry.setAttribute('position', new BufferAttribute(positions, 3));
 	      geometry.attributes.position.usage = DynamicDrawUsage;
-	      var indices = Uint32Array.from(surface.indices);
 	      geometry.setIndex(new BufferAttribute(indices, 1));
-	      obj.mesh = new Mesh(geometry, material);
-	      return d;
-	    });
-
-	    obj.thresholdInput.oninput = function () {
-	      obj.update();
-	    };
+	      var mesh = new Mesh(geometry, material);
+	      mesh.name = obj.config.source;
+	      return mesh;
+	    }); // then
 	  } // constructor
 
 
@@ -35604,38 +35695,106 @@
 	    get: function get() {
 	      // Default value is 0.
 	      var obj = this;
-	      var t = parseFloat(obj.thresholdInput.value);
-	      return t ? t : 0;
-	    }
+	      return obj.config.threshold;
+	    } // get threshold
+
 	  }, {
 	    key: "update",
 	    value: function update() {
 	      var obj = this; // Update the mesh buffers. This generate mesh still works on i,j,k as the vertex coordinate values.
 
-	      obj.data.then(function (d) {
-	        // Generate the surface using Thanassis code.
-	        var surface = generateMeshVTK(d, obj.threshold);
+	      Promise.all([obj.dataPromise, obj.meshPromise]).then(function (a) {
+	        var d = a[0];
+	        var mesh = a[1]; // Generate the surface using Thanassis code.
+
+	        var surface = generateMeshVTK(d, obj.config.threshold);
 	        /* This update here is quite wasteful, and should definitely be improved somehow.
 	        The issue is that the isosurface geometry will have a different number of triangles for different thresholds. This means that the buffer must in some cases be inreased after an interaction, but increasing buffers is not possible. Instead, a buffer large enough to store any size can be initiated, and updated, with the range of the buffer being used by the GPU limited.
 	        */
 
-	        var geometry = new BufferGeometry(); // const MAX_POINTS = 30000;
-	        // const positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
-
 	        var positions = Float32Array.from(surface.verts);
+	        var indices = Uint32Array.from(surface.indices);
+	        var geometry = new BufferGeometry();
 	        geometry.setAttribute('position', new BufferAttribute(positions, 3));
 	        geometry.attributes.position.usage = DynamicDrawUsage;
-	        var indices = Uint32Array.from(surface.indices);
 	        geometry.setIndex(new BufferAttribute(indices, 1));
-	        obj.mesh.geometry.dispose();
-	        obj.mesh.geometry = geometry;
-	      }); // then
+	        mesh.geometry.dispose();
+	        mesh.geometry = geometry;
+	      }); // Promise.all
 	    } // update
+
+	  }, {
+	    key: "updateControlsToValuesRange",
+	    value: function updateControlsToValuesRange(values) {
+	      var obj = this;
+	      var a = parseFloat(Math.min.apply(null, values).toPrecision(3));
+	      var b = parseFloat(Math.max.apply(null, values).toPrecision(3));
+	      var step = (b - a) / 100;
+	      obj.step = step;
+	      obj.a = a;
+	      obj.b = a + 100 * step;
+	      obj.config.threshold = (2 * a + b) / 3;
+
+	      if (obj.gui) {
+	        var tc = obj.gui.controllers.find(function (c) {
+	          return c.property == "threshold";
+	        });
+	        tc.min(obj.a);
+	        tc.max(obj.b);
+	        tc.step(obj.step);
+	        tc.setValue(obj.config.threshold);
+	      } // if
+
+	    } // updateControlsToValuesRange
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      var obj = this;
+	      obj.meshPromise.then(function (mesh) {
+	        sceneWebGL.add(mesh);
+	      }); // then
+	    } // addTo
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(elementsGUI) {
+	      var obj = this; // Add GUI controllers.
+
+	      obj.gui = elementsGUI.addFolder("Isosurface: " + trimStringToLength(obj.config.source, 27));
+	      var tc = obj.gui.add(obj.config, "threshold", obj.a, obj.b, obj.step); // slider
+
+	      obj.gui.add(obj.config, "visible"); // boolean
+
+	      obj.gui.add(obj.config, "remove"); // button
+
+	      tc.onChange(function (v) {
+	        obj.update();
+	      });
+	    } // addGUI
 
 	  }]);
 
 	  return IsoSurface;
 	}(); // isoSurface
+
+	function bin2array(binarray, ncomp) {
+	  var r = [];
+
+	  for (var i = 0; i < binarray.length; i += ncomp) {
+	    var c = [];
+
+	    for (var j = 0; j < ncomp; j++) {
+	      c.push(binarray[i + j]);
+	    } // for
+
+
+	    r.push(c);
+	  } // for
+
+
+	  return r;
+	} // bin2array
 
 	var ColorBar = /*#__PURE__*/function () {
 	  // Some helper color objects.

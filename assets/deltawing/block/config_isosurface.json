@@ -1,0 +1,6 @@
+{
+"name": "Isosurface",
+"vertices": "./assets/deltawing/block/suction_side_block_vertices.bin",
+"indices": "./assets/deltawing/block/suction_side_block_connectivity.bin",
+"values": "./assets/deltawing/block/suction_side_block_mach.bin"
+}

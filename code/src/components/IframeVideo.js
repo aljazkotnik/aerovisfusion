@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
+import { trimStringToLength } from "../helpers.js";
+
 
 function makeCSS3DiFrame( id, w, x, y, z, rx, ry, rz ) {
 	
@@ -89,5 +91,45 @@ export default class IframeVideo{
 		obj.webGLItem.scale.copy( obj.cssItem.scale );
 		
 	} // ontransform
+	
+	
+	
+	addTo(sceneCSS, sceneWebGL){
+		let obj = this;
+		
+		sceneCSS.add( obj.cssItem );
+		sceneWebGL.add( obj.webGLItem );
+		
+		
+		obj.config.remove = function(){
+			obj.gui.destroy();
+			
+			sceneCSS.remove( obj.cssItem );
+			sceneWebGL.remove( obj.webGLItem );
+		} // remove
+			
+		
+	} // addTo
+	
+	
+	addGUI(elementsGUI){
+		let obj = this;
+		
+		
+		//Add the gui elements also.
+		// Add GUI controllers.
+		obj.gui = elementsGUI.addFolder( "Video: " + trimStringToLength(obj.config.name , 30) ); // 37char for name
+		
+		let oc = obj.gui.add( obj.config, "transparent"); // slider
+		let tc = obj.gui.add( obj.config, "positioning" ); // boolean
+		obj.gui.add( obj.config, "remove" );      // button
+		
+		oc.onChange(function(v){
+			obj.webGLItem.material.blending = v ? THREE.NormalBlending : THREE.NoBlending;
+		})
+		
+	} // addGUI
+	
+	
 	
 } // IframeVideo

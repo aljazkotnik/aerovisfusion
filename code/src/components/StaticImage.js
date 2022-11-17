@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { trimStringToLength } from "../helpers.js";
 
 export default class StaticImage{
 	constructor(id, w, x, y, z, rx, ry, rz){
@@ -60,5 +61,46 @@ export default class StaticImage{
 			webGLImage.material.opacity = v;
 		})
 	} // setOpacity
+	
+	
+	
+	addTo(sceneWebGL){
+		let obj = this;
+
+		obj.created.then( webGLImage=>{
+			sceneWebGL.add( webGLImage );
+		}); // then
+		
+		
+		obj.config.remove = function(){
+			obj.created.then( webGLImage=>{
+				obj.gui.destroy();
+				sceneWebGL.remove( webGLImage );
+			}); // then
+		} // remove
+	} // addTo
+	
+	
+	
+	addGUI( elementsGUI ){
+		let obj = this;
+		
+		// Add GUI controllers.
+		obj.gui = elementsGUI.addFolder( "Image: " + trimStringToLength(obj.config.name , 30) );
+		
+		let oc = obj.gui.add( obj.config, "opacity", 0, 1); // slider
+		let tc = obj.gui.add( obj.config, "positioning" ); // boolean
+		obj.gui.add( obj.config, "remove" );      // button
+		
+		
+		oc.onChange(function(v){
+			obj.setOpacity(v);
+		})
+		
+		
+		
+	} // addGUI
+	
+	
 	
 } // StaticImage

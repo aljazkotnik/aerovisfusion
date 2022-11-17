@@ -39,7 +39,7 @@ Using colors attached to vertices gives some striations, but using a texture doe
 
 
 import * as THREE from "three";
-
+import { trimStringToLength } from "../helpers.js";
 
 
 
@@ -148,20 +148,33 @@ const fragmentShader = `
 
 
 
-
+/* Uniforms controlled by the colorbar GUI:
+obj.uniforms = {
+	u_colorbar: { type: "t", value: new CanvasTexture( canvas ) },
+	u_thresholds: {value: initialThresholds },
+	u_n_thresholds: {value: obj.n },
+	u_isolines_flag: {value: false },
+	u_contours_flag: {value: true }
+};
+*/
 
 
 
 export default class ContouredMesh{
-	constructor(id, dataPromise, uniforms){
+	constructor(configFilename, uniforms){
 		let obj = this;
 		
 		
 		obj.config = {
-			name: id,
+			source: configFilename,
 			visible: true,
 			remove: function(){}
 		}
+		
+		
+		
+		obj.configPromise = fetch(configFilename)
+		  .then(res=>res.json())
 		
 		
 		
@@ -184,45 +197,92 @@ export default class ContouredMesh{
 		};
 		*/
 		
-		obj.created = dataPromise.then(a=>{
+		obj.dataPromise = obj.configPromise.then(json=>{
+			
+			// Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+			let verticesPromise = fetch( json.vertices )
+			  .then(res=>res.arrayBuffer())
+			  .then(ab=>{return new Float32Array(ab)}); // float32
+			let indicesPromise = fetch( json.indices )
+			  .then(res=>res.arrayBuffer())
+			  .then(ab=>{return new Uint32Array(ab)}); // uint32
+			let valuePromise = fetch( json.values )
+			  .then(res=>res.arrayBuffer())
+			  .then(ab=>{return new Float32Array(ab)}); // float32
+		
+			return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(a=>{
 		
 		
-			const distinctContouringMaterial = new THREE.ShaderMaterial( {
-				uniforms: uniforms,
-				vertexShader: vertexShader,
-				fragmentShader: fragmentShader,
-				side: THREE.DoubleSide
-			}   ); // distinctContouringMaterial
-			
-			
-			// Create teh geometry basics.
-			const geometry = new THREE.BufferGeometry();
-			geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
-			geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
-			geometry.computeVertexNormals();
-			
-			
-			// Add flow attributes.
-			geometry.setAttribute( 'a_mach', new THREE.BufferAttribute( a[2], 1 ) );
-			
-			
-			
-			const mesh = new THREE.Mesh( geometry, distinctContouringMaterial );
-			mesh.name = "Colour contours";
-			
-			
-			
-			// Add a wireframe on top.
-			//var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
-			//var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-			//var wireframe = new THREE.LineSegments( geo, mat );
-			//mesh.add( wireframe );
-			
-			
-			return mesh;
-		}) // Promise.all
+				const distinctContouringMaterial = new THREE.ShaderMaterial( {
+					uniforms: uniforms,
+					vertexShader: vertexShader,
+					fragmentShader: fragmentShader,
+					side: THREE.DoubleSide
+				}   ); // distinctContouringMaterial
+				
+				
+				// Create teh geometry basics.
+				const geometry = new THREE.BufferGeometry();
+				geometry.setAttribute( 'position', new THREE.BufferAttribute( a[0], 3 ) );
+				geometry.setIndex( new THREE.BufferAttribute(a[1], 1) );
+				geometry.computeVertexNormals();
+				
+				
+				// Add flow attributes.
+				geometry.setAttribute( 'a_mach', new THREE.BufferAttribute( a[2], 1 ) );
+				
+				
+				
+				const mesh = new THREE.Mesh( geometry, distinctContouringMaterial );
+				mesh.name = json.name ? json.name : "Colour contours";
+				
+				
+				
+				// Add a wireframe on top.
+				//var geo = new THREE.WireframeGeometry( mesh.geometry ); // or WireframeGeometry
+				//var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
+				//var wireframe = new THREE.LineSegments( geo, mat );
+				//mesh.add( wireframe );
+				
+				
+				return mesh;
+			}) // Promise.all
+		
+		}) // then
+		
 		
 		
 	} // constructor
+	
+	
+	addTo( sceneWebGL ){
+		let obj = this;
+		
+		obj.dataPromise.then(mesh=>{
+			sceneWebGL.add(mesh)
+		}) // then
+		
+		obj.config.remove = function(){
+			obj.gui.destroy();
+			obj.dataPromise.then(mesh=>{
+				sceneWebGL.remove(mesh)
+			}) // then
+		} // remove
+				
+	} // addTo
+	
+	
+	addGUI(elementsGUI){
+		let obj = this;
+		
+		
+		// Add GUI controllers.
+		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(obj.config.source, 27));
+		
+		folder.add( obj.config, "visible" ); 	   // boolean
+		folder.add( obj.config, "remove" );      // button
+		
+	} // addGUI
+	
 
 } // ContouredMesh

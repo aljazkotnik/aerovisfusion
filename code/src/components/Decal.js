@@ -22,7 +22,7 @@ import DecalTextureUI from "./DecalTextureUI.js"
 
 
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
-
+import { applyIncrementalBehavior } from "../GUI/IncrementController.js";
 
 
 
@@ -36,6 +36,15 @@ export default class Decal{
 		// Camera is required to work with the raypointer.
 		let obj = this;
 		obj.assetname = assetsource;
+		
+		
+		obj.itemGuiConfig = {
+			remove: function(){},
+			editor: function(){obj.editor.show()},
+			unpaste: function(){obj.unpaste()},
+			rotation: 0,
+			size: 1
+		}
 		
 		// DECAL HELPER
 		// Help position the decal. Should respond to domain size?
@@ -97,60 +106,30 @@ export default class Decal{
 		// I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
 		let obj = this;
 		
-		const decalEditorItem = gui.addFolder(`Decal: ${ obj.assetname }`);
+		obj.gui = gui.addFolder(`Decal: ${ obj.assetname }`);
 		
-		const decalEditorItemConfig = {
-			editor: function(){obj.editor.show()},
-			unpaste: function(){obj.unpaste()},
-			rotation: 0,
-			size: 1
-		}
-		
-		const rc = decalEditorItem.add( decalEditorItemConfig , "rotation", -15, 15 )
-		const sc = decalEditorItem.add( decalEditorItemConfig , "size", 0.9, 1.1 )
-		decalEditorItem.add( decalEditorItemConfig , "editor" )
-		decalEditorItem.add( decalEditorItemConfig , "unpaste" )
+		const rc = obj.gui.add( obj.itemGuiConfig , "rotation", -15, 15 )
+		const sc = obj.gui.add( obj.itemGuiConfig , "size", 0.9, 1.1 )
+		obj.gui.add( obj.itemGuiConfig , "editor" )
+		obj.gui.add( obj.itemGuiConfig , "unpaste" )
+		obj.gui.add( obj.itemGuiConfig , "remove" )
 		
 		
 		
 		// Need to know the controller, config, property, callback
-		
-		function applyIncrementalBehavior(controller, config, property, callback){
-			let timer = undefined;
-			let rate = undefined;
-			function increment(v, callback){
-				if(rate == v){
-					callback(v);
-					timer = setTimeout(function(){increment(v, callback)},200)
-				} // if
-			} // increment
-			
-			controller.onChange(function(v){
-				clearTimeout(timer);
-				rate = v;
-				increment(v, callback)
-			}).onFinishChange(function(){
-				clearTimeout(timer);
-				rate = undefined;
-				config[property] = ( controller._max + controller._min ) / 2;
-				controller.updateDisplay();
-			}) // events
-		} // applyIncrementalBehavior
-		
-		
-		applyIncrementalBehavior(rc, decalEditorItemConfig, "rotation", function(phi){
+		applyIncrementalBehavior(rc, obj.itemGuiConfig, "rotation", function(phi){
 			obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
 			obj.decal.orientation.copy( obj.orientationHelper.rotation );
 			obj.decal.transform();
 		});
 		
-		applyIncrementalBehavior(sc, decalEditorItemConfig, "size", function(k){
+		applyIncrementalBehavior(sc, obj.itemGuiConfig, "size", function(k){
 			obj.decal.scale *= k;
 			obj.decal.transform();
 		});
 		
 		
-		return decalEditorItem;
+		return obj.gui;
 	} // addGUI
 	
 	
@@ -161,6 +140,16 @@ export default class Decal{
 		sceneWebGL.add( obj.orientationHelper )
 		sceneWebGL.add( obj.raypointer.line )
 		sceneWebGL.add( obj.decal.mesh )
+		
+		
+		// Provide the remove functionality.
+		obj.itemGuiConfig.remove = function(){
+			sceneWebGL.remove( obj.orientationHelper )
+			sceneWebGL.remove( obj.raypointer.line )
+			sceneWebGL.remove( obj.decal.mesh )
+			
+			obj.gui.destroy()
+		} // remove
 		
 	} // addTo
 	
