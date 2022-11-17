@@ -25,15 +25,6 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 
 
 
-// Repackage into lil-gui
-const params = {
-	minScale: 0.10,
-	maxScale: 0.20,
-	clear: function () {
-		removeDecals();
-	}
-};
-
 
 
 /*
@@ -41,13 +32,14 @@ One main idea is that the decal is added to the scene immediately upon creation.
 */
 export default class Decal{
 	
-	constructor( camera, admissibleTargetGeometries ){
+	constructor( assetsource, camera, admissibleTargetGeometries ){
 		// Camera is required to work with the raypointer.
 		let obj = this;
+		obj.assetname = assetsource;
 		
 		// DECAL HELPER
 		// Help position the decal. Should respond to domain size?
-		obj.orientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), 
+		obj.orientationHelper = new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.1, 0.1 ), 
 		new THREE.MeshNormalMaterial() );
 		obj.orientationHelper.visible = false;
 		
@@ -55,7 +47,7 @@ export default class Decal{
 		// DECAL MESH
 		// The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
 		// Rename to DecalTextureEditor?
-		obj.editor = new DecalTextureUI( 'assets/20220125_143807_gray.jpg' );
+		obj.editor = new DecalTextureUI( assetsource );
 		
 		
 		// Now make the mesh object itself.
@@ -91,7 +83,7 @@ export default class Decal{
 		obj.decal.support = target.object;
 		obj.decal.position.copy( obj.orientationHelper.position )
 		obj.decal.orientation.copy( obj.orientationHelper.rotation )
-		obj.decal.scale = params.minScale + Math.random() * ( params.maxScale - params.minScale );
+		obj.decal.scale = 1;
 		
 		obj.decal.transform()
 		
@@ -105,7 +97,7 @@ export default class Decal{
 		// I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
 		let obj = this;
 		
-		const decalEditorItem = gui.addFolder("Decal XY");
+		const decalEditorItem = gui.addFolder(`Decal: ${ obj.assetname }`);
 		
 		const decalEditorItemConfig = {
 			editor: function(){obj.editor.show()},
@@ -113,14 +105,12 @@ export default class Decal{
 			rotation: 0,
 			size: 1
 		}
-		console.log( decalEditorItemConfig )
 		
 		const rc = decalEditorItem.add( decalEditorItemConfig , "rotation", -15, 15 )
 		const sc = decalEditorItem.add( decalEditorItemConfig , "size", 0.9, 1.1 )
 		decalEditorItem.add( decalEditorItemConfig , "editor" )
 		decalEditorItem.add( decalEditorItemConfig , "unpaste" )
 		
-		console.log(decalEditorItem, decalEditorItemConfig)
 		
 		
 		// Need to know the controller, config, property, callback

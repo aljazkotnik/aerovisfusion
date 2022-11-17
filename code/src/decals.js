@@ -48,7 +48,6 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 
 
 // Scene elements
-import InterfaceDecals from "./GUI/InterfaceDecals.js";
 import ColorBar from "./GUI/ColorBar.js";
 import ContouredMesh from "./components/ContouredMesh.js";
 import Decal from "./components/Decal.js";
@@ -63,7 +62,7 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import Stats from "stats.js";
 
 
-var stats;
+
 
 
 // Scene items
@@ -72,7 +71,9 @@ var sceneWebGL, rendererWebGL;
 
 
 // GUI items
-var gui;
+var elementsGUI;
+var stats;
+
 
 /*
 wing domain roughly = {
@@ -101,8 +102,6 @@ const decalGeometries = []; // Geometries that can have a decal added on them.
 
 
 
-
-
 init();
 animate();
 
@@ -115,7 +114,7 @@ function init() {
 	addArcballControls();
 	setupHUD();
 	
-	
+	console.log(arcballcontrols)
 	
 	// Add in the wing.
 	addWingGeometry()
@@ -124,10 +123,9 @@ function init() {
 	// Add in a decal
 	addDecal();
 	
-	
 
 	window.addEventListener( 'resize', onWindowResize );
-	
+	console.log(sceneWebGL)
 
 } // init
 
@@ -152,7 +150,7 @@ function setupScene(){
 	
     // RENDERERS
     rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    rendererWebGL.setClearColor( 0x000000, 0 );
+    rendererWebGL.setClearColor( 0xFFFFFF, 0 );
     rendererWebGL.setPixelRatio( window.devicePixelRatio );
     rendererWebGL.setSize( window.innerWidth, window.innerHeight );
     rendererWebGL.shadowMap.enabled = true;
@@ -174,9 +172,8 @@ function setupScene(){
 // There should be a single add decal function that takes in the image URL, and takes care of everything else.
 function addDecal(){
 	
-	// RAYCASTER
-	// addAimingRay();
-	const decalobj = new Decal( camera, decalGeometries );
+	// DECAL: make the asset url an input.
+	const decalobj = new Decal( 'assets/20220125_143807_gray.jpg', camera, decalGeometries );
 	decalobj.addTo( sceneWebGL )
 	
 	
@@ -187,10 +184,7 @@ function addDecal(){
 	
 	
 	// Add teh decal gui to the overall gui.
-	const guiItem = decalobj.addGUI(gui);
-	const tc = guiItem.children[0];
-	
-
+	decalobj.addGUI(elementsGUI);
 	
 	
 	// And append the nodal to the session.
@@ -266,8 +260,6 @@ function addWingGeometry(){
 		// scene.add( vnh );
 		// console.log(mesh)
 	}) // then
-	
-	
 } // addWingGeometry
 
 
@@ -299,11 +291,45 @@ function setupHUD(){
 	
 	// The decal GUI is appended into a separate container, as it is a modal. But the controls need to have a button that toggles the modal on/off.
 	
-	// Lets see if I can make a gui, and then append a whole new GUI to it.
-	gui = new GUI({
+	
+	// MAYBE THIS GUI SHOULD BE WRAPPED UP?
+	const gui = new GUI({
 		container: container.querySelector("div.controls"),
-		title: "Overall GUI"
+		title: "Session controls"
 	});
+	elementsGUI = gui.addFolder("Elements");
+	const addElementGUI = gui.addFolder("Add element");
+	var allTransformControllers = [];
+
+	// The button should open a modal, or append a selection to the GUI to configure the element to be added.
+	const addElementConfig = {
+		type: '',
+		name: 'type in asset address',
+		add: function(el){
+			// Evaluate the current config and clear it.
+			
+			switch( addElementConfig.type ){
+				case "Image":
+					// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+					break;
+				case "Video":
+					// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+					break;
+				case "Geometry":
+					// addWingGeometry();
+					break;
+				case "Decal":
+					addDecal();
+				default:
+			}; // switch
+		}
+	}
+
+
+	addElementGUI.add( addElementConfig, "type", ['','Image','Video','Geometry','Decal'] ) // dropdown
+	addElementGUI.add( addElementConfig, "name" ); 	// text field
+	addElementGUI.add( addElementConfig, "add" ); 	// button
+	
 	
 } // setupHUD
 
@@ -323,7 +349,7 @@ function addArcballControls(){
 	
 	arcballcontrols = new ArcballControls( camera, document.getElementById( 'css' ), sceneWebGL );
 	arcballcontrols.focus( focusInitialPoint, 1, 1 );
-	
+	arcballcontrols.activateGizmos(false);
 	
 	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );

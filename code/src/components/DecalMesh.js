@@ -35,6 +35,8 @@ export default class DecalMesh{
 		// const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
 		// const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
 
+
+
 		// normalMap: decalNormal,
 		const decalMaterial = new THREE.MeshBasicMaterial( {
 			map: texture,
@@ -44,7 +46,8 @@ export default class DecalMesh{
 			depthWrite: false,
 			polygonOffset: true,
 			polygonOffsetFactor: - 4,
-			wireframe: false
+			wireframe: false,
+			blending: THREE.AdditiveBlending
 		} );
 		const placeholderGeometry = new THREE.BufferGeometry();
 		
