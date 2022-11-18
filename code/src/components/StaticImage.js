@@ -7,6 +7,7 @@ export default class StaticImage{
 		
 		obj.config = {
 			name: id,
+			visible: true,
 			opacity: 1,
 			positioning: false,
 			remove: function(){}
@@ -88,14 +89,12 @@ export default class StaticImage{
 		// Add GUI controllers.
 		obj.gui = elementsGUI.addFolder( "Image: " + trimStringToLength(obj.config.name , 30) );
 		
-		let oc = obj.gui.add( obj.config, "opacity", 0, 1); // slider
-		let tc = obj.gui.add( obj.config, "positioning" ); // boolean
+		obj.gui.add( obj.config, "visible" ).onChange(function(v){ obj.created.then(mesh=>{mesh.visible = v}) }); 	   // boolean
+		
+		let oc = obj.gui.add( obj.config, "opacity", 0, 1).onChange(function(v){obj.setOpacity(v)}); // slider
+		obj.gui.add( obj.config, "positioning" ); // boolean
 		obj.gui.add( obj.config, "remove" );      // button
 		
-		
-		oc.onChange(function(v){
-			obj.setOpacity(v);
-		})
 		
 		
 		

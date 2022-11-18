@@ -279,7 +279,7 @@ export default class ContouredMesh{
 		// Add GUI controllers.
 		const folder = elementsGUI.addFolder( "Geometry: " + trimStringToLength(obj.config.source, 27));
 		
-		folder.add( obj.config, "visible" ); 	   // boolean
+		folder.add( obj.config, "visible" ).onChange(function(v){ obj.dataPromise.then(mesh=>{mesh.visible = v}) }); 	   // boolean
 		folder.add( obj.config, "remove" );      // button
 		
 	} // addGUI

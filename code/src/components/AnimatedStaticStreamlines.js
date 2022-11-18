@@ -75,6 +75,7 @@ export default class AnimatedStaticStreamlines{
 		
 		obj.config = {
 			source: source,
+			visible: true,
 			type: ""
 		}
 
@@ -90,6 +91,7 @@ export default class AnimatedStaticStreamlines{
 		// depthTest: false,
 		// blending: THREE.AdditiveBlending,
 
+		obj.linesGroup = new THREE.Group();
 
 		obj.streamlineLoadPromise = fetch( source )
 		  .then(res=>res.json())
@@ -144,7 +146,7 @@ export default class AnimatedStaticStreamlines{
 		line.times = streamlineJson.IntegrationTime.reverse(); // reverse so checking for last element under time.
 	  
 		obj.lines.push(line);
-		
+		obj.linesGroup.add(line);
 	} // addLine
 	
 	
@@ -231,13 +233,7 @@ export default class AnimatedStaticStreamlines{
 	
 	addTo(sceneWebGL){
 		let obj = this;
-		
-		obj.dataPromise.then(lines=>{
-			lines.forEach(line=>{
-				sceneWebGL.add(line);
-			}) // forEach
-		}) // then
-		
+		sceneWebGL.add(obj.linesGroup)		
 	} // addTo
 	
 	
@@ -258,10 +254,16 @@ export default class AnimatedStaticStreamlines{
 
 		obj.gui = elementsGUI.addFolder("Streamlines: " + trimStringToLength(obj.config.source, 22));
 
+
+		obj.gui.add( obj.config, "visible" ).onChange(function(v){ 
+			obj.linesGroup.visible = v;
+		}); 	   // boolean
+
+
 		const typeConfig = {
 			static: function(){ obj.showstatic() },
-			flowing: function(){ obj.showanimated() },
-			synchronised: function(){ obj.showsynchronised() }
+			flowing: function(){ obj.showanimated() } // ,
+			// synchronised: function(){ obj.showsynchronised() }
 		}
 		
 		const type = obj.gui.add( obj.config, "type", [""].concat(Object.keys(typeConfig)) ) // dropdown

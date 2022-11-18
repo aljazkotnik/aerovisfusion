@@ -169,14 +169,13 @@ export default class IsoSurface{
 		// Add GUI controllers.
 		obj.gui = elementsGUI.addFolder( "Isosurface: " + trimStringToLength(obj.config.source, 27));
 		
-		let tc = obj.gui.add( obj.config, "threshold", obj.a, obj.b, obj.step );	// slider
-		obj.gui.add( obj.config, "visible" ); 	   						// boolean
+		obj.gui.add( obj.config, "visible" ).onChange(function(v){ obj.meshPromise.then(mesh=>{mesh.visible = v}) }); 	   // boolean
+		obj.gui.add( obj.config, "threshold", obj.a, obj.b, obj.step ).onChange(function(v){obj.update() });	// slider
+		
 		obj.gui.add( obj.config, "remove" );      						// button
 		
 		
-		tc.onChange(function(v){
-			obj.update();
-		})
+		
 	} // addGUI
 	
 	

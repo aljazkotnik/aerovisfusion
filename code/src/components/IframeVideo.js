@@ -49,6 +49,7 @@ export default class IframeVideo{
 		
 		obj.config = {
 			name: id,
+			visible: true,
 			transparent: false,
 			positioning: false,
 			remove: function(){}
@@ -120,6 +121,10 @@ export default class IframeVideo{
 		// Add GUI controllers.
 		obj.gui = elementsGUI.addFolder( "Video: " + trimStringToLength(obj.config.name , 30) ); // 37char for name
 		
+		obj.gui.add( obj.config, "visible" ).onChange(function(v){ 
+			obj.webGLItem.visible = v;
+			obj.cssItem.visible = v;
+		}); 	   // boolean
 		let oc = obj.gui.add( obj.config, "transparent"); // slider
 		let tc = obj.gui.add( obj.config, "positioning" ); // boolean
 		obj.gui.add( obj.config, "remove" );      // button

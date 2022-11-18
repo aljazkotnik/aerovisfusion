@@ -38,7 +38,10 @@ export default class Decal{
 		obj.assetname = assetsource;
 		
 		
-		obj.itemGuiConfig = {
+		obj.config = {
+			source: assetsource,
+			visible: true,
+			active: true,
 			remove: function(){},
 			editor: function(){obj.editor.show()},
 			unpaste: function(){obj.unpaste()},
@@ -67,6 +70,7 @@ export default class Decal{
 		// RAYPOINTER
 		// The user interaction for the initial positioning.
 		obj.raypointer = new DecalPointerRay( camera, admissibleTargetGeometries );
+		obj.raypointer.line.visible = obj.config.active;
 		obj.raypointer.decals = [obj.decal];
 		obj.raypointer.positionInteraction = function(target){
 			obj.position(target);
@@ -108,22 +112,39 @@ export default class Decal{
 		
 		obj.gui = gui.addFolder(`Decal: ${ obj.assetname }`);
 		
-		const rc = obj.gui.add( obj.itemGuiConfig , "rotation", -15, 15 )
-		const sc = obj.gui.add( obj.itemGuiConfig , "size", 0.9, 1.1 )
-		obj.gui.add( obj.itemGuiConfig , "editor" )
-		obj.gui.add( obj.itemGuiConfig , "unpaste" )
-		obj.gui.add( obj.itemGuiConfig , "remove" )
 		
+		const vc = obj.gui.add( obj.config , "visible")
+		const ac = obj.gui.add( obj.config , "active")
+		const rc = obj.gui.add( obj.config , "rotation", -15, 15 )
+		const sc = obj.gui.add( obj.config , "size", 0.9, 1.1 )
+		obj.gui.add( obj.config , "editor" )
+		obj.gui.add( obj.config , "unpaste" )
+		obj.gui.add( obj.config , "remove" )
+		
+		
+		vc.onChange(function(v){
+			obj.config.active = v;
+			ac.updateDisplay();
+			
+			obj.raypointer.line.visible = v;
+			obj.decal.mesh.visible = v
+		}); // boolean
 		
 		
 		// Need to know the controller, config, property, callback
-		applyIncrementalBehavior(rc, obj.itemGuiConfig, "rotation", function(phi){
+		applyIncrementalBehavior(rc, obj.config, "rotation", function(phi){
+			obj.config.active = v;
+			ac.updateDisplay();
+			
 			obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
 			obj.decal.orientation.copy( obj.orientationHelper.rotation );
 			obj.decal.transform();
 		});
 		
-		applyIncrementalBehavior(sc, obj.itemGuiConfig, "size", function(k){
+		applyIncrementalBehavior(sc, obj.config, "size", function(k){
+			obj.config.active = v;
+			ac.updateDisplay();
+			
 			obj.decal.scale *= k;
 			obj.decal.transform();
 		});
@@ -141,9 +162,10 @@ export default class Decal{
 		sceneWebGL.add( obj.raypointer.line )
 		sceneWebGL.add( obj.decal.mesh )
 		
+		obj.raypointer.line.visible = obj.config.active;
 		
 		// Provide the remove functionality.
-		obj.itemGuiConfig.remove = function(){
+		obj.config.remove = function(){
 			sceneWebGL.remove( obj.orientationHelper )
 			sceneWebGL.remove( obj.raypointer.line )
 			sceneWebGL.remove( obj.decal.mesh )

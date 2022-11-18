@@ -38116,6 +38116,7 @@
 	    var obj = this;
 	    obj.config = {
 	      name: id,
+	      visible: true,
 	      transparent: false,
 	      positioning: false,
 	      remove: function remove() {}
@@ -38176,6 +38177,11 @@
 
 	      obj.gui = elementsGUI.addFolder("Video: " + trimStringToLength(obj.config.name, 30)); // 37char for name
 
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.webGLItem.visible = v;
+	        obj.cssItem.visible = v;
+	      }); // boolean
+
 	      var oc = obj.gui.add(obj.config, "transparent"); // slider
 
 	      obj.gui.add(obj.config, "positioning"); // boolean
@@ -38199,6 +38205,7 @@
 	    var obj = this;
 	    obj.config = {
 	      name: id,
+	      visible: true,
 	      opacity: 1,
 	      positioning: false,
 	      remove: function remove() {}
@@ -38262,15 +38269,19 @@
 	      var obj = this; // Add GUI controllers.
 
 	      obj.gui = elementsGUI.addFolder("Image: " + trimStringToLength(obj.config.name, 30));
-	      var oc = obj.gui.add(obj.config, "opacity", 0, 1); // slider
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.created.then(function (mesh) {
+	          mesh.visible = v;
+	        });
+	      }); // boolean
+
+	      obj.gui.add(obj.config, "opacity", 0, 1).onChange(function (v) {
+	        obj.setOpacity(v);
+	      }); // slider
 
 	      obj.gui.add(obj.config, "positioning"); // boolean
 
 	      obj.gui.add(obj.config, "remove"); // button
-
-	      oc.onChange(function (v) {
-	        obj.setOpacity(v);
-	      });
 	    } // addGUI
 
 	  }]);
@@ -38395,7 +38406,11 @@
 	      var obj = this; // Add GUI controllers.
 
 	      var folder = elementsGUI.addFolder("Geometry: " + trimStringToLength(obj.config.source, 27));
-	      folder.add(obj.config, "visible"); // boolean
+	      folder.add(obj.config, "visible").onChange(function (v) {
+	        obj.dataPromise.then(function (mesh) {
+	          mesh.visible = v;
+	        });
+	      }); // boolean
 
 	      folder.add(obj.config, "remove"); // button
 	    } // addGUI
@@ -39630,7 +39645,10 @@
 
 	    var obj = this;
 	    obj.assetname = assetsource;
-	    obj.itemGuiConfig = {
+	    obj.config = {
+	      source: assetsource,
+	      visible: true,
+	      active: true,
 	      remove: function remove() {},
 	      editor: function editor() {
 	        obj.editor.show();
@@ -39654,6 +39672,7 @@
 	    // The user interaction for the initial positioning.
 
 	    obj.raypointer = new DecalPointerRay(camera, admissibleTargetGeometries);
+	    obj.raypointer.line.visible = obj.config.active;
 	    obj.raypointer.decals = [obj.decal];
 
 	    obj.raypointer.positionInteraction = function (target) {
@@ -39688,18 +39707,31 @@
 	      // I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
 	      var obj = this;
 	      obj.gui = gui.addFolder("Decal: ".concat(obj.assetname));
-	      var rc = obj.gui.add(obj.itemGuiConfig, "rotation", -15, 15);
-	      var sc = obj.gui.add(obj.itemGuiConfig, "size", 0.9, 1.1);
-	      obj.gui.add(obj.itemGuiConfig, "editor");
-	      obj.gui.add(obj.itemGuiConfig, "unpaste");
-	      obj.gui.add(obj.itemGuiConfig, "remove"); // Need to know the controller, config, property, callback
+	      var vc = obj.gui.add(obj.config, "visible");
+	      var ac = obj.gui.add(obj.config, "active");
+	      var rc = obj.gui.add(obj.config, "rotation", -15, 15);
+	      var sc = obj.gui.add(obj.config, "size", 0.9, 1.1);
+	      obj.gui.add(obj.config, "editor");
+	      obj.gui.add(obj.config, "unpaste");
+	      obj.gui.add(obj.config, "remove");
+	      vc.onChange(function (v) {
+	        obj.config.active = v;
+	        ac.updateDisplay();
+	        obj.raypointer.line.visible = v;
+	        obj.decal.mesh.visible = v;
+	      }); // boolean
+	      // Need to know the controller, config, property, callback
 
-	      applyIncrementalBehavior(rc, obj.itemGuiConfig, "rotation", function (phi) {
+	      applyIncrementalBehavior(rc, obj.config, "rotation", function (phi) {
+	        obj.config.active = v;
+	        ac.updateDisplay();
 	        obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
 	        obj.decal.orientation.copy(obj.orientationHelper.rotation);
 	        obj.decal.transform();
 	      });
-	      applyIncrementalBehavior(sc, obj.itemGuiConfig, "size", function (k) {
+	      applyIncrementalBehavior(sc, obj.config, "size", function (k) {
+	        obj.config.active = v;
+	        ac.updateDisplay();
 	        obj.decal.scale *= k;
 	        obj.decal.transform();
 	      });
@@ -39713,9 +39745,10 @@
 	      var obj = this;
 	      sceneWebGL.add(obj.orientationHelper);
 	      sceneWebGL.add(obj.raypointer.line);
-	      sceneWebGL.add(obj.decal.mesh); // Provide the remove functionality.
+	      sceneWebGL.add(obj.decal.mesh);
+	      obj.raypointer.line.visible = obj.config.active; // Provide the remove functionality.
 
-	      obj.itemGuiConfig.remove = function () {
+	      obj.config.remove = function () {
 	        sceneWebGL.remove(obj.orientationHelper);
 	        sceneWebGL.remove(obj.raypointer.line);
 	        sceneWebGL.remove(obj.decal.mesh);
@@ -40035,15 +40068,17 @@
 	      var obj = this; // Add GUI controllers.
 
 	      obj.gui = elementsGUI.addFolder("Isosurface: " + trimStringToLength(obj.config.source, 27));
-	      var tc = obj.gui.add(obj.config, "threshold", obj.a, obj.b, obj.step); // slider
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.meshPromise.then(function (mesh) {
+	          mesh.visible = v;
+	        });
+	      }); // boolean
 
-	      obj.gui.add(obj.config, "visible"); // boolean
+	      obj.gui.add(obj.config, "threshold", obj.a, obj.b, obj.step).onChange(function (v) {
+	        obj.update();
+	      }); // slider
 
 	      obj.gui.add(obj.config, "remove"); // button
-
-	      tc.onChange(function (v) {
-	        obj.update();
-	      });
 	    } // addGUI
 
 	  }]);
@@ -40094,6 +40129,7 @@
 	    var obj = this;
 	    obj.config = {
 	      source: source,
+	      visible: true,
 	      type: ""
 	    }; // STREAMLINES - keep for further copies.
 
@@ -40106,6 +40142,7 @@
 	    // depthTest: false,
 	    // blending: THREE.AdditiveBlending,
 
+	    obj.linesGroup = new Group();
 	    obj.streamlineLoadPromise = fetch(source).then(function (res) {
 	      return res.json();
 	    });
@@ -40151,6 +40188,7 @@
 	      line.times = streamlineJson.IntegrationTime.reverse(); // reverse so checking for last element under time.
 
 	      obj.lines.push(line);
+	      obj.linesGroup.add(line);
 	    } // addLine
 
 	  }, {
@@ -40224,11 +40262,7 @@
 	    key: "addTo",
 	    value: function addTo(sceneWebGL) {
 	      var obj = this;
-	      obj.dataPromise.then(function (lines) {
-	        lines.forEach(function (line) {
-	          sceneWebGL.add(line);
-	        }); // forEach
-	      }); // then
+	      sceneWebGL.add(obj.linesGroup);
 	    } // addTo
 
 	  }, {
@@ -40246,16 +40280,19 @@
 	      */
 
 	      obj.gui = elementsGUI.addFolder("Streamlines: " + trimStringToLength(obj.config.source, 22));
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.linesGroup.visible = v;
+	      }); // boolean
+
 	      var typeConfig = {
 	        "static": function _static() {
 	          obj.showstatic();
 	        },
 	        flowing: function flowing() {
 	          obj.showanimated();
-	        },
-	        synchronised: function synchronised() {
-	          obj.showsynchronised();
-	        }
+	        } // ,
+	        // synchronised: function(){ obj.showsynchronised() }
+
 	      };
 	      var type = obj.gui.add(obj.config, "type", [""].concat(Object.keys(typeConfig))); // dropdown
 
