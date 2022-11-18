@@ -3,14 +3,14 @@ import { html2element } from "../helpers.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import Stats from "stats.js";
 // import PlayBarSlider from "./PlayBarSlider.js"
-
+import AnnotationSystem from "./knowledge/AnnotationSystem.js";
 
 
 const template = `
 <div class="hud">
   <div class="stats"></div>
+  <div class="lefttop"></div>
   <div class="righttop"></div>
-  <div class="centerbottom"></div>
 </div>
 `;
 
@@ -26,7 +26,15 @@ export default class SessionGUI{
 		obj.stats = new Stats();
 		obj.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 		obj.dom.querySelector("div.stats").appendChild( obj.stats.dom );
+		obj.stats.dom.style.left = "";
+		obj.stats.dom.style.top = "";
+		obj.stats.dom.style.right = "0px";
+		obj.stats.dom.style.bottom = "0px";
 		
+		
+		// Annotations. Input is a `taskId'
+		obj.annotations = new AnnotationSystem("Delta wing");
+		obj.dom.querySelector("div.lefttop").appendChild( obj.annotations.dom );
 		
 		
 		// The overall gui should only contain folders.
@@ -63,13 +71,6 @@ export default class SessionGUI{
 			addElementGUI.add( addElementConfig, "name" ); 	// text field
 			addElementGUI.add( addElementConfig, "add" ); 	// button
 		} // if
-		
-		
-		
-		
-		// Add the playbar object centered in the bottom.
-		// obj.playbar = new PlayBarSlider(1,229,1);
-		// obj.dom.querySelector("div.centerbottom").appendChild( obj.playbar.dom );
 		
 		
 	} // constructor

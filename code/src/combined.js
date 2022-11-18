@@ -88,11 +88,11 @@ function init() {
 	
 	// For development
 	addWingGeometry('./assets/deltawing/wing/config_deltawing.json');
-	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	addDecal('assets/20220125_143807_gray.jpg');
-	addIsoSurface('./assets/deltawing/block/config_isosurface.json');
-	addAnimatedStreamlines('./assets/deltawing/streamlines/streamlines_suction_side_min.json');
+	// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	// addDecal('assets/20220125_143807_gray.jpg');
+	// addIsoSurface('./assets/deltawing/block/config_isosurface.json');
+	// addAnimatedStreamlines('./assets/deltawing/streamlines/streamlines_suction_side_min.json');
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -252,9 +252,6 @@ function addAnimatedStreamlines( configFilename ){
 	elementsThatNeedToBeUpdated.push(streamlines);
 	
 } // addAnimatedStreamlines
-
-
-
 
 
 

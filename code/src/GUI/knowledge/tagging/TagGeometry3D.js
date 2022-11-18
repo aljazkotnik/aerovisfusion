@@ -1,5 +1,4 @@
-import { html2element } from "../helpers.js"; 
-
+import { html2element } from "../../../helpers.js";
 
 /*
 This interface should be positioned left, it should have a form on the top, and the comments below.

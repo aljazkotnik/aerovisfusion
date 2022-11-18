@@ -51,21 +51,19 @@ input.login {
 	pointer-events: all;
 }
 
-div.hudright {
+div.righttop {
 	float: right;
 	color: gray; 
 	margin: 10px 10px 0px 0px;
 }
 
-div.fpsdisplay {
-	font-size:9px;
-	color: rgb(0,255,255);
-	font-weight:bold;
-	text-align: left;
-	line-height: 1.2em;
-	background-color: rgb(8,8,24);
-	padding:0px 0px 3px 3px;
+div.lefttop {
+	position: fixed;
+	float: left;
+	color: gray; 
+	margin: 10px 0px 0px 10px;
 }
+
 
 button.icon {
 	font-size: 24px;
