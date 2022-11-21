@@ -16,7 +16,7 @@ const template = `
 
 
 export default class SessionGUI{
-	constructor(elementOptions){
+	constructor(elementOptions, renderer, scene, camera){
 		let obj = this;
 		obj.dom = html2element(template);
 		
@@ -33,7 +33,7 @@ export default class SessionGUI{
 		
 		
 		// Annotations. Input is a `taskId'
-		obj.annotations = new AnnotationSystem("Delta wing");
+		obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
 		obj.dom.querySelector("div.lefttop").appendChild( obj.annotations.dom );
 		
 		

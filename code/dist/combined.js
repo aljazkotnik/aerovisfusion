@@ -38411,17 +38411,292 @@
 	b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
 	});
 
+	var annotationSphereMaterial = new ShaderMaterial({
+	  uniforms: {
+	    "c": {
+	      type: "f",
+	      value: 1.0
+	    },
+	    "p": {
+	      type: "f",
+	      value: 1.4
+	    },
+	    glowColor: {
+	      type: "c",
+	      value: new Color(0xff00ff)
+	    },
+	    viewVector: {
+	      type: "v3",
+	      value: new Vector3(0, 0, 0)
+	    }
+	  },
+	  vertexShader: "\n\t\tuniform vec3 viewVector;\n\t\tuniform float c;\n\t\tuniform float p;\n\t\tvarying float intensity;\n\t\tvoid main() \n\t\t{\n\t\t\tvec3 vNormal = normalize( normalMatrix * normal );\n\t\t\tvec3 vNormel = normalize( normalMatrix * viewVector );\n\t\t\tintensity = pow( c - dot(vNormal, vNormel), p );\n\t\t\t\n\t\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t\t}\n\t\t",
+	  fragmentShader: "\n\t\tuniform vec3 glowColor;\n\t\tvarying float intensity;\n\t\tvoid main() \n\t\t{\n\t\t\tvec3 glow = glowColor * intensity;\n\t\t\tgl_FragColor = vec4( glow, 1.0 );\n\t\t}\n\t\t",
+	  side: FrontSide,
+	  blending: AdditiveBlending,
+	  transparent: true
+	});
+	var annotationSphereGeom = new SphereGeometry(1, 32, 16);
+
+	var VolumeAnnotation = /*#__PURE__*/function () {
+	  function VolumeAnnotation(camera) {
+	    _classCallCheck(this, VolumeAnnotation);
+
+	    var obj = this; // The camera is required to adjust the glow correctly.
+
+	    obj.camera = camera; // Create a group here.
+
+	    obj.group = new Group();
+	  } // constructor
+
+
+	  _createClass(VolumeAnnotation, [{
+	    key: "add",
+	    value: function add(x, y, z, r) {
+	      // Add a sphere
+	      var obj = this;
+	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone());
+	      annotationGlow.position.set(x, y, z);
+	      annotationGlow.scale.setScalar(r);
+	      obj.group.add(annotationGlow);
+	    } // add
+
+	  }, {
+	    key: "remove",
+	    value: function remove(as) {
+	      // Remove annotation sphere s.
+	      var obj = this;
+	      as.forEach(function (s) {
+	        obj.group.remove(s);
+	      }); // forEach
+	    } // remove
+
+	  }, {
+	    key: "hide",
+	    value: function hide() {
+	      var obj = this;
+	      obj.hidden = [];
+	      obj.hidden.forEach(function (sphere) {
+	        obj.hidden.push(sphere);
+	        obj.group.remove(sphere);
+	      });
+	    } // hide
+
+	  }, {
+	    key: "show",
+	    value: function show() {
+	      var obj = this;
+	      obj.hidden.forEach(function (sphere) {
+	        obj.group.add(sphere);
+	      });
+	      obj.hidden = [];
+	    } // show
+
+	  }, {
+	    key: "select",
+	    value: function select(active) {
+	      // Color a particular array of spheres `active'.
+	      var obj = this;
+	      var inactive = obj.group.children.filter(function (c) {
+	        return !active.includes(c);
+	      });
+	      active.forEach(function (s) {
+	        s.material.uniforms.glowColor.value.setRGB(1, 0, 1);
+	      }); // forEach
+
+	      inactive.forEach(function (s) {
+	        s.material.uniforms.glowColor.value.setRGB(0, 1, 1);
+	      }); // forEach
+
+	      obj.selected = active;
+	    } // select
+
+	  }, {
+	    key: "geometry",
+	    get: function get() {
+	      // Return json tag object.
+	      var obj = this;
+	      return obj.group.children.map(function (c) {
+	        [c.position.x, c.position.y, c.position.z, c.scale.x];
+	      });
+	    } // get tag
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      // Update the view vector uniform by the camera position 'p' to display the glow correctly.
+	      var obj = this;
+	      obj.group.children.forEach(function (sphere) {
+	        var v = sphere.material.uniforms.viewVector.value;
+	        v = v.subVectors(obj.camera.position, sphere.position);
+	      });
+	    } // update
+
+	  }]);
+
+	  return VolumeAnnotation;
+	}(); // VolumeAnnotation
+
+	/*
+	This interface should be positioned left, it should have a form on the top, and the comments below.
+	*/
+
+	var template$8 = "\n<table style=\"display: none;\">\n  <tr>\n    <th>Depth</th>\n    <td>\n      <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n    </td>\n    <td rowspan=\"2\"><button class=\"icon remove\">\uD83E\uDDFD</button></th>\n  </tr>\n  <tr>\n    <th>Size</th>\n    <td>\n      <input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n    </td>\n  </tr>\n</table>\n"; //    <button class="icon add">🎯</button>
+	//	<button class="icon edit">🔧</button>
+
+	/*
+	This will be a subform of the commenting, and will only appear when the correct button is pressed.
+	*/
+
+	var TagGeometryForm = /*#__PURE__*/function () {
+	  function TagGeometryForm(renderer, scene, camera) {
+	    _classCallCheck(this, TagGeometryForm);
+
+	    this.erase = false;
+	    var obj = this;
+	    obj.node = html2element(template$8); // The inputs are used as controllers - -1 is negative and +1 is positive increment.
+
+	    obj.distanceInput = obj.node.querySelector("input.range");
+	    obj.radiusInput = obj.node.querySelector("input.size");
+	    obj.removeSphereButton = obj.node.querySelector("button.remove"); // Add functionality
+
+	    obj.distanceInput.addEventListener("mouseout", function () {
+	      obj.distanceInput.value = 0;
+	    });
+	    obj.distanceInput.addEventListener("mouseup", function () {
+	      obj.distanceInput.value = 0;
+	    });
+	    obj.radiusInput.addEventListener("mouseout", function () {
+	      obj.radiusInput.value = 0;
+	    });
+	    obj.radiusInput.addEventListener("mouseup", function () {
+	      obj.radiusInput.value = 0;
+	    });
+
+	    obj.removeSphereButton.onclick = function () {
+	      // Toggle the button, and change its appearance.
+	      obj.erase = !obj.erase;
+	      obj.removeSphereButton.style.border = "2px solid ".concat(obj.erase ? "gainsboro" : "black");
+	    }; // onclick
+	    // Actual annotations;
+
+
+	    obj.annotations = new VolumeAnnotation(camera);
+	    obj.pointer = new Vector2();
+	    obj.scene = scene;
+	    obj.camera = camera;
+	    obj.raycaster = new Raycaster(); // The annotations are added to the group, which is already a child of the scene.
+
+	    obj.scene.add(obj.annotations.group);
+	    renderer.domElement.addEventListener("mousemove", function (e) {
+	      obj.pointer.x = e.clientX / window.innerWidth * 2 - 1;
+	      obj.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+	    }); // onPointerMove
+	    // To work with panning etc the annotation adding is disabled when the mouse moves a sufficient distance.
+
+	    var mouseDownEvent;
+	    renderer.domElement.addEventListener("mousedown", function (e) {
+	      mouseDownEvent = e;
+	    }); // addEventListener
+
+	    renderer.domElement.addEventListener("mouseup", function (e) {
+	      // Has the mouse moved since mousedown?
+	      if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
+	        e.preventDefault();
+	        obj.placeVolumeAnnotation();
+	      } // if
+
+	    }); // addEventListener
+	  } // constructor
+
+
+	  _createClass(TagGeometryForm, [{
+	    key: "sphereDistance",
+	    get: function get() {
+	      return Number(this.distanceInput.value);
+	    } // aimSphereDistance
+
+	  }, {
+	    key: "sphereRadius",
+	    get: function get() {
+	      return Number(this.radiusInput.value);
+	    } // aimSphereRadius
+
+	  }, {
+	    key: "toggle",
+	    value: function toggle(active) {
+	      var obj = this;
+	      var current = obj.node.style.display;
+	      obj.node.style.display = active != undefined ? active : current == "none" ? "" : "none";
+	    } // toggle
+
+	  }, {
+	    key: "placeVolumeAnnotation",
+	    value: function placeVolumeAnnotation() {
+	      // Attempt to place a volume annotation for an on-screen click event e.
+	      var obj = this; // First deselect all other annotations.
+
+	      obj.annotations.select([]); // How to place the geometry in freestream without any geometry.
+	      // Place on a xy plane going through the domain midpoint?
+
+	      var p = obj.returnFirstIntersection();
+
+	      if (p) {
+	        obj.annotations.add(p.point.x, p.point.y, p.point.z, 0.1);
+	      } else {
+	        // No intersection was found, but an annotation should still be placed.
+	        console.log("Place annotation in freestream."); // How to place annotation on streamlines??
+	      } // if
+
+	    } // placeVolumeAnnotation
+
+	  }, {
+	    key: "tagGeometry",
+	    get: function get() {
+	      return "[[0,0]]";
+	    } // get tagGeometry
+
+	  }, {
+	    key: "returnFirstIntersection",
+	    value: function returnFirstIntersection() {
+	      // Maybe adjust this so that if an intersection with correct objects is not found, the intersection with a plane of interest is found. 
+	      // But what happens if we're looking away from the center of the domain?
+	      var obj = this;
+	      obj.raycaster.setFromCamera(obj.pointer, obj.camera);
+	      var meshes = obj.scene.children.filter(function (child) {
+	        return child.type == "Mesh";
+	      });
+	      var groups = obj.scene.children.filter(function (child) {
+	        return child.type == "Group";
+	      }).reduce(function (acc, child) {
+	        return acc.concat(child.children);
+	      }, []).filter(function (child) {
+	        return child.type == "Mesh";
+	      });
+	      var intersects = obj.raycaster.intersectObjects(meshes.concat(groups), false);
+	      return intersects[0];
+	    } // returnFirstIntersection
+
+	  }]);
+
+	  return TagGeometryForm;
+	}(); // TagGeometryForm
+
+	function mouseEventMovementDistanceSquared(origin, finish) {
+	  return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
+	} // mouseEventMovementDistanceSquared
+
 	var css$2 = {
 	  button: "\n    border: none;\n\tcursor: pointer;\n\tborder-radius: 0px;\n\tbackground-color: LightGray;\n\tcolor: black;\n  ",
 	  input: "\n    border-radius: 0px;\n    border: none;\n    background-color: LightGray;\n  ",
 	  iconbutton: "\n    font-size: 11px;\n  "
 	}; // css
 
-	var template$7 = "\n<div style=\"width: 300px\">\n  <div>\n    <input class=\"username\" type=\"text\" placeholder=\"username\" style=\"".concat(css$2.input, " width: 65px;\"></input>\n\n    <input class=\"tagname\" type=\"text\" placeholder=\"#tag-name\" style=\"").concat(css$2.input, " width: 65px;\"></input>\n  \n    <input class=\"tagvalue\" type=\"text\" placeholder=\"value\" style=\"").concat(css$2.input, " width: 35px;\"></input>\n  \n  </div>\n  \n  <div class=\"buttons\" style=\"margin-top: 5px;\">\n      <button class=\"2d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCD0</button>\n\t  <button class=\"3d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCA1</button>\n\t  <button class=\"vista\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDD2D</button>\n      <button class=\"submit\" style=\"").concat(css$2.button, "\">Submit</button>\n  </div>\n  \n  \n</div>\n"); // template
+	var template$7 = "\n<div style=\"width: 300px\">\n  <div>\n    <input class=\"username\" type=\"text\" placeholder=\"username\" style=\"".concat(css$2.input, " width: 65px;\"></input>\n\n    <input class=\"tagname\" type=\"text\" placeholder=\"#tag-name\" style=\"").concat(css$2.input, " width: 65px;\"></input>\n  \n    <input class=\"tagvalue\" type=\"text\" placeholder=\"value\" style=\"").concat(css$2.input, " width: 35px;\"></input>\n  \n  </div>\n  \n  <div class=\"buttons\" style=\"margin-top: 5px;\">\n      <button class=\"geom2d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCD0</button>\n\t  <button class=\"geom3d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCA1</button>\n\t  <button class=\"vista\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDD2D</button>\n      <button class=\"submit\" style=\"").concat(css$2.button, "\">Submit</button>\n  </div>\n  \n  <div class=\"subforms\" style=\"margin-top: 5px;\">\n  </div>\n  \n  \n</div>\n"); // template
 	// This is more than the chapterform, it is the entirety of the forms.
 
 	var TagForm = /*#__PURE__*/function () {
-	  function TagForm() {
+	  function TagForm(renderer, scene, camera) {
 	    _classCallCheck(this, TagForm);
 
 	    var obj = this;
@@ -38458,6 +38733,15 @@
 	      } // if
 
 	    }; // onmousedown
+	    // Add in hte sub-forms.
+
+
+	    obj.volumetags = new TagGeometryForm(renderer, scene, camera);
+	    obj.node.querySelector("div.subforms").appendChild(obj.volumetags.node);
+
+	    obj.node.querySelector("button.geom3d").onclick = function () {
+	      obj.volumetags.toggle();
+	    }; // onclick
 
 	  } // constructor
 
@@ -39209,14 +39493,14 @@
 	// Add top caret that hides the whole thing!! And the chapterform should maybe include a draw button.
 
 	var AnnotationSystem = /*#__PURE__*/function () {
-	  function AnnotationSystem(taskId) {
+	  function AnnotationSystem(taskId, renderer, scene, camera) {
 	    _classCallCheck(this, AnnotationSystem);
 
 	    var obj = this;
 	    obj.sessionId = taskId;
 	    obj.dom = html2element(template$1); // How will the chapter form know which time is currently selected? Should there be a dummy version that is assigned from the outside? So that the accessing can be done only when needed?
 
-	    obj.tagform = new TagForm();
+	    obj.tagform = new TagForm(renderer, scene, camera);
 	    obj.dom.appendChild(obj.tagform.node);
 	    obj.tagoverview = new TagOverview();
 	    obj.dom.appendChild(obj.tagoverview.node); // Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
@@ -39420,7 +39704,7 @@
 	var template = "\n<div class=\"hud\">\n  <div class=\"stats\"></div>\n  <div class=\"lefttop\"></div>\n  <div class=\"righttop\"></div>\n</div>\n";
 
 	var SessionGUI = /*#__PURE__*/function () {
-	  function SessionGUI(elementOptions) {
+	  function SessionGUI(elementOptions, renderer, scene, camera) {
 	    _classCallCheck(this, SessionGUI);
 
 	    var obj = this;
@@ -39435,7 +39719,7 @@
 	    obj.stats.dom.style.right = "0px";
 	    obj.stats.dom.style.bottom = "0px"; // Annotations. Input is a `taskId'
 
-	    obj.annotations = new AnnotationSystem("Delta wing");
+	    obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
 	    obj.dom.querySelector("div.lefttop").appendChild(obj.annotations.dom); // The overall gui should only contain folders.
 
 	    obj.session = new g({
@@ -39828,9 +40112,12 @@
 	    "Image": function Image(filename) {
 	      addStaticImage(filename, 1, 0.4, 100, 0, Math.PI / 2, 0, 0);
 	    }
-	  };
-	  gui = new SessionGUI(elementOptions);
-	  document.body.appendChild(gui.dom);
+	  }; // Camera is required to update the annotation glow correctly.
+
+	  gui = new SessionGUI(elementOptions, rendererCSS, sceneWebGL, camera);
+	  document.body.appendChild(gui.dom); // The glow of the annotations needs to be updated.
+
+	  elementsThatNeedToBeUpdated.push(gui.annotations.tagform.volumetags.annotations);
 	} // setupHUD
 	// CONTROLS - ADDED TO CSS RENDERER!!!!
 
@@ -39841,7 +40128,18 @@
 
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
 	  arcballcontrols.update();
+	  console.log(setGizmoOpacity);
 	} // addArcballControls
+
+
+	function setGizmoOpacity(active) {
+	  arcballcontrols._gizmos.children.forEach(function (gizmoLine) {
+	    gizmoLine.material.setValues({
+	      opacity: 1 * active
+	    });
+	  }); // forEach
+
+	} // setGizmoOpacity
 
 
 	function addTransformControls() {

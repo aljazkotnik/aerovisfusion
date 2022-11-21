@@ -270,8 +270,13 @@ function setupHUD(){
 		"Image": function(filename){ addStaticImage(filename, 1, 0.4, 100, 0, Math.PI/2, 0, 0) },
 	}
 	
-	gui = new SessionGUI( elementOptions );
+	// Camera is required to update the annotation glow correctly.
+	gui = new SessionGUI( elementOptions, rendererCSS, sceneWebGL, camera );
 	document.body.appendChild( gui.dom );
+	
+	
+	// The glow of the annotations needs to be updated.
+	elementsThatNeedToBeUpdated.push( gui.annotations.tagform.volumetags.annotations )
 	
 	
 } // setupHUD
@@ -284,12 +289,22 @@ function addArcballControls(){
 	arcballcontrols = new ArcballControls( camera, rendererCSS.domElement, sceneWebGL );
 	arcballcontrols.focus( focusInitialPoint, 1, 1 );
 	
-	
 	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	arcballcontrols.update();
 
+	console.log(setGizmoOpacity)
+	
 } // addArcballControls
+
+
+function setGizmoOpacity(active){
+	arcballcontrols._gizmos.children.forEach(function(gizmoLine){
+		gizmoLine.material.setValues( { opacity: 1*active } );
+	}) // forEach
+} // setGizmoOpacity
+
+
 
 function addTransformControls(){
 	// Attach and detach can be used to control the appearance of controls.

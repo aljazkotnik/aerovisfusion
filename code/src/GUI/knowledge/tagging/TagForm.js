@@ -1,5 +1,8 @@
 import { html2element } from "../../../helpers.js";
 
+import TagGeometryForm from "./TagGeometryForm.js";
+
+
 let css = {
   button: `
     border: none;
@@ -33,10 +36,13 @@ let template = `
   </div>
   
   <div class="buttons" style="margin-top: 5px;">
-      <button class="2d" style="${ css.button } ${css.iconbutton}">📐</button>
-	  <button class="3d" style="${ css.button } ${css.iconbutton}">💡</button>
+      <button class="geom2d" style="${ css.button } ${css.iconbutton}">📐</button>
+	  <button class="geom3d" style="${ css.button } ${css.iconbutton}">💡</button>
 	  <button class="vista" style="${ css.button } ${css.iconbutton}">🔭</button>
       <button class="submit" style="${ css.button }">Submit</button>
+  </div>
+  
+  <div class="subforms" style="margin-top: 5px;">
   </div>
   
   
@@ -47,7 +53,7 @@ let template = `
 // This is more than the chapterform, it is the entirety of the forms.
 export default class TagForm{
   
-  constructor(){
+  constructor(renderer, scene, camera){
     let obj = this;
 	obj.node = html2element(template);
 	
@@ -84,6 +90,18 @@ export default class TagForm{
 			obj.clear()
 		} // if
 	} // onmousedown
+	
+	
+	
+	
+	
+	// Add in hte sub-forms.
+	obj.volumetags = new TagGeometryForm(renderer, scene, camera);
+	obj.node.querySelector("div.subforms").appendChild( obj.volumetags.node );
+	obj.node.querySelector("button.geom3d").onclick = function(){
+		obj.volumetags.toggle();
+	} // onclick
+	
 	
   } // constructor
   

@@ -18,7 +18,7 @@ let template = `
 // Add top caret that hides the whole thing!! And the chapterform should maybe include a draw button.
 
 export default class AnnotationSystem{
-  constructor(taskId){
+  constructor(taskId, renderer, scene, camera){
 	let obj = this;
 	obj.sessionId = taskId;
 	
@@ -27,7 +27,7 @@ export default class AnnotationSystem{
 	
 	
 	// How will the chapter form know which time is currently selected? Should there be a dummy version that is assigned from the outside? So that the accessing can be done only when needed?
-	obj.tagform = new TagForm();
+	obj.tagform = new TagForm(renderer, scene, camera);
 	obj.dom.appendChild( obj.tagform.node )
 	
 	
