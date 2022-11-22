@@ -251,6 +251,8 @@ function addAnimatedStreamlines( configFilename ){
 	// Streamlines need to be made aware of an external update.
 	elementsThatNeedToBeUpdated.push(streamlines);
 	
+	streamlines.nlines(0,100);
+	console.log(streamlines)
 } // addAnimatedStreamlines
 
 
@@ -276,9 +278,8 @@ function setupHUD(){
 	
 	
 	// The glow of the annotations needs to be updated.
-	elementsThatNeedToBeUpdated.push( gui.annotations.tagform.volumetags.annotations )
-	
-	
+	elementsThatNeedToBeUpdated.push( gui )
+
 } // setupHUD
 
 
@@ -294,6 +295,7 @@ function addArcballControls(){
 	arcballcontrols.update();
 
 	console.log(setGizmoOpacity)
+	console.log(arcballcontrols)
 	
 } // addArcballControls
 
@@ -415,7 +417,6 @@ function onWindowResize() {
 
 function animate() {
 	requestAnimationFrame( animate );
-	gui.update();
 	elementsThatNeedToBeUpdated.forEach(el=>el.update());
 	render();
 } // animate

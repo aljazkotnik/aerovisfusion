@@ -102,10 +102,11 @@ export default class AnimatedStaticStreamlines{
 				// Interpolate using THREE.CatmullRomCurve3 to create more points?
 				  
 				// Limited to 5000 lines for performance.
-				if(i<2000){
-				  obj.addLine(s);
-				} // if
+				// Create all hte lines, but detach some of them afterwards to allow for plotting.
+				
+				obj.addLine(s);
 			}) // forEach
+			  
 			  
 			return obj.lines
 		  }) // then
@@ -148,6 +149,26 @@ export default class AnimatedStaticStreamlines{
 		obj.lines.push(line);
 		obj.linesGroup.add(line);
 	} // addLine
+	
+	
+	
+	nlines(index,count){
+		let obj = this;
+		
+		obj.dataPromise.then(lines=>{
+			lines.forEach((line,i)=>{
+				if(index<=i && i<=index+count){
+					line.userData.attached = true;
+					obj.linesGroup.add(line);
+				} else {
+					line.userData.attached = false;
+					obj.linesGroup.remove(line);
+				}
+			}) // forEach
+		}) // then
+		
+		
+	} // nlines
 	
 	
 	show(t){

@@ -1,5 +1,7 @@
 import { html2element } from "../../../helpers.js";
 
+
+// The buttons are toggled on/off to filter the comments!!
 export default class TagButton{
   constructor(tag){
     let obj = this;

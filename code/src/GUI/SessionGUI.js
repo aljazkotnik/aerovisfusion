@@ -32,14 +32,9 @@ export default class SessionGUI{
 		obj.stats.dom.style.bottom = "0px";
 		
 		
-		// Annotations. Input is a `taskId'
-		obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
-		obj.dom.querySelector("div.lefttop").appendChild( obj.annotations.dom );
-		
-		
 		// The overall gui should only contain folders.
 		obj.session = new GUI({
-			container: obj.dom.querySelector("div.controls"),
+			container: obj.dom.querySelector("div.righttop"),
 			title: "Session controls"
 		});
 		
@@ -73,11 +68,19 @@ export default class SessionGUI{
 		} // if
 		
 		
+		
+		// Annotations. Input is a `taskId'
+		obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
+		obj.dom.querySelector("div.righttop").appendChild( obj.annotations.dom );
+		
+		
 	} // constructor
 	
 	update(){
 		let obj = this;
 		obj.stats.update();
+		obj.annotations.tagform.volumetags.annotations.update();
+		obj.annotations.tagoverview.update();
 	}
 } // SessionGUI	
 	

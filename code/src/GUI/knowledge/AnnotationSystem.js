@@ -11,7 +11,7 @@ A class that handles all of the commenting system. Should be minimisable!!
 */
 
 let template = `
-<div></div>
+<div style="user-select: none; webkit-user-select: none;"></div>
 `; // template
 
 
@@ -31,15 +31,15 @@ export default class AnnotationSystem{
 	obj.dom.appendChild( obj.tagform.node )
 	
 	
-	obj.tagoverview = new TagOverview();
+	// TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
+	obj.tagoverview = new TagOverview(scene, camera);
 	obj.dom.appendChild( obj.tagoverview.node );
 	
 	
 	// Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
 	obj.commenting = new CommentingManager();
 	obj.dom.appendChild( obj.commenting.node );
-	
-	
+
 	
 	
 	
@@ -116,15 +116,10 @@ export default class AnnotationSystem{
 	obj.tagform.submit = function(tag){
 		// Tag comes with at least the tag name from tagform.
 		
-		/* The author and taskId are obligatory
-		Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data.
-		*/ 
+		// The author and taskId are obligatory
+		//Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
 		
 		tag.taskId = obj.sessionId;
-		
-		
-		// When stringifying an array all other properties are lost. Instead of explicitly stating that the geometry is closed just make the first and last points the same.
-		tag.geometry = JSON.stringify("Implement getting hte geometry");
 
 
 		// Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
@@ -134,6 +129,7 @@ export default class AnnotationSystem{
 		obj.ws.send( JSON.stringify( tag ) );
 			
 	} // submit
+	
 	
 	
 	// Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.

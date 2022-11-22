@@ -144,11 +144,12 @@ export default class TagForm{
 	let obj = this;
 		
 	
-	
+	// Geometry must be stringified ahead of the rest of hte object, otherwise the server side JSON.parse will turn it back into array, which will be converted into incorrect string for storage in SQL.
 	let tag = { 
 	    author: obj.author,
 		name: obj.nameinput.value,
-		value: obj.valueinput.value
+		value: obj.valueinput.value,
+		geometry: JSON.stringify( obj.volumetags.geometry )
 	} // tag
 	
 	

@@ -67,23 +67,26 @@ export default class VolumeAnnotation{
 	
 	
 	
-	add(x,y,z,r){
+	add(x,y,z,s){
 		// Add a sphere
 		let obj = this;
 		
 		let annotationGlow = new THREE.Mesh( annotationSphereGeom.clone(), annotationSphereMaterial.clone() );
 		
 		annotationGlow.position.set(x, y, z);
-		annotationGlow.scale.setScalar( r );
+		annotationGlow.scale.setScalar( s );
+		annotationGlow.name = "AnnotationSphere";
 		
 		obj.group.add( annotationGlow );
+		return annotationGlow;
 	} // add
 	
 	
 	remove(as){
 		// Remove annotation sphere s.
 		let obj = this;
-		as.forEach(s=>{
+		let itemsToRemove = as.filter(s=>obj.group.children.includes(s));
+		itemsToRemove.forEach(s=>{
 			obj.group.remove(s)
 		}) // forEach
 	} // remove
@@ -92,9 +95,8 @@ export default class VolumeAnnotation{
 	
 	hide(){
 		let obj = this;
-		obj.hidden = [];
+		obj.hidden = [...obj.group.children];
 		obj.hidden.forEach(sphere=>{
-			obj.hidden.push(sphere);
 			obj.group.remove(sphere);
 		})
 	} // hide
@@ -129,11 +131,12 @@ export default class VolumeAnnotation{
 	} // select
 	
 	
+	
 	get geometry(){
 		// Return json tag object.
 		let obj = this;
 		return obj.group.children.map(c=>{
-			[c.position.x, c.position.y, c.position.z, c.scale.x]
+			return [c.position.x, c.position.y, c.position.z, c.scale.x]
 		})
 	} // get tag
 	

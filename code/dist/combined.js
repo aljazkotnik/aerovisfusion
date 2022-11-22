@@ -38031,6 +38031,39 @@
 	  };
 	}
 
+	function _toConsumableArray(arr) {
+	  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+	}
+
+	function _arrayWithoutHoles(arr) {
+	  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+	}
+
+	function _iterableToArray(iter) {
+	  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+	}
+
+	function _unsupportedIterableToArray(o, minLen) {
+	  if (!o) return;
+	  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+	  var n = Object.prototype.toString.call(o).slice(8, -1);
+	  if (n === "Object" && o.constructor) n = o.constructor.name;
+	  if (n === "Map" || n === "Set") return Array.from(o);
+	  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+	}
+
+	function _arrayLikeToArray(arr, len) {
+	  if (len == null || len > arr.length) len = arr.length;
+
+	  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+	  return arr2;
+	}
+
+	function _nonIterableSpread() {
+	  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+	}
+
 	function html2element(html) {
 	  var template = document.createElement('template');
 	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
@@ -38452,13 +38485,15 @@
 
 	  _createClass(VolumeAnnotation, [{
 	    key: "add",
-	    value: function add(x, y, z, r) {
+	    value: function add(x, y, z, s) {
 	      // Add a sphere
 	      var obj = this;
 	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone());
 	      annotationGlow.position.set(x, y, z);
-	      annotationGlow.scale.setScalar(r);
+	      annotationGlow.scale.setScalar(s);
+	      annotationGlow.name = "AnnotationSphere";
 	      obj.group.add(annotationGlow);
+	      return annotationGlow;
 	    } // add
 
 	  }, {
@@ -38466,7 +38501,10 @@
 	    value: function remove(as) {
 	      // Remove annotation sphere s.
 	      var obj = this;
-	      as.forEach(function (s) {
+	      var itemsToRemove = as.filter(function (s) {
+	        return obj.group.children.includes(s);
+	      });
+	      itemsToRemove.forEach(function (s) {
 	        obj.group.remove(s);
 	      }); // forEach
 	    } // remove
@@ -38475,9 +38513,8 @@
 	    key: "hide",
 	    value: function hide() {
 	      var obj = this;
-	      obj.hidden = [];
+	      obj.hidden = _toConsumableArray(obj.group.children);
 	      obj.hidden.forEach(function (sphere) {
-	        obj.hidden.push(sphere);
 	        obj.group.remove(sphere);
 	      });
 	    } // hide
@@ -38517,7 +38554,7 @@
 	      // Return json tag object.
 	      var obj = this;
 	      return obj.group.children.map(function (c) {
-	        [c.position.x, c.position.y, c.position.z, c.scale.x];
+	        return [c.position.x, c.position.y, c.position.z, c.scale.x];
 	      });
 	    } // get tag
 
@@ -38541,7 +38578,11 @@
 	This interface should be positioned left, it should have a form on the top, and the comments below.
 	*/
 
-	var template$8 = "\n<table style=\"display: none;\">\n  <tr>\n    <th>Depth</th>\n    <td>\n      <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n    </td>\n    <td rowspan=\"2\"><button class=\"icon remove\">\uD83E\uDDFD</button></th>\n  </tr>\n  <tr>\n    <th>Size</th>\n    <td>\n      <input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n    </td>\n  </tr>\n</table>\n"; //    <button class="icon add">🎯</button>
+	var css$3 = {
+	  iconbutton: "\n    cursor: pointer;\n    color: LightGray;\n    font-size: 14px;\n  "
+	}; // css
+
+	var template$8 = "\n<div>\n  <div>\n    <button class=\"icon place\" style=\"".concat(css$3.iconbutton, "\">Place\uD83D\uDCCC</button>\n\t<button class=\"icon edit\" style=\"").concat(css$3.iconbutton, "\">Edit\uD83D\uDD27</button>\n\t<button class=\"icon remove\" style=\"").concat(css$3.iconbutton, "\">Erase\uD83E\uDDFD</button>\n  </div>\n  <div class=\"editmenu\" style=\"display: none;\">\n\t<table>\n\t  <tr>\n\t\t<th>Depth</th>\n\t\t<td>\n\t\t  <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n\t\t</td>\n\t  </tr>\n\t  <tr>\n\t\t<th>Size</th>\n\t\t<td>\n\t\t  <input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n\t\t</td>\n\t  </tr>\n\t</table>\n  </div>\n</div>\n"); //    <button class="icon add">🎯</button>
 	//	<button class="icon edit">🔧</button>
 
 	/*
@@ -38552,13 +38593,44 @@
 	  function TagGeometryForm(renderer, scene, camera) {
 	    _classCallCheck(this, TagGeometryForm);
 
-	    this.erase = false;
+	    this.buttonSelected = "";
+	    this.scale = 0.1;
 	    var obj = this;
-	    obj.node = html2element(template$8); // The inputs are used as controllers - -1 is negative and +1 is positive increment.
+	    obj.node = html2element(template$8); // Buttons that control hte annotation creation/editing/removal modes.
+
+	    obj.placeSphereButton = obj.node.querySelector("button.place");
+	    obj.editSphereButton = obj.node.querySelector("button.edit");
+	    obj.removeSphereButton = obj.node.querySelector("button.remove");
+
+	    function toggleButton(name) {
+	      // Toggle the button, and change its appearance.
+	      obj.buttonSelected = obj.buttonSelected == name ? "" : name;
+	      var a = [obj.buttonSelected == "place", obj.buttonSelected == "edit", obj.buttonSelected == "remove"];
+	      obj.placeSphereButton.style.border = "2px solid ".concat(a[0] ? "gainsboro" : "black");
+	      obj.editSphereButton.style.border = "2px solid ".concat(a[1] ? "gainsboro" : "black");
+	      obj.removeSphereButton.style.border = "2px solid ".concat(a[2] ? "gainsboro" : "black");
+	      obj.node.querySelector("div.editmenu").style.display = obj.buttonSelected == "edit" ? "" : "none";
+	    } // toggleButtons
+
+
+	    obj.placeSphereButton.onclick = function () {
+	      toggleButton("place");
+	    }; // onclick
+
+
+	    obj.editSphereButton.onclick = function () {
+	      toggleButton("edit");
+	    }; // onclick
+
+
+	    obj.removeSphereButton.onclick = function () {
+	      toggleButton("remove");
+	    }; // onclick
+	    // The inputs are used as controllers - -1 is negative and +1 is positive increment.
+
 
 	    obj.distanceInput = obj.node.querySelector("input.range");
-	    obj.radiusInput = obj.node.querySelector("input.size");
-	    obj.removeSphereButton = obj.node.querySelector("button.remove"); // Add functionality
+	    obj.radiusInput = obj.node.querySelector("input.size"); // Add functionality
 
 	    obj.distanceInput.addEventListener("mouseout", function () {
 	      obj.distanceInput.value = 0;
@@ -38571,17 +38643,32 @@
 	    });
 	    obj.radiusInput.addEventListener("mouseup", function () {
 	      obj.radiusInput.value = 0;
-	    });
+	    }); // Allow adjusting the sphere radius.
 
-	    obj.removeSphereButton.onclick = function () {
-	      // Toggle the button, and change its appearance.
-	      obj.erase = !obj.erase;
-	      obj.removeSphereButton.style.border = "2px solid ".concat(obj.erase ? "gainsboro" : "black");
-	    }; // onclick
+	    obj.radiusInput.addEventListener("input", function (e) {
+	      // Change the radius of the currently selected sphere.
+	      var ds = Number(obj.radiusInput.value) / 50;
+	      obj.annotations.selected.forEach(function (sphere) {
+	        sphere.scale.addScalar(ds);
+	        obj.scale = sphere.scale.x;
+	      });
+	    }); // addEventListener
+
+	    obj.distanceInput.addEventListener("input", function (e) {
+	      // Add a vector to the sphere. The vector should go from the camera point through the center of the sphere.
+	      var v = Number(obj.distanceInput.value);
+	      obj.annotations.selected.forEach(function (sphere) {
+	        var p = sphere.position;
+	        var x = p.x + 0.01 * v * (p.x - camera.position.x);
+	        var y = p.y + 0.01 * v * (p.y - camera.position.y);
+	        var z = p.z + 0.01 * v * (p.z - camera.position.z);
+	        sphere.position.set(x, y, z);
+	      }); // forEach
+	    }); // addEventListener
 	    // Actual annotations;
 
-
 	    obj.annotations = new VolumeAnnotation(camera);
+	    console.log(obj.annotations);
 	    obj.pointer = new Vector2();
 	    obj.scene = scene;
 	    obj.camera = camera;
@@ -38602,8 +38689,23 @@
 	    renderer.domElement.addEventListener("mouseup", function (e) {
 	      // Has the mouse moved since mousedown?
 	      if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
-	        e.preventDefault();
-	        obj.placeVolumeAnnotation();
+	        e.preventDefault(); // How to switch between hte currently active annotation spheres? Longpress? Or should there be an adjust button that brings out the sliders? And a place button that allows annotation adding to be disabled?
+
+	        switch (obj.buttonSelected) {
+	          case "place":
+	            obj.placeVolumeAnnotation();
+	            break;
+
+	          case "edit":
+	            // Select a new sphere to edit.
+	            obj.selectVolumeAnnotation();
+	            break;
+
+	          case "erase":
+	            obj.eraseVolumeAnnotation();
+	            break;
+	        } // switch
+
 	      } // if
 
 	    }); // addEventListener
@@ -38611,18 +38713,6 @@
 
 
 	  _createClass(TagGeometryForm, [{
-	    key: "sphereDistance",
-	    get: function get() {
-	      return Number(this.distanceInput.value);
-	    } // aimSphereDistance
-
-	  }, {
-	    key: "sphereRadius",
-	    get: function get() {
-	      return Number(this.radiusInput.value);
-	    } // aimSphereRadius
-
-	  }, {
 	    key: "toggle",
 	    value: function toggle(active) {
 	      var obj = this;
@@ -38634,15 +38724,14 @@
 	    key: "placeVolumeAnnotation",
 	    value: function placeVolumeAnnotation() {
 	      // Attempt to place a volume annotation for an on-screen click event e.
-	      var obj = this; // First deselect all other annotations.
-
-	      obj.annotations.select([]); // How to place the geometry in freestream without any geometry.
+	      var obj = this; // How to place the geometry in freestream without any geometry.
 	      // Place on a xy plane going through the domain midpoint?
 
 	      var p = obj.returnFirstIntersection();
 
 	      if (p) {
-	        obj.annotations.add(p.point.x, p.point.y, p.point.z, 0.1);
+	        var addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.scale);
+	        obj.annotations.select([addedSphere]);
 	      } else {
 	        // No intersection was found, but an annotation should still be placed.
 	        console.log("Place annotation in freestream."); // How to place annotation on streamlines??
@@ -38651,9 +38740,42 @@
 	    } // placeVolumeAnnotation
 
 	  }, {
-	    key: "tagGeometry",
+	    key: "selectVolumeAnnotation",
+	    value: function selectVolumeAnnotation() {
+	      var obj = this; // How to place the geometry in freestream without any geometry.
+	      // Place on a xy plane going through the domain midpoint?
+
+	      var p = obj.returnFirstIntersection();
+
+	      if (p.object.name == "AnnotationSphere") {
+	        // First deselect all other annotations.
+	        obj.annotations.select([p.object]);
+	      } // if
+
+	    } // selectVolumeAnnotation
+
+	  }, {
+	    key: "eraseVolumeAnnotation",
+	    value: function eraseVolumeAnnotation() {
+	      var obj = this; // First deselect all other annotations.
+
+	      obj.annotations.select([]); // How to place the geometry in freestream without any geometry.
+	      // Place on a xy plane going through the domain midpoint?
+
+	      var p = obj.returnFirstIntersection();
+
+	      if (p.object.name == "AnnotationSphere") {
+	        obj.annotations.remove([p.object]);
+	      } // if
+
+	    } // eraseVolumeAnnotation
+
+	  }, {
+	    key: "geometry",
 	    get: function get() {
-	      return "[[0,0]]";
+	      // The geometry should only be added if the form is maximised? Should toggling wipe the form? 
+	      var obj = this;
+	      return obj.annotations.geometry;
 	    } // get tagGeometry
 
 	  }, {
@@ -38790,11 +38912,13 @@
 	    key: "tag",
 	    get: function get() {
 	      // Chapter tag should belong to the task id so that the observations across multiple slices are available together to the user.
-	      var obj = this;
+	      var obj = this; // Geometry must be stringified ahead of the rest of hte object, otherwise the server side JSON.parse will turn it back into array, which will be converted into incorrect string for storage in SQL.
+
 	      var tag = {
 	        author: obj.author,
 	        name: obj.nameinput.value,
-	        value: obj.valueinput.value
+	        value: obj.valueinput.value,
+	        geometry: JSON.stringify(obj.volumetags.geometry)
 	      }; // tag
 
 	      return tag.author && tag.name ? tag : false;
@@ -38847,16 +38971,61 @@
 	  return TagButton;
 	}(); // TagButton
 
+	var Tag3DGeometryButton = /*#__PURE__*/function (_TagButton) {
+	  _inherits(Tag3DGeometryButton, _TagButton);
+
+	  var _super = _createSuper(Tag3DGeometryButton);
+
+	  function Tag3DGeometryButton(tag, scene, camera) {
+	    var _this;
+
+	    _classCallCheck(this, Tag3DGeometryButton);
+
+	    _this = _super.call(this, tag);
+
+	    var obj = _assertThisInitialized(_this); // VolumeAnnotation requires camera to update the glow.
+
+
+	    obj.annotation = new VolumeAnnotation(camera);
+	    scene.add(obj.annotation.group);
+	    obj.tag.geometry.forEach(function (g) {
+	      var _obj$annotation;
+
+	      (_obj$annotation = obj.annotation).add.apply(_obj$annotation, _toConsumableArray(g));
+	    }); // forEach
+
+	    obj.annotation.hide();
+
+	    obj.node.onmouseenter = function (e) {
+	      obj.annotation.show();
+	    }; // onmousein
+
+
+	    obj.node.onmouseleave = function (e) {
+	      obj.annotation.hide();
+	    }; // onmousein
+
+
+	    return _this;
+	  } // constructor
+
+
+	  return Tag3DGeometryButton;
+	}(TagButton); // Tag3DGeometryButton
+
 	var template$6 = "<div style=\"width: 300px; margin-top: 5px;\"></div>";
 
 	var TagOverview = /*#__PURE__*/function () {
-	  function TagOverview() {
+	  function TagOverview(scene, camera) {
 	    _classCallCheck(this, TagOverview);
 
 	    this.tags = [];
 	    this.buttons = [];
+	    this.needsupdating = [];
 	    var obj = this;
-	    obj.node = html2element(template$6); // The tag visualisation should happen here also.
+	    obj.node = html2element(template$6);
+	    obj.scene = scene;
+	    obj.camera = camera; // The tag visualisation should happen here also.
 	  } // constructor
 
 
@@ -38868,25 +39037,36 @@
 	        return obj.tags.push(t);
 	      });
 	      var newbuttons = newtags.map(function (tag) {
-	        return new TagButton(tag);
+	        // If the tag has geometry with points with 4 components then its a 3D volume geometry.
+	        // Or should a type be simply prescribed?
+	        var n = 0;
+
+	        if (tag.geometry) {
+	          tag.geometry = JSON.parse(tag.geometry);
+	          n = tag.geometry[0] ? tag.geometry[0].length : 0;
+	        } // if
+
+
+	        var b;
+
+	        switch (n) {
+	          case 4:
+	            b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
+	            obj.needsupdating.push(b.annotation);
+	            break;
+
+	          default:
+	            b = new TagButton(tag);
+	        } // switch
+
+
+	        return b;
 	      }); // map
 
 	      newbuttons.forEach(function (b) {
 	        obj.buttons.push(b);
 	        obj.node.appendChild(b.node);
-
-	        b.node.onmouseover = function () {
-	          obj.preview(b.tag);
-	        }; // onmouseover
-
-
-	        b.node.onmouseout = function () {
-	          obj.previewend();
-	        }; // onmouseover
-
 	      }); // forEach
-
-	      obj.communicatetags(obj.tags);
 	    } // add
 
 	  }, {
@@ -38909,22 +39089,16 @@
 	      });
 	      obj.buttons = [];
 	    } // purge
-	    // Dummy code. 
 
 	  }, {
-	    key: "preview",
-	    value: function preview(tag) {// If the tag has geometry then the SVG should be turned on. This can only be done with access to the geometry annotation class.
-	    } // preview
-
-	  }, {
-	    key: "previewend",
-	    value: function previewend() {// Stop the previewing by switching the SVG off - if it's not toggled on.
-	    } // previewend
-	    // The available tags need to be communicated to comments to highlight them in hte text.
-
-	  }, {
-	    key: "communicatetags",
-	    value: function communicatetags(tagnames) {} //communicatetags
+	    key: "update",
+	    value: function update() {
+	      // Launch update of all the annotation spheres.
+	      var obj = this;
+	      obj.needsupdating.forEach(function (a) {
+	        a.update();
+	      });
+	    } // update
 
 	  }]);
 
@@ -39489,7 +39663,7 @@
 
 	*/
 
-	var template$1 = "\n<div></div>\n"; // template
+	var template$1 = "\n<div style=\"user-select: none; webkit-user-select: none;\"></div>\n"; // template
 	// Add top caret that hides the whole thing!! And the chapterform should maybe include a draw button.
 
 	var AnnotationSystem = /*#__PURE__*/function () {
@@ -39501,8 +39675,9 @@
 	    obj.dom = html2element(template$1); // How will the chapter form know which time is currently selected? Should there be a dummy version that is assigned from the outside? So that the accessing can be done only when needed?
 
 	    obj.tagform = new TagForm(renderer, scene, camera);
-	    obj.dom.appendChild(obj.tagform.node);
-	    obj.tagoverview = new TagOverview();
+	    obj.dom.appendChild(obj.tagform.node); // TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
+
+	    obj.tagoverview = new TagOverview(scene, camera);
 	    obj.dom.appendChild(obj.tagoverview.node); // Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
 
 	    obj.commenting = new CommentingManager();
@@ -39588,13 +39763,9 @@
 
 	    obj.tagform.submit = function (tag) {
 	      // Tag comes with at least the tag name from tagform.
-
-	      /* The author and taskId are obligatory
-	      Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data.
-	      */
-	      tag.taskId = obj.sessionId; // When stringifying an array all other properties are lost. Instead of explicitly stating that the geometry is closed just make the first and last points the same.
-
-	      tag.geometry = JSON.stringify("Implement getting hte geometry"); // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
+	      // The author and taskId are obligatory
+	      //Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
+	      tag.taskId = obj.sessionId; // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
 
 	      tag.type = "tag";
 	      obj.ws.send(JSON.stringify(tag));
@@ -39717,13 +39888,10 @@
 	    obj.stats.dom.style.left = "";
 	    obj.stats.dom.style.top = "";
 	    obj.stats.dom.style.right = "0px";
-	    obj.stats.dom.style.bottom = "0px"; // Annotations. Input is a `taskId'
-
-	    obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
-	    obj.dom.querySelector("div.lefttop").appendChild(obj.annotations.dom); // The overall gui should only contain folders.
+	    obj.stats.dom.style.bottom = "0px"; // The overall gui should only contain folders.
 
 	    obj.session = new g({
-	      container: obj.dom.querySelector("div.controls"),
+	      container: obj.dom.querySelector("div.righttop"),
 	      title: "Session controls"
 	    }); // Folder for individual elements
 
@@ -39753,7 +39921,11 @@
 
 	      addElementGUI.add(addElementConfig, "add"); // button
 	    } // if
+	    // Annotations. Input is a `taskId'
 
+
+	    obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
+	    obj.dom.querySelector("div.righttop").appendChild(obj.annotations.dom);
 	  } // constructor
 
 
@@ -39762,6 +39934,8 @@
 	    value: function update() {
 	      var obj = this;
 	      obj.stats.update();
+	      obj.annotations.tagform.volumetags.annotations.update();
+	      obj.annotations.tagoverview.update();
 	    }
 	  }]);
 
@@ -40117,7 +40291,7 @@
 	  gui = new SessionGUI(elementOptions, rendererCSS, sceneWebGL, camera);
 	  document.body.appendChild(gui.dom); // The glow of the annotations needs to be updated.
 
-	  elementsThatNeedToBeUpdated.push(gui.annotations.tagform.volumetags.annotations);
+	  elementsThatNeedToBeUpdated.push(gui);
 	} // setupHUD
 	// CONTROLS - ADDED TO CSS RENDERER!!!!
 
@@ -40129,6 +40303,7 @@
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
 	  arcballcontrols.update();
 	  console.log(setGizmoOpacity);
+	  console.log(arcballcontrols);
 	} // addArcballControls
 
 
@@ -40261,7 +40436,6 @@
 
 	function animate() {
 	  requestAnimationFrame(animate);
-	  gui.update();
 	  elementsThatNeedToBeUpdated.forEach(function (el) {
 	    return el.update();
 	  });
