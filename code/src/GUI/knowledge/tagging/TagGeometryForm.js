@@ -17,7 +17,7 @@ let css = {
 
 
 let template = `
-<div>
+<div style="display: none;">
   <div>
     <button class="icon place" style="${ css.iconbutton }">Place📌</button>
 	<button class="icon edit" style="${ css.iconbutton }">Edit🔧</button>
@@ -79,7 +79,14 @@ export default class TagGeometryForm{
 	} // toggleButtons
 
 	obj.placeSphereButton.onclick  = function(){ toggleButton("place")   } // onclick
-	obj.editSphereButton.onclick   = function(){ toggleButton("edit")    } // onclick
+	obj.editSphereButton.onclick   = function(){ 
+	    toggleButton("edit");
+		
+		let sphere = obj.annotations.selected[0];
+		if(obj.buttonSelected=="edit" && sphere){
+			obj.makeSphereDraggable(sphere);
+		} // if
+	} // onclick
 	obj.removeSphereButton.onclick = function(){ toggleButton("remove") } // onclick
 	
 	
@@ -279,7 +286,15 @@ export default class TagGeometryForm{
 	
 	let intersects = obj.raycaster.intersectObjects( meshes.concat(groups), false );
 	return intersects[0];
-} // returnFirstIntersection
+  } // returnFirstIntersection
+  
+  
+  
+  
+  
+  
+  
+  makeSphereDraggable(){} // makeSphereDraggable
   
   
   

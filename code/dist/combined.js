@@ -32936,3185 +32936,2753 @@
 
 	}
 
-	//trackball state
-	const STATE = {
+	function _classCallCheck(instance, Constructor) {
+	  if (!(instance instanceof Constructor)) {
+	    throw new TypeError("Cannot call a class as a function");
+	  }
+	}
 
-		IDLE: Symbol(),
-		ROTATE: Symbol(),
-		PAN: Symbol(),
-		SCALE: Symbol(),
-		FOV: Symbol(),
-		FOCUS: Symbol(),
-		ZROTATE: Symbol(),
-		TOUCH_MULTI: Symbol(),
-		ANIMATION_FOCUS: Symbol(),
-		ANIMATION_ROTATE: Symbol()
+	function _defineProperties(target, props) {
+	  for (var i = 0; i < props.length; i++) {
+	    var descriptor = props[i];
+	    descriptor.enumerable = descriptor.enumerable || false;
+	    descriptor.configurable = true;
+	    if ("value" in descriptor) descriptor.writable = true;
+	    Object.defineProperty(target, descriptor.key, descriptor);
+	  }
+	}
 
+	function _createClass(Constructor, protoProps, staticProps) {
+	  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+	  if (staticProps) _defineProperties(Constructor, staticProps);
+	  return Constructor;
+	}
+
+	function _inherits(subClass, superClass) {
+	  if (typeof superClass !== "function" && superClass !== null) {
+	    throw new TypeError("Super expression must either be null or a function");
+	  }
+
+	  subClass.prototype = Object.create(superClass && superClass.prototype, {
+	    constructor: {
+	      value: subClass,
+	      writable: true,
+	      configurable: true
+	    }
+	  });
+	  if (superClass) _setPrototypeOf(subClass, superClass);
+	}
+
+	function _getPrototypeOf(o) {
+	  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+	    return o.__proto__ || Object.getPrototypeOf(o);
+	  };
+	  return _getPrototypeOf(o);
+	}
+
+	function _setPrototypeOf(o, p) {
+	  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+	    o.__proto__ = p;
+	    return o;
+	  };
+
+	  return _setPrototypeOf(o, p);
+	}
+
+	function _isNativeReflectConstruct() {
+	  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+	  if (Reflect.construct.sham) return false;
+	  if (typeof Proxy === "function") return true;
+
+	  try {
+	    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+	    return true;
+	  } catch (e) {
+	    return false;
+	  }
+	}
+
+	function _assertThisInitialized(self) {
+	  if (self === void 0) {
+	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+	  }
+
+	  return self;
+	}
+
+	function _possibleConstructorReturn(self, call) {
+	  if (call && (typeof call === "object" || typeof call === "function")) {
+	    return call;
+	  }
+
+	  return _assertThisInitialized(self);
+	}
+
+	function _createSuper(Derived) {
+	  var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+	  return function _createSuperInternal() {
+	    var Super = _getPrototypeOf(Derived),
+	        result;
+
+	    if (hasNativeReflectConstruct) {
+	      var NewTarget = _getPrototypeOf(this).constructor;
+
+	      result = Reflect.construct(Super, arguments, NewTarget);
+	    } else {
+	      result = Super.apply(this, arguments);
+	    }
+
+	    return _possibleConstructorReturn(this, result);
+	  };
+	}
+
+	function _toConsumableArray(arr) {
+	  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+	}
+
+	function _arrayWithoutHoles(arr) {
+	  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+	}
+
+	function _iterableToArray(iter) {
+	  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+	}
+
+	function _unsupportedIterableToArray(o, minLen) {
+	  if (!o) return;
+	  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+	  var n = Object.prototype.toString.call(o).slice(8, -1);
+	  if (n === "Object" && o.constructor) n = o.constructor.name;
+	  if (n === "Map" || n === "Set") return Array.from(o);
+	  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+	}
+
+	function _arrayLikeToArray(arr, len) {
+	  if (len == null || len > arr.length) len = arr.length;
+
+	  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+	  return arr2;
+	}
+
+	function _nonIterableSpread() {
+	  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+	}
+
+	var STATE = {
+	  IDLE: Symbol(),
+	  ROTATE: Symbol(),
+	  PAN: Symbol(),
+	  SCALE: Symbol(),
+	  FOV: Symbol(),
+	  FOCUS: Symbol(),
+	  ZROTATE: Symbol(),
+	  TOUCH_MULTI: Symbol(),
+	  ANIMATION_FOCUS: Symbol(),
+	  ANIMATION_ROTATE: Symbol()
+	};
+	var INPUT = {
+	  NONE: Symbol(),
+	  ONE_FINGER: Symbol(),
+	  ONE_FINGER_SWITCHED: Symbol(),
+	  TWO_FINGER: Symbol(),
+	  MULT_FINGER: Symbol(),
+	  CURSOR: Symbol()
+	}; //cursor center coordinates
+
+	var _center = {
+	  x: 0,
+	  y: 0
+	}; //transformation matrices for gizmos and camera
+
+	var _transformation = {
+	  camera: new Matrix4(),
+	  gizmos: new Matrix4()
+	}; //events
+
+	var _changeEvent$1 = {
+	  type: 'change'
+	};
+	var _startEvent = {
+	  type: 'start'
+	};
+	var _endEvent = {
+	  type: 'end'
 	};
 
-	const INPUT = {
+	var _raycaster$1 = new Raycaster();
 
-		NONE: Symbol(),
-		ONE_FINGER: Symbol(),
-		ONE_FINGER_SWITCHED: Symbol(),
-		TWO_FINGER: Symbol(),
-		MULT_FINGER: Symbol(),
-		CURSOR: Symbol()
+	var _offset = new Vector3();
 
+	var _currentFocusSettings = {
+	  point: new Vector3(),
+	  size: 1,
+	  amount: 1
 	};
 
-	//cursor center coordinates
-	const _center = {
+	var _gizmoMatrixStateTemp = new Matrix4();
 
-		x: 0,
-		y: 0
+	var _cameraMatrixStateTemp = new Matrix4();
 
-	};
-
-	//transformation matrices for gizmos and camera
-	const _transformation = {
-
-		camera: new Matrix4(),
-		gizmos: new Matrix4()
-
-	};
-
-	//events
-	const _changeEvent$1 = { type: 'change' };
-	const _startEvent = { type: 'start' };
-	const _endEvent = { type: 'end' };
-
-	const _raycaster$1 = new Raycaster();
-	const _offset = new Vector3();
-
-	const _gizmoMatrixStateTemp = new Matrix4();
-	const _cameraMatrixStateTemp = new Matrix4();
-	const _scalePointTemp = new Vector3();
+	var _scalePointTemp = new Vector3();
 	/**
 	 *
 	 * @param {Camera} camera Virtual camera used in the scene
 	 * @param {HTMLElement} domElement Renderer's dom element
 	 * @param {Scene} scene The scene to be rendered
 	 */
-	class ArcballControls extends EventDispatcher {
-
-		constructor( camera, domElement, scene = null ) {
-
-			super();
-			this.camera = null;
-			this.domElement = domElement;
-			this.scene = scene;
-			this.target = new Vector3();
-			this._currentTarget = new Vector3();
-			this.radiusFactor = 0.67;
-
-			this.mouseActions = [];
-			this._mouseOp = null;
-
-
-			//global vectors and matrices that are used in some operations to avoid creating new objects every time (e.g. every time cursor moves)
-			this._v2_1 = new Vector2();
-			this._v3_1 = new Vector3();
-			this._v3_2 = new Vector3();
-
-			this._m4_1 = new Matrix4();
-			this._m4_2 = new Matrix4();
-
-			this._quat = new Quaternion();
-
-			//transformation matrices
-			this._translationMatrix = new Matrix4(); //matrix for translation operation
-			this._rotationMatrix = new Matrix4(); //matrix for rotation operation
-			this._scaleMatrix = new Matrix4(); //matrix for scaling operation
-
-			this._rotationAxis = new Vector3(); //axis for rotate operation
-
-
-			//camera state
-			this._cameraMatrixState = new Matrix4();
-			this._cameraProjectionState = new Matrix4();
-
-			this._fovState = 1;
-			this._upState = new Vector3();
-			this._zoomState = 1;
-			this._nearPos = 0;
-			this._farPos = 0;
-
-			this._gizmoMatrixState = new Matrix4();
-
-			//initial values
-			this._up0 = new Vector3();
-			this._zoom0 = 1;
-			this._fov0 = 0;
-			this._initialNear = 0;
-			this._nearPos0 = 0;
-			this._initialFar = 0;
-			this._farPos0 = 0;
-			this._cameraMatrixState0 = new Matrix4();
-			this._gizmoMatrixState0 = new Matrix4();
-
-			//pointers array
-			this._button = - 1;
-			this._touchStart = [];
-			this._touchCurrent = [];
-			this._input = INPUT.NONE;
-
-			//two fingers touch interaction
-			this._switchSensibility = 32;	//minimum movement to be performed to fire single pan start after the second finger has been released
-			this._startFingerDistance = 0; //distance between two fingers
-			this._currentFingerDistance = 0;
-			this._startFingerRotation = 0; //amount of rotation performed with two fingers
-			this._currentFingerRotation = 0;
-
-			//double tap
-			this._devPxRatio = 0;
-			this._downValid = true;
-			this._nclicks = 0;
-			this._downEvents = [];
-			this._downStart = 0;	//pointerDown time
-			this._clickStart = 0;	//first click time
-			this._maxDownTime = 250;
-			this._maxInterval = 300;
-			this._posThreshold = 24;
-			this._movementThreshold = 24;
 
-			//cursor positions
-			this._currentCursorPosition = new Vector3();
-			this._startCursorPosition = new Vector3();
 
-			//grid
-			this._grid = null; //grid to be visualized during pan operation
-			this._gridPosition = new Vector3();
+	var ArcballControls = /*#__PURE__*/function (_EventDispatcher) {
+	  _inherits(ArcballControls, _EventDispatcher);
 
-			//gizmos
-			this._gizmos = new Group();
-			this._curvePts = 128;
+	  var _super = _createSuper(ArcballControls);
 
+	  function ArcballControls(_camera, domElement) {
+	    var _this;
 
-			//animations
-			this._timeStart = - 1; //initial time
-			this._animationId = - 1;
+	    var scene = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
 
-			//focus animation
-			this.focusAnimationTime = 500; //duration of focus animation in ms
+	    _classCallCheck(this, ArcballControls);
 
-			//rotate animation
-			this._timePrev = 0; //time at which previous rotate operation has been detected
-			this._timeCurrent = 0; //time at which current rotate operation has been detected
-			this._anglePrev = 0; //angle of previous rotation
-			this._angleCurrent = 0; //angle of current rotation
-			this._cursorPosPrev = new Vector3();	//cursor position when previous rotate operation has been detected
-			this._cursorPosCurr = new Vector3();//cursor position when current rotate operation has been detected
-			this._wPrev = 0; //angular velocity of the previous rotate operation
-			this._wCurr = 0; //angular velocity of the current rotate operation
+	    _this = _super.call(this);
 
+	    _this.onWindowResize = function () {
+	      var scale = (_this._gizmos.scale.x + _this._gizmos.scale.y + _this._gizmos.scale.z) / 3;
+	      _this._tbRadius = _this.calculateTbRadius(_this.camera);
+	      var newRadius = _this._tbRadius / scale;
+	      var curve = new EllipseCurve(0, 0, newRadius, newRadius);
+	      var points = curve.getPoints(_this._curvePts);
+	      var curveGeometry = new BufferGeometry().setFromPoints(points);
 
-			//parameters
-			this.adjustNearFar = false;
-			this.scaleFactor = 1.1;	//zoom/distance multiplier
-			this.dampingFactor = 25;
-			this.wMax = 20;	//maximum angular velocity allowed
-			this.enableAnimations = true; //if animations should be performed
-			this.enableGrid = false; //if grid should be showed during pan operation
-			this.cursorZoom = false;	//if wheel zoom should be cursor centered
-			this.minFov = 5;
-			this.maxFov = 90;
+	      for (var gizmo in _this._gizmos.children) {
+	        _this._gizmos.children[gizmo].geometry = curveGeometry;
+	      }
 
-			this.enabled = true;
-			this.enablePan = true;
-			this.enableRotate = true;
-			this.enableZoom = true;
-			this.enableGizmos = true;
+	      _this.dispatchEvent(_changeEvent$1);
+	    };
 
-			this.minDistance = 0;
-			this.maxDistance = Infinity;
-			this.minZoom = 0;
-			this.maxZoom = Infinity;
+	    _this.onContextMenu = function (event) {
+	      if (!_this.enabled) {
+	        return;
+	      }
 
-			//trackball parameters
-			this._tbRadius = 1;
+	      for (var i = 0; i < _this.mouseActions.length; i++) {
+	        if (_this.mouseActions[i].mouse == 2) {
+	          //prevent only if button 2 is actually used
+	          event.preventDefault();
+	          break;
+	        }
+	      }
+	    };
 
-			//FSA
-			this._state = STATE.IDLE;
+	    _this.onPointerCancel = function () {
+	      _this._touchStart.splice(0, _this._touchStart.length);
 
-			this.setCamera( camera );
+	      _this._touchCurrent.splice(0, _this._touchCurrent.length);
 
-			if ( this.scene != null ) {
+	      _this._input = INPUT.NONE;
+	    };
 
-				this.scene.add( this._gizmos );
+	    _this.onPointerDown = function (event) {
+	      if (event.button == 0 && event.isPrimary) {
+	        _this._downValid = true;
 
-			}
+	        _this._downEvents.push(event);
 
-			this.domElement.style.touchAction = 'none';
-			this._devPxRatio = window.devicePixelRatio;
+	        _this._downStart = performance.now();
+	      } else {
+	        _this._downValid = false;
+	      }
 
-			this.initializeMouseActions();
+	      if (event.pointerType == 'touch' && _this._input != INPUT.CURSOR) {
+	        _this._touchStart.push(event);
 
-			this.domElement.addEventListener( 'contextmenu', this.onContextMenu );
-			this.domElement.addEventListener( 'wheel', this.onWheel );
-			this.domElement.addEventListener( 'pointerdown', this.onPointerDown );
-			this.domElement.addEventListener( 'pointercancel', this.onPointerCancel );
+	        _this._touchCurrent.push(event);
 
-			window.addEventListener( 'resize', this.onWindowResize );
+	        switch (_this._input) {
+	          case INPUT.NONE:
+	            //singleStart
+	            _this._input = INPUT.ONE_FINGER;
 
-		}
+	            _this.onSinglePanStart(event, 'ROTATE');
 
-		//listeners
+	            window.addEventListener('pointermove', _this.onPointerMove);
+	            window.addEventListener('pointerup', _this.onPointerUp);
+	            break;
 
-		onWindowResize = () => {
+	          case INPUT.ONE_FINGER:
+	          case INPUT.ONE_FINGER_SWITCHED:
+	            //doubleStart
+	            _this._input = INPUT.TWO_FINGER;
 
-			const scale = ( this._gizmos.scale.x + this._gizmos.scale.y + this._gizmos.scale.z ) / 3;
-			this._tbRadius = this.calculateTbRadius( this.camera );
+	            _this.onRotateStart();
 
-			const newRadius = this._tbRadius / scale;
-			const curve = new EllipseCurve( 0, 0, newRadius, newRadius );
-			const points = curve.getPoints( this._curvePts );
-			const curveGeometry = new BufferGeometry().setFromPoints( points );
+	            _this.onPinchStart();
 
+	            _this.onDoublePanStart();
 
-			for ( const gizmo in this._gizmos.children ) {
+	            break;
 
-				this._gizmos.children[ gizmo ].geometry = curveGeometry;
+	          case INPUT.TWO_FINGER:
+	            //multipleStart
+	            _this._input = INPUT.MULT_FINGER;
 
-			}
+	            _this.onTriplePanStart(event);
 
-			this.dispatchEvent( _changeEvent$1 );
+	            break;
+	        }
+	      } else if (event.pointerType != 'touch' && _this._input == INPUT.NONE) {
+	        var modifier = null;
 
-		};
+	        if (event.ctrlKey || event.metaKey) {
+	          modifier = 'CTRL';
+	        } else if (event.shiftKey) {
+	          modifier = 'SHIFT';
+	        }
 
-		onContextMenu = ( event ) => {
+	        _this._mouseOp = _this.getOpFromAction(event.button, modifier);
 
-			if ( ! this.enabled ) {
+	        if (_this._mouseOp != null) {
+	          window.addEventListener('pointermove', _this.onPointerMove);
+	          window.addEventListener('pointerup', _this.onPointerUp); //singleStart
 
-				return;
+	          _this._input = INPUT.CURSOR;
+	          _this._button = event.button;
 
-			}
+	          _this.onSinglePanStart(event, _this._mouseOp);
+	        }
+	      }
+	    };
 
-			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	    _this.onPointerMove = function (event) {
+	      if (event.pointerType == 'touch' && _this._input != INPUT.CURSOR) {
+	        switch (_this._input) {
+	          case INPUT.ONE_FINGER:
+	            //singleMove
+	            _this.updateTouchEvent(event);
 
-				if ( this.mouseActions[ i ].mouse == 2 ) {
+	            _this.onSinglePanMove(event, STATE.ROTATE);
 
-					//prevent only if button 2 is actually used
-					event.preventDefault();
-					break;
+	            break;
 
-				}
+	          case INPUT.ONE_FINGER_SWITCHED:
+	            var movement = _this.calculatePointersDistance(_this._touchCurrent[0], event) * _this._devPxRatio;
 
-			}
+	            if (movement >= _this._switchSensibility) {
+	              //singleMove
+	              _this._input = INPUT.ONE_FINGER;
 
-		};
+	              _this.updateTouchEvent(event);
 
-		onPointerCancel = () => {
+	              _this.onSinglePanStart(event, 'ROTATE');
 
-			this._touchStart.splice( 0, this._touchStart.length );
-			this._touchCurrent.splice( 0, this._touchCurrent.length );
-			this._input = INPUT.NONE;
+	              break;
+	            }
 
-		};
+	            break;
 
-		onPointerDown = ( event ) => {
+	          case INPUT.TWO_FINGER:
+	            //rotate/pan/pinchMove
+	            _this.updateTouchEvent(event);
 
-			if ( event.button == 0 && event.isPrimary ) {
+	            _this.onRotateMove();
 
-				this._downValid = true;
-				this._downEvents.push( event );
-				this._downStart = performance.now();
+	            _this.onPinchMove();
 
-			} else {
+	            _this.onDoublePanMove();
 
-				this._downValid = false;
+	            break;
 
-			}
+	          case INPUT.MULT_FINGER:
+	            //multMove
+	            _this.updateTouchEvent(event);
 
-			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
+	            _this.onTriplePanMove(event);
 
-				this._touchStart.push( event );
-				this._touchCurrent.push( event );
+	            break;
+	        }
+	      } else if (event.pointerType != 'touch' && _this._input == INPUT.CURSOR) {
+	        var modifier = null;
 
-				switch ( this._input ) {
+	        if (event.ctrlKey || event.metaKey) {
+	          modifier = 'CTRL';
+	        } else if (event.shiftKey) {
+	          modifier = 'SHIFT';
+	        }
 
-					case INPUT.NONE:
+	        var mouseOpState = _this.getOpStateFromAction(_this._button, modifier);
 
-						//singleStart
-						this._input = INPUT.ONE_FINGER;
-						this.onSinglePanStart( event, 'ROTATE' );
+	        if (mouseOpState != null) {
+	          _this.onSinglePanMove(event, mouseOpState);
+	        }
+	      } //checkDistance
 
-						window.addEventListener( 'pointermove', this.onPointerMove );
-						window.addEventListener( 'pointerup', this.onPointerUp );
 
-						break;
+	      if (_this._downValid) {
+	        var _movement = _this.calculatePointersDistance(_this._downEvents[_this._downEvents.length - 1], event) * _this._devPxRatio;
 
-					case INPUT.ONE_FINGER:
-					case INPUT.ONE_FINGER_SWITCHED:
+	        if (_movement > _this._movementThreshold) {
+	          _this._downValid = false;
+	        }
+	      }
+	    };
 
-						//doubleStart
-						this._input = INPUT.TWO_FINGER;
+	    _this.onPointerUp = function (event) {
+	      if (event.pointerType == 'touch' && _this._input != INPUT.CURSOR) {
+	        var nTouch = _this._touchCurrent.length;
 
-						this.onRotateStart();
-						this.onPinchStart();
-						this.onDoublePanStart();
+	        for (var i = 0; i < nTouch; i++) {
+	          if (_this._touchCurrent[i].pointerId == event.pointerId) {
+	            _this._touchCurrent.splice(i, 1);
 
-						break;
+	            _this._touchStart.splice(i, 1);
 
-					case INPUT.TWO_FINGER:
+	            break;
+	          }
+	        }
 
-						//multipleStart
-						this._input = INPUT.MULT_FINGER;
-						this.onTriplePanStart( event );
-						break;
+	        switch (_this._input) {
+	          case INPUT.ONE_FINGER:
+	          case INPUT.ONE_FINGER_SWITCHED:
+	            //singleEnd
+	            window.removeEventListener('pointermove', _this.onPointerMove);
+	            window.removeEventListener('pointerup', _this.onPointerUp);
+	            _this._input = INPUT.NONE;
 
-				}
+	            _this.onSinglePanEnd();
 
-			} else if ( event.pointerType != 'touch' && this._input == INPUT.NONE ) {
+	            break;
 
-				let modifier = null;
+	          case INPUT.TWO_FINGER:
+	            //doubleEnd
+	            _this.onDoublePanEnd(event);
 
-				if ( event.ctrlKey || event.metaKey ) {
+	            _this.onPinchEnd(event);
 
-					modifier = 'CTRL';
+	            _this.onRotateEnd(event); //switching to singleStart
 
-				} else if ( event.shiftKey ) {
 
-					modifier = 'SHIFT';
+	            _this._input = INPUT.ONE_FINGER_SWITCHED;
+	            break;
 
-				}
+	          case INPUT.MULT_FINGER:
+	            if (_this._touchCurrent.length == 0) {
+	              window.removeEventListener('pointermove', _this.onPointerMove);
+	              window.removeEventListener('pointerup', _this.onPointerUp); //multCancel
 
-				this._mouseOp = this.getOpFromAction( event.button, modifier );
-				if ( this._mouseOp != null ) {
+	              _this._input = INPUT.NONE;
 
-					window.addEventListener( 'pointermove', this.onPointerMove );
-					window.addEventListener( 'pointerup', this.onPointerUp );
+	              _this.onTriplePanEnd();
+	            }
 
-					//singleStart
-					this._input = INPUT.CURSOR;
-					this._button = event.button;
-					this.onSinglePanStart( event, this._mouseOp );
+	            break;
+	        }
+	      } else if (event.pointerType != 'touch' && _this._input == INPUT.CURSOR) {
+	        window.removeEventListener('pointermove', _this.onPointerMove);
+	        window.removeEventListener('pointerup', _this.onPointerUp);
+	        _this._input = INPUT.NONE;
 
-				}
+	        _this.onSinglePanEnd();
 
-			}
+	        _this._button = -1;
+	      }
 
-		};
+	      if (event.isPrimary) {
+	        if (_this._downValid) {
+	          var downTime = event.timeStamp - _this._downEvents[_this._downEvents.length - 1].timeStamp;
 
-		onPointerMove = ( event ) => {
+	          if (downTime <= _this._maxDownTime) {
+	            if (_this._nclicks == 0) {
+	              //first valid click detected
+	              _this._nclicks = 1;
+	              _this._clickStart = performance.now();
+	            } else {
+	              var clickInterval = event.timeStamp - _this._clickStart;
 
-			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
+	              var movement = _this.calculatePointersDistance(_this._downEvents[1], _this._downEvents[0]) * _this._devPxRatio;
 
-				switch ( this._input ) {
+	              if (clickInterval <= _this._maxInterval && movement <= _this._posThreshold) {
+	                //second valid click detected
+	                //fire double tap and reset values
+	                _this._nclicks = 0;
 
-					case INPUT.ONE_FINGER:
+	                _this._downEvents.splice(0, _this._downEvents.length);
 
-						//singleMove
-						this.updateTouchEvent( event );
+	                _this.onDoubleTap(event);
+	              } else {
+	                //new 'first click'
+	                _this._nclicks = 1;
 
-						this.onSinglePanMove( event, STATE.ROTATE );
-						break;
+	                _this._downEvents.shift();
 
-					case INPUT.ONE_FINGER_SWITCHED:
+	                _this._clickStart = performance.now();
+	              }
+	            }
+	          } else {
+	            _this._downValid = false;
+	            _this._nclicks = 0;
 
-						const movement = this.calculatePointersDistance( this._touchCurrent[ 0 ], event ) * this._devPxRatio;
+	            _this._downEvents.splice(0, _this._downEvents.length);
+	          }
+	        } else {
+	          _this._nclicks = 0;
 
-						if ( movement >= this._switchSensibility ) {
+	          _this._downEvents.splice(0, _this._downEvents.length);
+	        }
+	      }
+	    };
 
-							//singleMove
-							this._input = INPUT.ONE_FINGER;
-							this.updateTouchEvent( event );
+	    _this.onWheel = function (event) {
+	      if (_this.enabled && _this.enableZoom) {
+	        var modifier = null;
 
-							this.onSinglePanStart( event, 'ROTATE' );
-							break;
+	        if (event.ctrlKey || event.metaKey) {
+	          modifier = 'CTRL';
+	        } else if (event.shiftKey) {
+	          modifier = 'SHIFT';
+	        }
 
-						}
+	        var mouseOp = _this.getOpFromAction('WHEEL', modifier);
 
-						break;
+	        if (mouseOp != null) {
+	          event.preventDefault();
 
-					case INPUT.TWO_FINGER:
+	          _this.dispatchEvent(_startEvent);
 
-						//rotate/pan/pinchMove
-						this.updateTouchEvent( event );
+	          var notchDeltaY = 125; //distance of one notch of mouse wheel
 
-						this.onRotateMove();
-						this.onPinchMove();
-						this.onDoublePanMove();
+	          var sgn = event.deltaY / notchDeltaY;
+	          var size = 1;
 
-						break;
+	          if (sgn > 0) {
+	            size = 1 / _this.scaleFactor;
+	          } else if (sgn < 0) {
+	            size = _this.scaleFactor;
+	          }
 
-					case INPUT.MULT_FINGER:
+	          switch (mouseOp) {
+	            case 'ZOOM':
+	              _this.updateTbState(STATE.SCALE, true);
 
-						//multMove
-						this.updateTouchEvent( event );
+	              if (sgn > 0) {
+	                size = 1 / Math.pow(_this.scaleFactor, sgn);
+	              } else if (sgn < 0) {
+	                size = Math.pow(_this.scaleFactor, -sgn);
+	              }
 
-						this.onTriplePanMove( event );
-						break;
+	              if (_this.cursorZoom && _this.enablePan) {
+	                var scalePoint;
 
-				}
+	                if (_this.camera.isOrthographicCamera) {
+	                  scalePoint = _this.unprojectOnTbPlane(_this.camera, event.clientX, event.clientY, _this.domElement).applyQuaternion(_this.camera.quaternion).multiplyScalar(1 / _this.camera.zoom).add(_this._gizmos.position);
+	                } else if (_this.camera.isPerspectiveCamera) {
+	                  scalePoint = _this.unprojectOnTbPlane(_this.camera, event.clientX, event.clientY, _this.domElement).applyQuaternion(_this.camera.quaternion).add(_this._gizmos.position);
+	                }
 
-			} else if ( event.pointerType != 'touch' && this._input == INPUT.CURSOR ) {
+	                _this.applyTransformMatrix(_this.scale(size, scalePoint));
+	              } else {
+	                _this.applyTransformMatrix(_this.scale(size, _this._gizmos.position));
+	              }
 
-				let modifier = null;
+	              if (_this._grid != null) {
+	                _this.disposeGrid();
 
-				if ( event.ctrlKey || event.metaKey ) {
+	                _this.drawGrid();
+	              }
 
-					modifier = 'CTRL';
+	              _this.updateTbState(STATE.IDLE, false);
 
-				} else if ( event.shiftKey ) {
+	              _this.dispatchEvent(_changeEvent$1);
 
-					modifier = 'SHIFT';
+	              _this.dispatchEvent(_endEvent);
 
-				}
+	              break;
 
-				const mouseOpState = this.getOpStateFromAction( this._button, modifier );
+	            case 'FOV':
+	              if (_this.camera.isPerspectiveCamera) {
+	                _this.updateTbState(STATE.FOV, true); //Vertigo effect
+	                //	  fov / 2
+	                //		|\
+	                //		| \
+	                //		|  \
+	                //	x	|	\
+	                //		| 	 \
+	                //		| 	  \
+	                //		| _ _ _\
+	                //			y
+	                //check for iOs shift shortcut
 
-				if ( mouseOpState != null ) {
 
-					this.onSinglePanMove( event, mouseOpState );
+	                if (event.deltaX != 0) {
+	                  sgn = event.deltaX / notchDeltaY;
+	                  size = 1;
 
-				}
+	                  if (sgn > 0) {
+	                    size = 1 / Math.pow(_this.scaleFactor, sgn);
+	                  } else if (sgn < 0) {
+	                    size = Math.pow(_this.scaleFactor, -sgn);
+	                  }
+	                }
 
-			}
+	                _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState);
 
-			//checkDistance
-			if ( this._downValid ) {
+	                var x = _this._v3_1.distanceTo(_this._gizmos.position);
 
-				const movement = this.calculatePointersDistance( this._downEvents[ this._downEvents.length - 1 ], event ) * this._devPxRatio;
-				if ( movement > this._movementThreshold ) {
+	                var xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+	                //check min and max distance
 
-					this._downValid = false;
+	                xNew = MathUtils.clamp(xNew, _this.minDistance, _this.maxDistance);
+	                var y = x * Math.tan(MathUtils.DEG2RAD * _this.camera.fov * 0.5); //calculate new fov
 
-				}
+	                var newFov = MathUtils.RAD2DEG * (Math.atan(y / xNew) * 2); //check min and max fov
 
-			}
+	                if (newFov > _this.maxFov) {
+	                  newFov = _this.maxFov;
+	                } else if (newFov < _this.minFov) {
+	                  newFov = _this.minFov;
+	                }
 
-		};
+	                var newDistance = y / Math.tan(MathUtils.DEG2RAD * (newFov / 2));
+	                size = x / newDistance;
 
-		onPointerUp = ( event ) => {
+	                _this.setFov(newFov);
 
-			if ( event.pointerType == 'touch' && this._input != INPUT.CURSOR ) {
+	                _this.applyTransformMatrix(_this.scale(size, _this._gizmos.position, false));
+	              }
 
-				const nTouch = this._touchCurrent.length;
+	              if (_this._grid != null) {
+	                _this.disposeGrid();
 
-				for ( let i = 0; i < nTouch; i ++ ) {
+	                _this.drawGrid();
+	              }
 
-					if ( this._touchCurrent[ i ].pointerId == event.pointerId ) {
+	              _this.updateTbState(STATE.IDLE, false);
 
-						this._touchCurrent.splice( i, 1 );
-						this._touchStart.splice( i, 1 );
-						break;
+	              _this.dispatchEvent(_changeEvent$1);
 
-					}
+	              _this.dispatchEvent(_endEvent);
 
-				}
+	              break;
+	          }
+	        }
+	      }
+	    };
 
-				switch ( this._input ) {
+	    _this.onSinglePanStart = function (event, operation) {
+	      if (_this.enabled) {
+	        _this.dispatchEvent(_startEvent);
 
-					case INPUT.ONE_FINGER:
-					case INPUT.ONE_FINGER_SWITCHED:
+	        _this.setCenter(event.clientX, event.clientY);
 
-						//singleEnd
-						window.removeEventListener( 'pointermove', this.onPointerMove );
-						window.removeEventListener( 'pointerup', this.onPointerUp );
+	        switch (operation) {
+	          case 'PAN':
+	            if (!_this.enablePan) {
+	              return;
+	            }
 
-						this._input = INPUT.NONE;
-						this.onSinglePanEnd();
+	            if (_this._animationId != -1) {
+	              cancelAnimationFrame(_this._animationId);
+	              _this._animationId = -1;
+	              _this._timeStart = -1;
 
-						break;
+	              _this.activateGizmos(false);
 
-					case INPUT.TWO_FINGER:
+	              _this.dispatchEvent(_changeEvent$1);
+	            }
 
-						//doubleEnd
-						this.onDoublePanEnd( event );
-						this.onPinchEnd( event );
-						this.onRotateEnd( event );
+	            _this.updateTbState(STATE.PAN, true);
 
-						//switching to singleStart
-						this._input = INPUT.ONE_FINGER_SWITCHED;
+	            _this._startCursorPosition.copy(_this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement));
 
-						break;
+	            if (_this.enableGrid) {
+	              _this.drawGrid();
 
-					case INPUT.MULT_FINGER:
+	              _this.dispatchEvent(_changeEvent$1);
+	            }
 
-						if ( this._touchCurrent.length == 0 ) {
+	            break;
 
-							window.removeEventListener( 'pointermove', this.onPointerMove );
-							window.removeEventListener( 'pointerup', this.onPointerUp );
+	          case 'ROTATE':
+	            if (!_this.enableRotate) {
+	              return;
+	            }
 
-							//multCancel
-							this._input = INPUT.NONE;
-							this.onTriplePanEnd();
+	            if (_this._animationId != -1) {
+	              cancelAnimationFrame(_this._animationId);
+	              _this._animationId = -1;
+	              _this._timeStart = -1;
+	            }
 
-						}
+	            _this.updateTbState(STATE.ROTATE, true);
 
-						break;
+	            _this._startCursorPosition.copy(_this.unprojectOnTbSurface(_this.camera, _center.x, _center.y, _this.domElement, _this._tbRadius));
 
-				}
+	            _this.activateGizmos(true);
 
-			} else if ( event.pointerType != 'touch' && this._input == INPUT.CURSOR ) {
+	            if (_this.enableAnimations) {
+	              _this._timePrev = _this._timeCurrent = performance.now();
+	              _this._angleCurrent = _this._anglePrev = 0;
 
-				window.removeEventListener( 'pointermove', this.onPointerMove );
-				window.removeEventListener( 'pointerup', this.onPointerUp );
+	              _this._cursorPosPrev.copy(_this._startCursorPosition);
 
-				this._input = INPUT.NONE;
-				this.onSinglePanEnd();
-				this._button = - 1;
+	              _this._cursorPosCurr.copy(_this._cursorPosPrev);
 
-			}
+	              _this._wCurr = 0;
+	              _this._wPrev = _this._wCurr;
+	            }
 
-			if ( event.isPrimary ) {
+	            _this.dispatchEvent(_changeEvent$1);
 
-				if ( this._downValid ) {
+	            break;
 
-					const downTime = event.timeStamp - this._downEvents[ this._downEvents.length - 1 ].timeStamp;
+	          case 'FOV':
+	            if (!_this.camera.isPerspectiveCamera || !_this.enableZoom) {
+	              return;
+	            }
 
-					if ( downTime <= this._maxDownTime ) {
+	            if (_this._animationId != -1) {
+	              cancelAnimationFrame(_this._animationId);
+	              _this._animationId = -1;
+	              _this._timeStart = -1;
 
-						if ( this._nclicks == 0 ) {
+	              _this.activateGizmos(false);
 
-							//first valid click detected
-							this._nclicks = 1;
-							this._clickStart = performance.now();
+	              _this.dispatchEvent(_changeEvent$1);
+	            }
 
-						} else {
+	            _this.updateTbState(STATE.FOV, true);
 
-							const clickInterval = event.timeStamp - this._clickStart;
-							const movement = this.calculatePointersDistance( this._downEvents[ 1 ], this._downEvents[ 0 ] ) * this._devPxRatio;
+	            _this._startCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-							if ( clickInterval <= this._maxInterval && movement <= this._posThreshold ) {
+	            _this._currentCursorPosition.copy(_this._startCursorPosition);
 
-								//second valid click detected
-								//fire double tap and reset values
-								this._nclicks = 0;
-								this._downEvents.splice( 0, this._downEvents.length );
-								this.onDoubleTap( event );
+	            break;
 
-							} else {
+	          case 'ZOOM':
+	            if (!_this.enableZoom) {
+	              return;
+	            }
 
-								//new 'first click'
-								this._nclicks = 1;
-								this._downEvents.shift();
-								this._clickStart = performance.now();
+	            if (_this._animationId != -1) {
+	              cancelAnimationFrame(_this._animationId);
+	              _this._animationId = -1;
+	              _this._timeStart = -1;
 
-							}
+	              _this.activateGizmos(false);
 
-						}
+	              _this.dispatchEvent(_changeEvent$1);
+	            }
 
-					} else {
+	            _this.updateTbState(STATE.SCALE, true);
 
-						this._downValid = false;
-						this._nclicks = 0;
-						this._downEvents.splice( 0, this._downEvents.length );
+	            _this._startCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-					}
+	            _this._currentCursorPosition.copy(_this._startCursorPosition);
 
-				} else {
+	            break;
+	        }
+	      }
+	    };
 
-					this._nclicks = 0;
-					this._downEvents.splice( 0, this._downEvents.length );
+	    _this.onSinglePanMove = function (event, opState) {
+	      if (_this.enabled) {
+	        var restart = opState != _this._state;
 
-				}
+	        _this.setCenter(event.clientX, event.clientY);
 
-			}
+	        switch (opState) {
+	          case STATE.PAN:
+	            if (_this.enablePan) {
+	              if (restart) {
+	                //switch to pan operation
+	                _this.dispatchEvent(_endEvent);
 
-		};
+	                _this.dispatchEvent(_startEvent);
 
-		onWheel = ( event ) => {
+	                _this.updateTbState(opState, true);
 
-			if ( this.enabled && this.enableZoom ) {
+	                _this._startCursorPosition.copy(_this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement));
 
-				let modifier = null;
+	                if (_this.enableGrid) {
+	                  _this.drawGrid();
+	                }
 
-				if ( event.ctrlKey || event.metaKey ) {
+	                _this.activateGizmos(false);
+	              } else {
+	                //continue with pan operation
+	                _this._currentCursorPosition.copy(_this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement));
 
-					modifier = 'CTRL';
+	                _this.applyTransformMatrix(_this.pan(_this._startCursorPosition, _this._currentCursorPosition));
+	              }
+	            }
 
-				} else if ( event.shiftKey ) {
+	            break;
 
-					modifier = 'SHIFT';
+	          case STATE.ROTATE:
+	            if (_this.enableRotate) {
+	              if (restart) {
+	                //switch to rotate operation
+	                _this.dispatchEvent(_endEvent);
 
-				}
+	                _this.dispatchEvent(_startEvent);
 
-				const mouseOp = this.getOpFromAction( 'WHEEL', modifier );
+	                _this.updateTbState(opState, true);
 
-				if ( mouseOp != null ) {
+	                _this._startCursorPosition.copy(_this.unprojectOnTbSurface(_this.camera, _center.x, _center.y, _this.domElement, _this._tbRadius));
 
-					event.preventDefault();
-					this.dispatchEvent( _startEvent );
+	                if (_this.enableGrid) {
+	                  _this.disposeGrid();
+	                }
 
-					const notchDeltaY = 125; //distance of one notch of mouse wheel
-					let sgn = event.deltaY / notchDeltaY;
+	                _this.activateGizmos(true);
+	              } else {
+	                //continue with rotate operation
+	                _this._currentCursorPosition.copy(_this.unprojectOnTbSurface(_this.camera, _center.x, _center.y, _this.domElement, _this._tbRadius));
 
-					let size = 1;
+	                var distance = _this._startCursorPosition.distanceTo(_this._currentCursorPosition);
 
-					if ( sgn > 0 ) {
+	                var angle = _this._startCursorPosition.angleTo(_this._currentCursorPosition);
 
-						size = 1 / this.scaleFactor;
+	                var amount = Math.max(distance / _this._tbRadius, angle); //effective rotation angle
 
-					} else if ( sgn < 0 ) {
+	                _this.applyTransformMatrix(_this.rotate(_this.calculateRotationAxis(_this._startCursorPosition, _this._currentCursorPosition), amount));
 
-						size = this.scaleFactor;
+	                if (_this.enableAnimations) {
+	                  _this._timePrev = _this._timeCurrent;
+	                  _this._timeCurrent = performance.now();
+	                  _this._anglePrev = _this._angleCurrent;
+	                  _this._angleCurrent = amount;
 
-					}
+	                  _this._cursorPosPrev.copy(_this._cursorPosCurr);
 
-					switch ( mouseOp ) {
+	                  _this._cursorPosCurr.copy(_this._currentCursorPosition);
 
-						case 'ZOOM':
+	                  _this._wPrev = _this._wCurr;
+	                  _this._wCurr = _this.calculateAngularSpeed(_this._anglePrev, _this._angleCurrent, _this._timePrev, _this._timeCurrent);
+	                }
+	              }
+	            }
 
-							this.updateTbState( STATE.SCALE, true );
+	            break;
 
-							if ( sgn > 0 ) {
+	          case STATE.SCALE:
+	            if (_this.enableZoom) {
+	              if (restart) {
+	                //switch to zoom operation
+	                _this.dispatchEvent(_endEvent);
 
-								size = 1 / ( Math.pow( this.scaleFactor, sgn ) );
+	                _this.dispatchEvent(_startEvent);
 
-							} else if ( sgn < 0 ) {
+	                _this.updateTbState(opState, true);
 
-								size = Math.pow( this.scaleFactor, - sgn );
+	                _this._startCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-							}
+	                _this._currentCursorPosition.copy(_this._startCursorPosition);
 
-							if ( this.cursorZoom && this.enablePan ) {
+	                if (_this.enableGrid) {
+	                  _this.disposeGrid();
+	                }
 
-								let scalePoint;
+	                _this.activateGizmos(false);
+	              } else {
+	                //continue with zoom operation
+	                var screenNotches = 8; //how many wheel notches corresponds to a full screen pan
 
-								if ( this.camera.isOrthographicCamera ) {
+	                _this._currentCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-									scalePoint = this.unprojectOnTbPlane( this.camera, event.clientX, event.clientY, this.domElement ).applyQuaternion( this.camera.quaternion ).multiplyScalar( 1 / this.camera.zoom ).add( this._gizmos.position );
+	                var movement = _this._currentCursorPosition.y - _this._startCursorPosition.y;
+	                var size = 1;
 
-								} else if ( this.camera.isPerspectiveCamera ) {
+	                if (movement < 0) {
+	                  size = 1 / Math.pow(_this.scaleFactor, -movement * screenNotches);
+	                } else if (movement > 0) {
+	                  size = Math.pow(_this.scaleFactor, movement * screenNotches);
+	                }
 
-									scalePoint = this.unprojectOnTbPlane( this.camera, event.clientX, event.clientY, this.domElement ).applyQuaternion( this.camera.quaternion ).add( this._gizmos.position );
+	                _this.applyTransformMatrix(_this.scale(size, _this._gizmos.position));
+	              }
+	            }
 
-								}
+	            break;
 
-								this.applyTransformMatrix( this.scale( size, scalePoint ) );
+	          case STATE.FOV:
+	            if (_this.enableZoom && _this.camera.isPerspectiveCamera) {
+	              if (restart) {
+	                //switch to fov operation
+	                _this.dispatchEvent(_endEvent);
 
-							} else {
+	                _this.dispatchEvent(_startEvent);
 
-								this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+	                _this.updateTbState(opState, true);
 
-							}
+	                _this._startCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-							if ( this._grid != null ) {
+	                _this._currentCursorPosition.copy(_this._startCursorPosition);
 
-								this.disposeGrid();
-								this.drawGrid();
+	                if (_this.enableGrid) {
+	                  _this.disposeGrid();
+	                }
 
-							}
+	                _this.activateGizmos(false);
+	              } else {
+	                //continue with fov operation
+	                var _screenNotches = 8; //how many wheel notches corresponds to a full screen pan
 
-							this.updateTbState( STATE.IDLE, false );
+	                _this._currentCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-							this.dispatchEvent( _changeEvent$1 );
-							this.dispatchEvent( _endEvent );
+	                var _movement2 = _this._currentCursorPosition.y - _this._startCursorPosition.y;
 
-							break;
+	                var _size = 1;
 
-						case 'FOV':
+	                if (_movement2 < 0) {
+	                  _size = 1 / Math.pow(_this.scaleFactor, -_movement2 * _screenNotches);
+	                } else if (_movement2 > 0) {
+	                  _size = Math.pow(_this.scaleFactor, _movement2 * _screenNotches);
+	                }
 
-							if ( this.camera.isPerspectiveCamera ) {
+	                _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState);
 
-								this.updateTbState( STATE.FOV, true );
+	                var x = _this._v3_1.distanceTo(_this._gizmos.position);
 
+	                var xNew = x / _size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+	                //check min and max distance
 
-								//Vertigo effect
+	                xNew = MathUtils.clamp(xNew, _this.minDistance, _this.maxDistance);
+	                var y = x * Math.tan(MathUtils.DEG2RAD * _this._fovState * 0.5); //calculate new fov
 
-								//	  fov / 2
-								//		|\
-								//		| \
-								//		|  \
-								//	x	|	\
-								//		| 	 \
-								//		| 	  \
-								//		| _ _ _\
-								//			y
+	                var newFov = MathUtils.RAD2DEG * (Math.atan(y / xNew) * 2); //check min and max fov
 
-								//check for iOs shift shortcut
-								if ( event.deltaX != 0 ) {
+	                newFov = MathUtils.clamp(newFov, _this.minFov, _this.maxFov);
+	                var newDistance = y / Math.tan(MathUtils.DEG2RAD * (newFov / 2));
+	                _size = x / newDistance;
 
-									sgn = event.deltaX / notchDeltaY;
+	                _this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState);
 
-									size = 1;
+	                _this.setFov(newFov);
 
-									if ( sgn > 0 ) {
+	                _this.applyTransformMatrix(_this.scale(_size, _this._v3_2, false)); //adjusting distance
 
-										size = 1 / ( Math.pow( this.scaleFactor, sgn ) );
 
-									} else if ( sgn < 0 ) {
+	                _offset.copy(_this._gizmos.position).sub(_this.camera.position).normalize().multiplyScalar(newDistance / x);
 
-										size = Math.pow( this.scaleFactor, - sgn );
+	                _this._m4_1.makeTranslation(_offset.x, _offset.y, _offset.z);
+	              }
+	            }
 
-									}
+	            break;
+	        }
 
-								}
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-								this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
-								const x = this._v3_1.distanceTo( this._gizmos.position );
-								let xNew = x / size;	//distance between camera and gizmos if scale(size, scalepoint) would be performed
+	    _this.onSinglePanEnd = function () {
+	      if (_this._state == STATE.ROTATE) {
+	        if (!_this.enableRotate) {
+	          return;
+	        }
 
-								//check min and max distance
-								xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+	        if (_this.enableAnimations) {
+	          //perform rotation animation
+	          var deltaTime = performance.now() - _this._timeCurrent;
 
-								const y = x * Math.tan( MathUtils.DEG2RAD * this.camera.fov * 0.5 );
+	          if (deltaTime < 120) {
+	            var w = Math.abs((_this._wPrev + _this._wCurr) / 2);
 
-								//calculate new fov
-								let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
+	            var self = _assertThisInitialized(_this);
 
-								//check min and max fov
-								if ( newFov > this.maxFov ) {
+	            _this._animationId = window.requestAnimationFrame(function (t) {
+	              self.updateTbState(STATE.ANIMATION_ROTATE, true);
+	              var rotationAxis = self.calculateRotationAxis(self._cursorPosPrev, self._cursorPosCurr);
+	              self.onRotationAnim(t, rotationAxis, Math.min(w, self.wMax));
+	            });
+	          } else {
+	            //cursor has been standing still for over 120 ms since last movement
+	            _this.updateTbState(STATE.IDLE, false);
 
-									newFov = this.maxFov;
+	            _this.activateGizmos(false);
 
-								} else if ( newFov < this.minFov ) {
+	            _this.dispatchEvent(_changeEvent$1);
+	          }
+	        } else {
+	          _this.updateTbState(STATE.IDLE, false);
 
-									newFov = this.minFov;
+	          _this.activateGizmos(false);
 
-								}
+	          _this.dispatchEvent(_changeEvent$1);
+	        }
+	      } else if (_this._state == STATE.PAN || _this._state == STATE.IDLE) {
+	        _this.updateTbState(STATE.IDLE, false);
 
-								const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
-								size = x / newDistance;
+	        if (_this.enableGrid) {
+	          _this.disposeGrid();
+	        }
 
-								this.setFov( newFov );
-								this.applyTransformMatrix( this.scale( size, this._gizmos.position, false ) );
+	        _this.activateGizmos(false);
 
-							}
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
 
-							if ( this._grid != null ) {
+	      _this.dispatchEvent(_endEvent);
+	    };
 
-								this.disposeGrid();
-								this.drawGrid();
+	    _this.onDoubleTap = function (event) {
+	      if (_this.enabled && _this.enablePan && _this.scene != null) {
+	        _this.dispatchEvent(_startEvent);
 
-							}
+	        _this.setCenter(event.clientX, event.clientY);
 
-							this.updateTbState( STATE.IDLE, false );
+	        var hitP = _this.unprojectOnObj(_this.getCursorNDC(_center.x, _center.y, _this.domElement), _this.camera);
 
-							this.dispatchEvent( _changeEvent$1 );
-							this.dispatchEvent( _endEvent );
+	        if (hitP != null && _this.enableAnimations) {
+	          var self = _assertThisInitialized(_this);
 
-							break;
+	          if (_this._animationId != -1) {
+	            window.cancelAnimationFrame(_this._animationId);
+	          }
 
-					}
+	          _this._timeStart = -1;
+	          _this._animationId = window.requestAnimationFrame(function (t) {
+	            self.updateTbState(STATE.ANIMATION_FOCUS, true);
+	            self.onFocusAnim(t, hitP, self._cameraMatrixState, self._gizmoMatrixState);
+	          });
+	        } else if (hitP != null && !_this.enableAnimations) {
+	          _this.updateTbState(STATE.FOCUS, true);
 
-				}
+	          _this.focus(hitP, _this.scaleFactor);
 
-			}
+	          _this.updateTbState(STATE.IDLE, false);
 
-		};
+	          _this.dispatchEvent(_changeEvent$1);
+	        }
+	      }
 
-		onSinglePanStart = ( event, operation ) => {
+	      _this.dispatchEvent(_endEvent);
+	    };
 
-			if ( this.enabled ) {
+	    _this.onDoublePanStart = function () {
+	      if (_this.enabled && _this.enablePan) {
+	        _this.dispatchEvent(_startEvent);
 
-				this.dispatchEvent( _startEvent );
+	        _this.updateTbState(STATE.PAN, true);
 
-				this.setCenter( event.clientX, event.clientY );
+	        _this.setCenter((_this._touchCurrent[0].clientX + _this._touchCurrent[1].clientX) / 2, (_this._touchCurrent[0].clientY + _this._touchCurrent[1].clientY) / 2);
 
-				switch ( operation ) {
+	        _this._startCursorPosition.copy(_this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement, true));
 
-					case 'PAN':
+	        _this._currentCursorPosition.copy(_this._startCursorPosition);
 
-						if ( ! this.enablePan ) {
+	        _this.activateGizmos(false);
+	      }
+	    };
 
-							return;
+	    _this.onDoublePanMove = function () {
+	      if (_this.enabled && _this.enablePan) {
+	        _this.setCenter((_this._touchCurrent[0].clientX + _this._touchCurrent[1].clientX) / 2, (_this._touchCurrent[0].clientY + _this._touchCurrent[1].clientY) / 2);
 
-						}
+	        if (_this._state != STATE.PAN) {
+	          _this.updateTbState(STATE.PAN, true);
 
-						if ( this._animationId != - 1 ) {
+	          _this._startCursorPosition.copy(_this._currentCursorPosition);
+	        }
 
-							cancelAnimationFrame( this._animationId );
-							this._animationId = - 1;
-							this._timeStart = - 1;
+	        _this._currentCursorPosition.copy(_this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement, true));
 
-							this.activateGizmos( false );
-							this.dispatchEvent( _changeEvent$1 );
+	        _this.applyTransformMatrix(_this.pan(_this._startCursorPosition, _this._currentCursorPosition, true));
 
-						}
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-						this.updateTbState( STATE.PAN, true );
-						this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
-						if ( this.enableGrid ) {
+	    _this.onDoublePanEnd = function () {
+	      _this.updateTbState(STATE.IDLE, false);
 
-							this.drawGrid();
-							this.dispatchEvent( _changeEvent$1 );
+	      _this.dispatchEvent(_endEvent);
+	    };
 
-						}
+	    _this.onRotateStart = function () {
+	      if (_this.enabled && _this.enableRotate) {
+	        _this.dispatchEvent(_startEvent);
 
-						break;
+	        _this.updateTbState(STATE.ZROTATE, true); //this._startFingerRotation = event.rotation;
 
-					case 'ROTATE':
 
-						if ( ! this.enableRotate ) {
+	        _this._startFingerRotation = _this.getAngle(_this._touchCurrent[1], _this._touchCurrent[0]) + _this.getAngle(_this._touchStart[1], _this._touchStart[0]);
+	        _this._currentFingerRotation = _this._startFingerRotation;
 
-							return;
+	        _this.camera.getWorldDirection(_this._rotationAxis); //rotation axis
 
-						}
 
-						if ( this._animationId != - 1 ) {
+	        if (!_this.enablePan && !_this.enableZoom) {
+	          _this.activateGizmos(true);
+	        }
+	      }
+	    };
 
-							cancelAnimationFrame( this._animationId );
-							this._animationId = - 1;
-							this._timeStart = - 1;
+	    _this.onRotateMove = function () {
+	      if (_this.enabled && _this.enableRotate) {
+	        _this.setCenter((_this._touchCurrent[0].clientX + _this._touchCurrent[1].clientX) / 2, (_this._touchCurrent[0].clientY + _this._touchCurrent[1].clientY) / 2);
 
-						}
+	        var rotationPoint;
 
-						this.updateTbState( STATE.ROTATE, true );
-						this._startCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
-						this.activateGizmos( true );
-						if ( this.enableAnimations ) {
+	        if (_this._state != STATE.ZROTATE) {
+	          _this.updateTbState(STATE.ZROTATE, true);
 
-							this._timePrev = this._timeCurrent = performance.now();
-							this._angleCurrent = this._anglePrev = 0;
-							this._cursorPosPrev.copy( this._startCursorPosition );
-							this._cursorPosCurr.copy( this._cursorPosPrev );
-							this._wCurr = 0;
-							this._wPrev = this._wCurr;
+	          _this._startFingerRotation = _this._currentFingerRotation;
+	        } //this._currentFingerRotation = event.rotation;
 
-						}
 
-						this.dispatchEvent( _changeEvent$1 );
-						break;
+	        _this._currentFingerRotation = _this.getAngle(_this._touchCurrent[1], _this._touchCurrent[0]) + _this.getAngle(_this._touchStart[1], _this._touchStart[0]);
 
-					case 'FOV':
+	        if (!_this.enablePan) {
+	          rotationPoint = new Vector3().setFromMatrixPosition(_this._gizmoMatrixState);
+	        } else {
+	          _this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState);
 
-						if ( ! this.camera.isPerspectiveCamera || ! this.enableZoom ) {
+	          rotationPoint = _this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement).applyQuaternion(_this.camera.quaternion).multiplyScalar(1 / _this.camera.zoom).add(_this._v3_2);
+	        }
 
-							return;
+	        var amount = MathUtils.DEG2RAD * (_this._startFingerRotation - _this._currentFingerRotation);
 
-						}
+	        _this.applyTransformMatrix(_this.zRotate(rotationPoint, amount));
 
-						if ( this._animationId != - 1 ) {
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-							cancelAnimationFrame( this._animationId );
-							this._animationId = - 1;
-							this._timeStart = - 1;
+	    _this.onRotateEnd = function () {
+	      _this.updateTbState(STATE.IDLE, false);
 
-							this.activateGizmos( false );
-							this.dispatchEvent( _changeEvent$1 );
+	      _this.activateGizmos(false);
 
-						}
+	      _this.dispatchEvent(_endEvent);
+	    };
 
-						this.updateTbState( STATE.FOV, true );
-						this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
-						this._currentCursorPosition.copy( this._startCursorPosition );
-						break;
+	    _this.onPinchStart = function () {
+	      if (_this.enabled && _this.enableZoom) {
+	        _this.dispatchEvent(_startEvent);
 
-					case 'ZOOM':
+	        _this.updateTbState(STATE.SCALE, true);
 
-						if ( ! this.enableZoom ) {
+	        _this._startFingerDistance = _this.calculatePointersDistance(_this._touchCurrent[0], _this._touchCurrent[1]);
+	        _this._currentFingerDistance = _this._startFingerDistance;
 
-							return;
+	        _this.activateGizmos(false);
+	      }
+	    };
 
-						}
+	    _this.onPinchMove = function () {
+	      if (_this.enabled && _this.enableZoom) {
+	        _this.setCenter((_this._touchCurrent[0].clientX + _this._touchCurrent[1].clientX) / 2, (_this._touchCurrent[0].clientY + _this._touchCurrent[1].clientY) / 2);
 
-						if ( this._animationId != - 1 ) {
+	        var minDistance = 12; //minimum distance between fingers (in css pixels)
 
-							cancelAnimationFrame( this._animationId );
-							this._animationId = - 1;
-							this._timeStart = - 1;
+	        if (_this._state != STATE.SCALE) {
+	          _this._startFingerDistance = _this._currentFingerDistance;
 
-							this.activateGizmos( false );
-							this.dispatchEvent( _changeEvent$1 );
+	          _this.updateTbState(STATE.SCALE, true);
+	        }
 
-						}
+	        _this._currentFingerDistance = Math.max(_this.calculatePointersDistance(_this._touchCurrent[0], _this._touchCurrent[1]), minDistance * _this._devPxRatio);
+	        var amount = _this._currentFingerDistance / _this._startFingerDistance;
+	        var scalePoint;
 
-						this.updateTbState( STATE.SCALE, true );
-						this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
-						this._currentCursorPosition.copy( this._startCursorPosition );
-						break;
+	        if (!_this.enablePan) {
+	          scalePoint = _this._gizmos.position;
+	        } else {
+	          if (_this.camera.isOrthographicCamera) {
+	            scalePoint = _this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement).applyQuaternion(_this.camera.quaternion).multiplyScalar(1 / _this.camera.zoom).add(_this._gizmos.position);
+	          } else if (_this.camera.isPerspectiveCamera) {
+	            scalePoint = _this.unprojectOnTbPlane(_this.camera, _center.x, _center.y, _this.domElement).applyQuaternion(_this.camera.quaternion).add(_this._gizmos.position);
+	          }
+	        }
 
-				}
+	        _this.applyTransformMatrix(_this.scale(amount, scalePoint));
 
-			}
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-		};
+	    _this.onPinchEnd = function () {
+	      _this.updateTbState(STATE.IDLE, false);
 
-		onSinglePanMove = ( event, opState ) => {
+	      _this.dispatchEvent(_endEvent);
+	    };
 
-			if ( this.enabled ) {
+	    _this.onTriplePanStart = function () {
+	      if (_this.enabled && _this.enableZoom) {
+	        _this.dispatchEvent(_startEvent);
 
-				const restart = opState != this._state;
-				this.setCenter( event.clientX, event.clientY );
+	        _this.updateTbState(STATE.SCALE, true); //const center = event.center;
 
-				switch ( opState ) {
 
-					case STATE.PAN:
+	        var clientX = 0;
+	        var clientY = 0;
+	        var nFingers = _this._touchCurrent.length;
 
-						if ( this.enablePan ) {
+	        for (var i = 0; i < nFingers; i++) {
+	          clientX += _this._touchCurrent[i].clientX;
+	          clientY += _this._touchCurrent[i].clientY;
+	        }
 
-							if ( restart ) {
+	        _this.setCenter(clientX / nFingers, clientY / nFingers);
 
-								//switch to pan operation
+	        _this._startCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-								this.dispatchEvent( _endEvent );
-								this.dispatchEvent( _startEvent );
+	        _this._currentCursorPosition.copy(_this._startCursorPosition);
+	      }
+	    };
 
-								this.updateTbState( opState, true );
-								this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
-								if ( this.enableGrid ) {
+	    _this.onTriplePanMove = function () {
+	      if (_this.enabled && _this.enableZoom) {
+	        //	  fov / 2
+	        //		|\
+	        //		| \
+	        //		|  \
+	        //	x	|	\
+	        //		| 	 \
+	        //		| 	  \
+	        //		| _ _ _\
+	        //			y
+	        //const center = event.center;
+	        var clientX = 0;
+	        var clientY = 0;
+	        var nFingers = _this._touchCurrent.length;
 
-									this.drawGrid();
+	        for (var i = 0; i < nFingers; i++) {
+	          clientX += _this._touchCurrent[i].clientX;
+	          clientY += _this._touchCurrent[i].clientY;
+	        }
 
-								}
+	        _this.setCenter(clientX / nFingers, clientY / nFingers);
 
-								this.activateGizmos( false );
+	        var screenNotches = 8; //how many wheel notches corresponds to a full screen pan
 
-							} else {
+	        _this._currentCursorPosition.setY(_this.getCursorNDC(_center.x, _center.y, _this.domElement).y * 0.5);
 
-								//continue with pan operation
-								this._currentCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ) );
-								this.applyTransformMatrix( this.pan( this._startCursorPosition, this._currentCursorPosition ) );
+	        var movement = _this._currentCursorPosition.y - _this._startCursorPosition.y;
+	        var size = 1;
 
-							}
+	        if (movement < 0) {
+	          size = 1 / Math.pow(_this.scaleFactor, -movement * screenNotches);
+	        } else if (movement > 0) {
+	          size = Math.pow(_this.scaleFactor, movement * screenNotches);
+	        }
 
-						}
+	        _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState);
 
-						break;
+	        var x = _this._v3_1.distanceTo(_this._gizmos.position);
 
-					case STATE.ROTATE:
+	        var xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+	        //check min and max distance
 
-						if ( this.enableRotate ) {
+	        xNew = MathUtils.clamp(xNew, _this.minDistance, _this.maxDistance);
+	        var y = x * Math.tan(MathUtils.DEG2RAD * _this._fovState * 0.5); //calculate new fov
 
-							if ( restart ) {
+	        var newFov = MathUtils.RAD2DEG * (Math.atan(y / xNew) * 2); //check min and max fov
 
-								//switch to rotate operation
+	        newFov = MathUtils.clamp(newFov, _this.minFov, _this.maxFov);
+	        var newDistance = y / Math.tan(MathUtils.DEG2RAD * (newFov / 2));
+	        size = x / newDistance;
 
-								this.dispatchEvent( _endEvent );
-								this.dispatchEvent( _startEvent );
+	        _this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState);
 
-								this.updateTbState( opState, true );
-								this._startCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
+	        _this.setFov(newFov);
 
-								if ( this.enableGrid ) {
+	        _this.applyTransformMatrix(_this.scale(size, _this._v3_2, false)); //adjusting distance
 
-									this.disposeGrid();
 
-								}
+	        _offset.copy(_this._gizmos.position).sub(_this.camera.position).normalize().multiplyScalar(newDistance / x);
 
-								this.activateGizmos( true );
+	        _this._m4_1.makeTranslation(_offset.x, _offset.y, _offset.z);
 
-							} else {
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-								//continue with rotate operation
-								this._currentCursorPosition.copy( this.unprojectOnTbSurface( this.camera, _center.x, _center.y, this.domElement, this._tbRadius ) );
+	    _this.onTriplePanEnd = function () {
+	      _this.updateTbState(STATE.IDLE, false);
 
-								const distance = this._startCursorPosition.distanceTo( this._currentCursorPosition );
-								const angle = this._startCursorPosition.angleTo( this._currentCursorPosition );
-								const amount = Math.max( distance / this._tbRadius, angle ); //effective rotation angle
+	      _this.dispatchEvent(_endEvent); //this.dispatchEvent( _changeEvent );
 
-								this.applyTransformMatrix( this.rotate( this.calculateRotationAxis( this._startCursorPosition, this._currentCursorPosition ), amount ) );
+	    };
 
-								if ( this.enableAnimations ) {
+	    _this.setCenter = function (clientX, clientY) {
+	      _center.x = clientX;
+	      _center.y = clientY;
+	    };
 
-									this._timePrev = this._timeCurrent;
-									this._timeCurrent = performance.now();
-									this._anglePrev = this._angleCurrent;
-									this._angleCurrent = amount;
-									this._cursorPosPrev.copy( this._cursorPosCurr );
-									this._cursorPosCurr.copy( this._currentCursorPosition );
-									this._wPrev = this._wCurr;
-									this._wCurr = this.calculateAngularSpeed( this._anglePrev, this._angleCurrent, this._timePrev, this._timeCurrent );
+	    _this.initializeMouseActions = function () {
+	      _this.setMouseAction('PAN', 0, 'CTRL');
 
-								}
+	      _this.setMouseAction('PAN', 2);
 
-							}
+	      _this.setMouseAction('ROTATE', 0);
 
-						}
+	      _this.setMouseAction('ZOOM', 'WHEEL');
 
-						break;
+	      _this.setMouseAction('ZOOM', 1);
 
-					case STATE.SCALE:
+	      _this.setMouseAction('FOV', 'WHEEL', 'SHIFT');
 
-						if ( this.enableZoom ) {
+	      _this.setMouseAction('FOV', 1, 'SHIFT');
+	    };
 
-							if ( restart ) {
+	    _this.compareMouseAction = function (action1, action2) {
+	      if (action1.operation == action2.operation) {
+	        if (action1.mouse == action2.mouse && action1.key == action2.key) {
+	          return true;
+	        } else {
+	          return false;
+	        }
+	      } else {
+	        return false;
+	      }
+	    };
 
-								//switch to zoom operation
+	    _this.setMouseAction = function (operation, mouse) {
+	      var key = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+	      var operationInput = ['PAN', 'ROTATE', 'ZOOM', 'FOV'];
+	      var mouseInput = [0, 1, 2, 'WHEEL'];
+	      var keyInput = ['CTRL', 'SHIFT', null];
+	      var state;
 
-								this.dispatchEvent( _endEvent );
-								this.dispatchEvent( _startEvent );
+	      if (!operationInput.includes(operation) || !mouseInput.includes(mouse) || !keyInput.includes(key)) {
+	        //invalid parameters
+	        return false;
+	      }
 
-								this.updateTbState( opState, true );
-								this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
-								this._currentCursorPosition.copy( this._startCursorPosition );
+	      if (mouse == 'WHEEL') {
+	        if (operation != 'ZOOM' && operation != 'FOV') {
+	          //cannot associate 2D operation to 1D input
+	          return false;
+	        }
+	      }
 
-								if ( this.enableGrid ) {
+	      switch (operation) {
+	        case 'PAN':
+	          state = STATE.PAN;
+	          break;
 
-									this.disposeGrid();
+	        case 'ROTATE':
+	          state = STATE.ROTATE;
+	          break;
 
-								}
+	        case 'ZOOM':
+	          state = STATE.SCALE;
+	          break;
 
-								this.activateGizmos( false );
+	        case 'FOV':
+	          state = STATE.FOV;
+	          break;
+	      }
 
-							} else {
+	      var action = {
+	        operation: operation,
+	        mouse: mouse,
+	        key: key,
+	        state: state
+	      };
 
-								//continue with zoom operation
-								const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
-								this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+	      for (var i = 0; i < _this.mouseActions.length; i++) {
+	        if (_this.mouseActions[i].mouse == action.mouse && _this.mouseActions[i].key == action.key) {
+	          _this.mouseActions.splice(i, 1, action);
 
-								const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+	          return true;
+	        }
+	      }
 
-								let size = 1;
+	      _this.mouseActions.push(action);
 
-								if ( movement < 0 ) {
+	      return true;
+	    };
 
-									size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+	    _this.unsetMouseAction = function (mouse) {
+	      var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
-								} else if ( movement > 0 ) {
+	      for (var i = 0; i < _this.mouseActions.length; i++) {
+	        if (_this.mouseActions[i].mouse == mouse && _this.mouseActions[i].key == key) {
+	          _this.mouseActions.splice(i, 1);
 
-									size = Math.pow( this.scaleFactor, movement * screenNotches );
+	          return true;
+	        }
+	      }
 
-								}
+	      return false;
+	    };
 
-								this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+	    _this.getOpFromAction = function (mouse, key) {
+	      var action;
 
-							}
+	      for (var i = 0; i < _this.mouseActions.length; i++) {
+	        action = _this.mouseActions[i];
 
-						}
+	        if (action.mouse == mouse && action.key == key) {
+	          return action.operation;
+	        }
+	      }
 
-						break;
+	      if (key != null) {
+	        for (var _i = 0; _i < _this.mouseActions.length; _i++) {
+	          action = _this.mouseActions[_i];
 
-					case STATE.FOV:
+	          if (action.mouse == mouse && action.key == null) {
+	            return action.operation;
+	          }
+	        }
+	      }
 
-						if ( this.enableZoom && this.camera.isPerspectiveCamera ) {
+	      return null;
+	    };
 
-							if ( restart ) {
+	    _this.getOpStateFromAction = function (mouse, key) {
+	      var action;
 
-								//switch to fov operation
+	      for (var i = 0; i < _this.mouseActions.length; i++) {
+	        action = _this.mouseActions[i];
 
-								this.dispatchEvent( _endEvent );
-								this.dispatchEvent( _startEvent );
+	        if (action.mouse == mouse && action.key == key) {
+	          return action.state;
+	        }
+	      }
 
-								this.updateTbState( opState, true );
-								this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
-								this._currentCursorPosition.copy( this._startCursorPosition );
+	      if (key != null) {
+	        for (var _i2 = 0; _i2 < _this.mouseActions.length; _i2++) {
+	          action = _this.mouseActions[_i2];
 
-								if ( this.enableGrid ) {
+	          if (action.mouse == mouse && action.key == null) {
+	            return action.state;
+	          }
+	        }
+	      }
 
-									this.disposeGrid();
+	      return null;
+	    };
 
-								}
+	    _this.getAngle = function (p1, p2) {
+	      return Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX) * 180 / Math.PI;
+	    };
 
-								this.activateGizmos( false );
+	    _this.updateTouchEvent = function (event) {
+	      for (var i = 0; i < _this._touchCurrent.length; i++) {
+	        if (_this._touchCurrent[i].pointerId == event.pointerId) {
+	          _this._touchCurrent.splice(i, 1, event);
 
-							} else {
+	          break;
+	        }
+	      }
+	    };
 
-								//continue with fov operation
-								const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
-								this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+	    _this.calculateAngularSpeed = function (p0, p1, t0, t1) {
+	      var s = p1 - p0;
+	      var t = (t1 - t0) / 1000;
 
-								const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+	      if (t == 0) {
+	        return 0;
+	      }
 
-								let size = 1;
+	      return s / t;
+	    };
 
-								if ( movement < 0 ) {
+	    _this.calculatePointersDistance = function (p0, p1) {
+	      return Math.sqrt(Math.pow(p1.clientX - p0.clientX, 2) + Math.pow(p1.clientY - p0.clientY, 2));
+	    };
 
-									size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+	    _this.calculateRotationAxis = function (vec1, vec2) {
+	      _this._rotationMatrix.extractRotation(_this._cameraMatrixState);
 
-								} else if ( movement > 0 ) {
+	      _this._quat.setFromRotationMatrix(_this._rotationMatrix);
 
-									size = Math.pow( this.scaleFactor, movement * screenNotches );
+	      _this._rotationAxis.crossVectors(vec1, vec2).applyQuaternion(_this._quat);
 
-								}
+	      return _this._rotationAxis.normalize().clone();
+	    };
 
-								this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
-								const x = this._v3_1.distanceTo( this._gizmos.position );
-								let xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
+	    _this.calculateTbRadius = function (camera) {
+	      var distance = camera.position.distanceTo(_this._gizmos.position);
 
-								//check min and max distance
-								xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+	      if (camera.type == 'PerspectiveCamera') {
+	        var halfFovV = MathUtils.DEG2RAD * camera.fov * 0.5; //vertical fov/2 in radians
 
-								const y = x * Math.tan( MathUtils.DEG2RAD * this._fovState * 0.5 );
+	        var halfFovH = Math.atan(camera.aspect * Math.tan(halfFovV)); //horizontal fov/2 in radians
 
-								//calculate new fov
-								let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
+	        return Math.tan(Math.min(halfFovV, halfFovH)) * distance * _this.radiusFactor;
+	      } else if (camera.type == 'OrthographicCamera') {
+	        return Math.min(camera.top, camera.right) * _this.radiusFactor;
+	      }
+	    };
 
-								//check min and max fov
-								newFov = MathUtils.clamp( newFov, this.minFov, this.maxFov );
+	    _this.focus = function (point, size) {
+	      var amount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1; // Store the new focus point.
 
-								const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
-								size = x / newDistance;
-								this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+	      _currentFocusSettings.point.set(point.x, point.y, point.z);
 
-								this.setFov( newFov );
-								this.applyTransformMatrix( this.scale( size, this._v3_2, false ) );
+	      _currentFocusSettings.size = size;
+	      _currentFocusSettings.amount = amount; //move center of camera (along with gizmos) towards point of interest
 
-								//adjusting distance
-								_offset.copy( this._gizmos.position ).sub( this.camera.position ).normalize().multiplyScalar( newDistance / x );
-								this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
+	      _offset.copy(point).sub(_this._gizmos.position).multiplyScalar(amount);
 
-							}
+	      _this._translationMatrix.makeTranslation(_offset.x, _offset.y, _offset.z);
 
-						}
+	      _gizmoMatrixStateTemp.copy(_this._gizmoMatrixState);
 
-						break;
+	      _this._gizmoMatrixState.premultiply(_this._translationMatrix);
 
-				}
+	      _this._gizmoMatrixState.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
-				this.dispatchEvent( _changeEvent$1 );
+	      _cameraMatrixStateTemp.copy(_this._cameraMatrixState);
 
-			}
+	      _this._cameraMatrixState.premultiply(_this._translationMatrix);
 
-		};
+	      _this._cameraMatrixState.decompose(_this.camera.position, _this.camera.quaternion, _this.camera.scale); //apply zoom
 
-		onSinglePanEnd = () => {
 
-			if ( this._state == STATE.ROTATE ) {
+	      if (_this.enableZoom) {
+	        _this.applyTransformMatrix(_this.scale(size, _this._gizmos.position));
+	      }
 
+	      _this._gizmoMatrixState.copy(_gizmoMatrixStateTemp);
 
-				if ( ! this.enableRotate ) {
+	      _this._cameraMatrixState.copy(_cameraMatrixStateTemp);
+	    };
 
-					return;
+	    _this.retrieveCurrentFocus = function () {
+	      return _currentFocusSettings;
+	    };
 
-				}
+	    _this.drawGrid = function () {
+	      if (_this.scene != null) {
+	        var color = 0x888888;
+	        var multiplier = 3;
+	        var size, divisions, maxLength, tick;
 
-				if ( this.enableAnimations ) {
+	        if (_this.camera.isOrthographicCamera) {
+	          var width = _this.camera.right - _this.camera.left;
+	          var height = _this.camera.bottom - _this.camera.top;
+	          maxLength = Math.max(width, height);
+	          tick = maxLength / 20;
+	          size = maxLength / _this.camera.zoom * multiplier;
+	          divisions = size / tick * _this.camera.zoom;
+	        } else if (_this.camera.isPerspectiveCamera) {
+	          var distance = _this.camera.position.distanceTo(_this._gizmos.position);
 
-					//perform rotation animation
-					const deltaTime = ( performance.now() - this._timeCurrent );
-					if ( deltaTime < 120 ) {
+	          var halfFovV = MathUtils.DEG2RAD * _this.camera.fov * 0.5;
+	          var halfFovH = Math.atan(_this.camera.aspect * Math.tan(halfFovV));
+	          maxLength = Math.tan(Math.max(halfFovV, halfFovH)) * distance * 2;
+	          tick = maxLength / 20;
+	          size = maxLength * multiplier;
+	          divisions = size / tick;
+	        }
 
-						const w = Math.abs( ( this._wPrev + this._wCurr ) / 2 );
+	        if (_this._grid == null) {
+	          _this._grid = new GridHelper(size, divisions, color, color);
 
-						const self = this;
-						this._animationId = window.requestAnimationFrame( function ( t ) {
+	          _this._grid.position.copy(_this._gizmos.position);
 
-							self.updateTbState( STATE.ANIMATION_ROTATE, true );
-							const rotationAxis = self.calculateRotationAxis( self._cursorPosPrev, self._cursorPosCurr );
+	          _this._gridPosition.copy(_this._grid.position);
 
-							self.onRotationAnim( t, rotationAxis, Math.min( w, self.wMax ) );
+	          _this._grid.quaternion.copy(_this.camera.quaternion);
 
-						} );
+	          _this._grid.rotateX(Math.PI * 0.5);
 
-					} else {
+	          _this.scene.add(_this._grid);
+	        }
+	      }
+	    };
 
-						//cursor has been standing still for over 120 ms since last movement
-						this.updateTbState( STATE.IDLE, false );
-						this.activateGizmos( false );
-						this.dispatchEvent( _changeEvent$1 );
+	    _this.dispose = function () {
+	      if (_this._animationId != -1) {
+	        window.cancelAnimationFrame(_this._animationId);
+	      }
 
-					}
+	      _this.domElement.removeEventListener('pointerdown', _this.onPointerDown);
 
-				} else {
+	      _this.domElement.removeEventListener('pointercancel', _this.onPointerCancel);
 
-					this.updateTbState( STATE.IDLE, false );
-					this.activateGizmos( false );
-					this.dispatchEvent( _changeEvent$1 );
+	      _this.domElement.removeEventListener('wheel', _this.onWheel);
 
-				}
+	      _this.domElement.removeEventListener('contextmenu', _this.onContextMenu);
 
-			} else if ( this._state == STATE.PAN || this._state == STATE.IDLE ) {
+	      window.removeEventListener('pointermove', _this.onPointerMove);
+	      window.removeEventListener('pointerup', _this.onPointerUp);
+	      window.removeEventListener('resize', _this.onWindowResize);
+	      if (_this.scene !== null) _this.scene.remove(_this._gizmos);
 
-				this.updateTbState( STATE.IDLE, false );
+	      _this.disposeGrid();
+	    };
 
-				if ( this.enableGrid ) {
+	    _this.disposeGrid = function () {
+	      if (_this._grid != null && _this.scene != null) {
+	        _this.scene.remove(_this._grid);
 
-					this.disposeGrid();
+	        _this._grid = null;
+	      }
+	    };
 
-				}
+	    _this.easeOutCubic = function (t) {
+	      return 1 - Math.pow(1 - t, 3);
+	    };
 
-				this.activateGizmos( false );
-				this.dispatchEvent( _changeEvent$1 );
+	    _this.activateGizmos = function (isActive) {
+	      var gizmoX = _this._gizmos.children[0];
+	      var gizmoY = _this._gizmos.children[1];
+	      var gizmoZ = _this._gizmos.children[2];
 
+	      if (isActive) {
+	        gizmoX.material.setValues({
+	          opacity: 1
+	        });
+	        gizmoY.material.setValues({
+	          opacity: 1
+	        });
+	        gizmoZ.material.setValues({
+	          opacity: 1
+	        });
+	      } else {
+	        gizmoX.material.setValues({
+	          opacity: 0.6
+	        });
+	        gizmoY.material.setValues({
+	          opacity: 0.6
+	        });
+	        gizmoZ.material.setValues({
+	          opacity: 0.6
+	        });
+	      }
+	    };
 
-			}
+	    _this.getCursorNDC = function (cursorX, cursorY, canvas) {
+	      var canvasRect = canvas.getBoundingClientRect();
 
-			this.dispatchEvent( _endEvent );
+	      _this._v2_1.setX((cursorX - canvasRect.left) / canvasRect.width * 2 - 1);
 
-		};
+	      _this._v2_1.setY((canvasRect.bottom - cursorY) / canvasRect.height * 2 - 1);
 
-		onDoubleTap = ( event ) => {
+	      return _this._v2_1.clone();
+	    };
 
-			if ( this.enabled && this.enablePan && this.scene != null ) {
+	    _this.getCursorPosition = function (cursorX, cursorY, canvas) {
+	      _this._v2_1.copy(_this.getCursorNDC(cursorX, cursorY, canvas));
 
-				this.dispatchEvent( _startEvent );
+	      _this._v2_1.x *= (_this.camera.right - _this.camera.left) * 0.5;
+	      _this._v2_1.y *= (_this.camera.top - _this.camera.bottom) * 0.5;
+	      return _this._v2_1.clone();
+	    };
 
-				this.setCenter( event.clientX, event.clientY );
-				const hitP = this.unprojectOnObj( this.getCursorNDC( _center.x, _center.y, this.domElement ), this.camera );
+	    _this.setCamera = function (camera) {
+	      camera.lookAt(_this.target);
+	      camera.updateMatrix(); //setting state
 
-				if ( hitP != null && this.enableAnimations ) {
+	      if (camera.type == 'PerspectiveCamera') {
+	        _this._fov0 = camera.fov;
+	        _this._fovState = camera.fov;
+	      }
 
-					const self = this;
-					if ( this._animationId != - 1 ) {
+	      _this._cameraMatrixState0.copy(camera.matrix);
 
-						window.cancelAnimationFrame( this._animationId );
+	      _this._cameraMatrixState.copy(_this._cameraMatrixState0);
 
-					}
+	      _this._cameraProjectionState.copy(camera.projectionMatrix);
 
-					this._timeStart = - 1;
-					this._animationId = window.requestAnimationFrame( function ( t ) {
+	      _this._zoom0 = camera.zoom;
+	      _this._zoomState = _this._zoom0;
+	      _this._initialNear = camera.near;
+	      _this._nearPos0 = camera.position.distanceTo(_this.target) - camera.near;
+	      _this._nearPos = _this._initialNear;
+	      _this._initialFar = camera.far;
+	      _this._farPos0 = camera.position.distanceTo(_this.target) - camera.far;
+	      _this._farPos = _this._initialFar;
 
-						self.updateTbState( STATE.ANIMATION_FOCUS, true );
-						self.onFocusAnim( t, hitP, self._cameraMatrixState, self._gizmoMatrixState );
+	      _this._up0.copy(camera.up);
 
-					} );
+	      _this._upState.copy(camera.up);
 
-				} else if ( hitP != null && ! this.enableAnimations ) {
+	      _this.camera = camera;
 
-					this.updateTbState( STATE.FOCUS, true );
-					this.focus( hitP, this.scaleFactor );
-					this.updateTbState( STATE.IDLE, false );
-					this.dispatchEvent( _changeEvent$1 );
+	      _this.camera.updateProjectionMatrix(); //making gizmos
 
-				}
 
-			}
+	      _this._tbRadius = _this.calculateTbRadius(camera);
 
-			this.dispatchEvent( _endEvent );
+	      _this.makeGizmos(_this.target, _this._tbRadius);
+	    };
 
-		};
+	    _this.makeGizmos = function (tbCenter, tbRadius) {
+	      var curve = new EllipseCurve(0, 0, tbRadius, tbRadius);
+	      var points = curve.getPoints(_this._curvePts); //geometry
 
-		onDoublePanStart = () => {
+	      var curveGeometry = new BufferGeometry().setFromPoints(points); //material
 
-			if ( this.enabled && this.enablePan ) {
+	      var curveMaterialX = new LineBasicMaterial({
+	        color: 0xff8080,
+	        fog: false,
+	        transparent: true,
+	        opacity: 0.6
+	      });
+	      var curveMaterialY = new LineBasicMaterial({
+	        color: 0x80ff80,
+	        fog: false,
+	        transparent: true,
+	        opacity: 0.6
+	      });
+	      var curveMaterialZ = new LineBasicMaterial({
+	        color: 0x8080ff,
+	        fog: false,
+	        transparent: true,
+	        opacity: 0.6
+	      }); //line
 
-				this.dispatchEvent( _startEvent );
+	      var gizmoX = new Line(curveGeometry, curveMaterialX);
+	      var gizmoY = new Line(curveGeometry, curveMaterialY);
+	      var gizmoZ = new Line(curveGeometry, curveMaterialZ);
+	      var rotation = Math.PI * 0.5;
+	      gizmoX.rotation.x = rotation;
+	      gizmoY.rotation.y = rotation; //setting state
 
-				this.updateTbState( STATE.PAN, true );
+	      _this._gizmoMatrixState0.identity().setPosition(tbCenter);
 
-				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
-				this._startCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement, true ) );
-				this._currentCursorPosition.copy( this._startCursorPosition );
+	      _this._gizmoMatrixState.copy(_this._gizmoMatrixState0);
 
-				this.activateGizmos( false );
+	      if (_this.camera.zoom != 1) {
+	        //adapt gizmos size to camera zoom
+	        var size = 1 / _this.camera.zoom;
 
-			}
+	        _this._scaleMatrix.makeScale(size, size, size);
 
-		};
+	        _this._translationMatrix.makeTranslation(-tbCenter.x, -tbCenter.y, -tbCenter.z);
 
-		onDoublePanMove = () => {
+	        _this._gizmoMatrixState.premultiply(_this._translationMatrix).premultiply(_this._scaleMatrix);
 
-			if ( this.enabled && this.enablePan ) {
+	        _this._translationMatrix.makeTranslation(tbCenter.x, tbCenter.y, tbCenter.z);
 
-				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
+	        _this._gizmoMatrixState.premultiply(_this._translationMatrix);
+	      }
 
-				if ( this._state != STATE.PAN ) {
+	      _this._gizmoMatrixState.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
-					this.updateTbState( STATE.PAN, true );
-					this._startCursorPosition.copy( this._currentCursorPosition );
+	      _this._gizmos.clear();
 
-				}
+	      _this._gizmos.add(gizmoX);
 
-				this._currentCursorPosition.copy( this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement, true ) );
-				this.applyTransformMatrix( this.pan( this._startCursorPosition, this._currentCursorPosition, true ) );
-				this.dispatchEvent( _changeEvent$1 );
+	      _this._gizmos.add(gizmoY);
 
-			}
+	      _this._gizmos.add(gizmoZ);
+	    };
 
-		};
+	    _this.onFocusAnim = function (time, point, cameraMatrix, gizmoMatrix) {
+	      if (_this._timeStart == -1) {
+	        //animation start
+	        _this._timeStart = time;
+	      }
 
-		onDoublePanEnd = () => {
+	      if (_this._state == STATE.ANIMATION_FOCUS) {
+	        var deltaTime = time - _this._timeStart;
+	        var animTime = deltaTime / _this.focusAnimationTime;
 
-			this.updateTbState( STATE.IDLE, false );
-			this.dispatchEvent( _endEvent );
+	        _this._gizmoMatrixState.copy(gizmoMatrix);
 
-		};
+	        if (animTime >= 1) {
+	          //animation end
+	          _this._gizmoMatrixState.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
+	          _this.focus(point, _this.scaleFactor);
 
-		onRotateStart = () => {
+	          _this._timeStart = -1;
 
-			if ( this.enabled && this.enableRotate ) {
+	          _this.updateTbState(STATE.IDLE, false);
 
-				this.dispatchEvent( _startEvent );
+	          _this.activateGizmos(false);
 
-				this.updateTbState( STATE.ZROTATE, true );
+	          _this.dispatchEvent(_changeEvent$1);
+	        } else {
+	          var amount = _this.easeOutCubic(animTime);
 
-				//this._startFingerRotation = event.rotation;
+	          var size = 1 - amount + _this.scaleFactor * amount;
 
-				this._startFingerRotation = this.getAngle( this._touchCurrent[ 1 ], this._touchCurrent[ 0 ] ) + this.getAngle( this._touchStart[ 1 ], this._touchStart[ 0 ] );
-				this._currentFingerRotation = this._startFingerRotation;
+	          _this._gizmoMatrixState.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
-				this.camera.getWorldDirection( this._rotationAxis ); //rotation axis
+	          _this.focus(point, size, amount);
 
-				if ( ! this.enablePan && ! this.enableZoom ) {
+	          _this.dispatchEvent(_changeEvent$1);
 
-					this.activateGizmos( true );
+	          var self = _assertThisInitialized(_this);
 
-				}
+	          _this._animationId = window.requestAnimationFrame(function (t) {
+	            self.onFocusAnim(t, point, cameraMatrix, gizmoMatrix.clone());
+	          });
+	        }
+	      } else {
+	        //interrupt animation
+	        _this._animationId = -1;
+	        _this._timeStart = -1;
+	      }
+	    };
 
-			}
+	    _this.onRotationAnim = function (time, rotationAxis, w0) {
+	      if (_this._timeStart == -1) {
+	        //animation start
+	        _this._anglePrev = 0;
+	        _this._angleCurrent = 0;
+	        _this._timeStart = time;
+	      }
 
-		};
+	      if (_this._state == STATE.ANIMATION_ROTATE) {
+	        //w = w0 + alpha * t
+	        var deltaTime = (time - _this._timeStart) / 1000;
+	        var w = w0 + -_this.dampingFactor * deltaTime;
 
-		onRotateMove = () => {
+	        if (w > 0) {
+	          //tetha = 0.5 * alpha * t^2 + w0 * t + tetha0
+	          _this._angleCurrent = 0.5 * -_this.dampingFactor * Math.pow(deltaTime, 2) + w0 * deltaTime + 0;
 
-			if ( this.enabled && this.enableRotate ) {
+	          _this.applyTransformMatrix(_this.rotate(rotationAxis, _this._angleCurrent));
 
-				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
-				let rotationPoint;
+	          _this.dispatchEvent(_changeEvent$1);
 
-				if ( this._state != STATE.ZROTATE ) {
+	          var self = _assertThisInitialized(_this);
 
-					this.updateTbState( STATE.ZROTATE, true );
-					this._startFingerRotation = this._currentFingerRotation;
+	          _this._animationId = window.requestAnimationFrame(function (t) {
+	            self.onRotationAnim(t, rotationAxis, w0);
+	          });
+	        } else {
+	          _this._animationId = -1;
+	          _this._timeStart = -1;
 
-				}
+	          _this.updateTbState(STATE.IDLE, false);
 
-				//this._currentFingerRotation = event.rotation;
-				this._currentFingerRotation = this.getAngle( this._touchCurrent[ 1 ], this._touchCurrent[ 0 ] ) + this.getAngle( this._touchStart[ 1 ], this._touchStart[ 0 ] );
+	          _this.activateGizmos(false);
 
-				if ( ! this.enablePan ) {
+	          _this.dispatchEvent(_changeEvent$1);
+	        }
+	      } else {
+	        //interrupt animation
+	        _this._animationId = -1;
+	        _this._timeStart = -1;
 
-					rotationPoint = new Vector3().setFromMatrixPosition( this._gizmoMatrixState );
+	        if (_this._state != STATE.ROTATE) {
+	          _this.activateGizmos(false);
 
-				} else {
+	          _this.dispatchEvent(_changeEvent$1);
+	        }
+	      }
+	    };
 
-					this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
-					rotationPoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement ).applyQuaternion( this.camera.quaternion ).multiplyScalar( 1 / this.camera.zoom ).add( this._v3_2 );
+	    _this.pan = function (p0, p1) {
+	      var adjust = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+	      var movement = p0.clone().sub(p1);
 
-				}
+	      if (_this.camera.isOrthographicCamera) {
+	        //adjust movement amount
+	        movement.multiplyScalar(1 / _this.camera.zoom);
+	      } else if (_this.camera.isPerspectiveCamera && adjust) {
+	        //adjust movement amount
+	        _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState0); //camera's initial position
 
-				const amount = MathUtils.DEG2RAD * ( this._startFingerRotation - this._currentFingerRotation );
 
-				this.applyTransformMatrix( this.zRotate( rotationPoint, amount ) );
-				this.dispatchEvent( _changeEvent$1 );
+	        _this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState0); //gizmo's initial position
 
-			}
 
-		};
+	        var distanceFactor = _this._v3_1.distanceTo(_this._v3_2) / _this.camera.position.distanceTo(_this._gizmos.position);
 
-		onRotateEnd = () => {
+	        movement.multiplyScalar(1 / distanceFactor);
+	      }
 
-			this.updateTbState( STATE.IDLE, false );
-			this.activateGizmos( false );
-			this.dispatchEvent( _endEvent );
+	      _this._v3_1.set(movement.x, movement.y, 0).applyQuaternion(_this.camera.quaternion);
 
-		};
+	      _this._m4_1.makeTranslation(_this._v3_1.x, _this._v3_1.y, _this._v3_1.z);
 
-		onPinchStart = () => {
+	      _this.setTransformationMatrices(_this._m4_1, _this._m4_1);
 
-			if ( this.enabled && this.enableZoom ) {
+	      return _transformation;
+	    };
 
-				this.dispatchEvent( _startEvent );
-				this.updateTbState( STATE.SCALE, true );
+	    _this.reset = function () {
+	      _this.camera.zoom = _this._zoom0;
 
-				this._startFingerDistance = this.calculatePointersDistance( this._touchCurrent[ 0 ], this._touchCurrent[ 1 ] );
-				this._currentFingerDistance = this._startFingerDistance;
+	      if (_this.camera.isPerspectiveCamera) {
+	        _this.camera.fov = _this._fov0;
+	      }
 
-				this.activateGizmos( false );
+	      _this.camera.near = _this._nearPos;
+	      _this.camera.far = _this._farPos;
 
-			}
+	      _this._cameraMatrixState.copy(_this._cameraMatrixState0);
 
-		};
+	      _this._cameraMatrixState.decompose(_this.camera.position, _this.camera.quaternion, _this.camera.scale);
 
-		onPinchMove = () => {
+	      _this.camera.up.copy(_this._up0);
 
-			if ( this.enabled && this.enableZoom ) {
+	      _this.camera.updateMatrix();
 
-				this.setCenter( ( this._touchCurrent[ 0 ].clientX + this._touchCurrent[ 1 ].clientX ) / 2, ( this._touchCurrent[ 0 ].clientY + this._touchCurrent[ 1 ].clientY ) / 2 );
-				const minDistance = 12; //minimum distance between fingers (in css pixels)
+	      _this.camera.updateProjectionMatrix();
 
-				if ( this._state != STATE.SCALE ) {
+	      _this._gizmoMatrixState.copy(_this._gizmoMatrixState0);
 
-					this._startFingerDistance = this._currentFingerDistance;
-					this.updateTbState( STATE.SCALE, true );
+	      _this._gizmoMatrixState0.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
-				}
+	      _this._gizmos.updateMatrix();
 
-				this._currentFingerDistance = Math.max( this.calculatePointersDistance( this._touchCurrent[ 0 ], this._touchCurrent[ 1 ] ), minDistance * this._devPxRatio );
-				const amount = this._currentFingerDistance / this._startFingerDistance;
+	      _this._tbRadius = _this.calculateTbRadius(_this.camera);
 
-				let scalePoint;
+	      _this.makeGizmos(_this._gizmos.position, _this._tbRadius);
 
-				if ( ! this.enablePan ) {
+	      _this.camera.lookAt(_this._gizmos.position);
 
-					scalePoint = this._gizmos.position;
+	      _this.updateTbState(STATE.IDLE, false);
 
-				} else {
+	      _this.dispatchEvent(_changeEvent$1);
+	    };
 
-					if ( this.camera.isOrthographicCamera ) {
+	    _this.rotate = function (axis, angle) {
+	      var point = _this._gizmos.position; //rotation center
 
-						scalePoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement )
-							.applyQuaternion( this.camera.quaternion )
-							.multiplyScalar( 1 / this.camera.zoom )
-							.add( this._gizmos.position );
+	      _this._translationMatrix.makeTranslation(-point.x, -point.y, -point.z);
 
-					} else if ( this.camera.isPerspectiveCamera ) {
+	      _this._rotationMatrix.makeRotationAxis(axis, -angle); //rotate camera
 
-						scalePoint = this.unprojectOnTbPlane( this.camera, _center.x, _center.y, this.domElement )
-							.applyQuaternion( this.camera.quaternion )
-							.add( this._gizmos.position );
 
-					}
+	      _this._m4_1.makeTranslation(point.x, point.y, point.z);
 
-				}
+	      _this._m4_1.multiply(_this._rotationMatrix);
 
-				this.applyTransformMatrix( this.scale( amount, scalePoint ) );
-				this.dispatchEvent( _changeEvent$1 );
+	      _this._m4_1.multiply(_this._translationMatrix);
 
-			}
+	      _this.setTransformationMatrices(_this._m4_1);
 
-		};
+	      return _transformation;
+	    };
 
-		onPinchEnd = () => {
+	    _this.copyState = function () {
+	      var state;
 
-			this.updateTbState( STATE.IDLE, false );
-			this.dispatchEvent( _endEvent );
+	      if (_this.camera.isOrthographicCamera) {
+	        state = JSON.stringify({
+	          arcballState: {
+	            cameraFar: _this.camera.far,
+	            cameraMatrix: _this.camera.matrix,
+	            cameraNear: _this.camera.near,
+	            cameraUp: _this.camera.up,
+	            cameraZoom: _this.camera.zoom,
+	            gizmoMatrix: _this._gizmos.matrix
+	          }
+	        });
+	      } else if (_this.camera.isPerspectiveCamera) {
+	        state = JSON.stringify({
+	          arcballState: {
+	            cameraFar: _this.camera.far,
+	            cameraFov: _this.camera.fov,
+	            cameraMatrix: _this.camera.matrix,
+	            cameraNear: _this.camera.near,
+	            cameraUp: _this.camera.up,
+	            cameraZoom: _this.camera.zoom,
+	            gizmoMatrix: _this._gizmos.matrix
+	          }
+	        });
+	      }
 
-		};
+	      navigator.clipboard.writeText(state);
+	    };
 
-		onTriplePanStart = () => {
+	    _this.pasteState = function () {
+	      var self = _assertThisInitialized(_this);
 
-			if ( this.enabled && this.enableZoom ) {
+	      navigator.clipboard.readText().then(function resolved(value) {
+	        self.setStateFromJSON(value);
+	      });
+	    };
 
-				this.dispatchEvent( _startEvent );
+	    _this.saveState = function () {
+	      _this._cameraMatrixState0.copy(_this.camera.matrix);
 
-				this.updateTbState( STATE.SCALE, true );
+	      _this._gizmoMatrixState0.copy(_this._gizmos.matrix);
 
-				//const center = event.center;
-				let clientX = 0;
-				let clientY = 0;
-				const nFingers = this._touchCurrent.length;
+	      _this._nearPos = _this.camera.near;
+	      _this._farPos = _this.camera.far;
+	      _this._zoom0 = _this.camera.zoom;
 
-				for ( let i = 0; i < nFingers; i ++ ) {
+	      _this._up0.copy(_this.camera.up);
 
-					clientX += this._touchCurrent[ i ].clientX;
-					clientY += this._touchCurrent[ i ].clientY;
+	      if (_this.camera.isPerspectiveCamera) {
+	        _this._fov0 = _this.camera.fov;
+	      }
+	    };
 
-				}
+	    _this.scale = function (size, point) {
+	      var scaleGizmos = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-				this.setCenter( clientX / nFingers, clientY / nFingers );
+	      _scalePointTemp.copy(point);
 
-				this._startCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
-				this._currentCursorPosition.copy( this._startCursorPosition );
+	      var sizeInverse = 1 / size;
 
-			}
+	      if (_this.camera.isOrthographicCamera) {
+	        //camera zoom
+	        _this.camera.zoom = _this._zoomState;
+	        _this.camera.zoom *= size; //check min and max zoom
 
-		};
+	        if (_this.camera.zoom > _this.maxZoom) {
+	          _this.camera.zoom = _this.maxZoom;
+	          sizeInverse = _this._zoomState / _this.maxZoom;
+	        } else if (_this.camera.zoom < _this.minZoom) {
+	          _this.camera.zoom = _this.minZoom;
+	          sizeInverse = _this._zoomState / _this.minZoom;
+	        }
 
-		onTriplePanMove = () => {
+	        _this.camera.updateProjectionMatrix();
 
-			if ( this.enabled && this.enableZoom ) {
+	        _this._v3_1.setFromMatrixPosition(_this._gizmoMatrixState); //gizmos position
+	        //scale gizmos so they appear in the same spot having the same dimension
 
-				//	  fov / 2
-				//		|\
-				//		| \
-				//		|  \
-				//	x	|	\
-				//		| 	 \
-				//		| 	  \
-				//		| _ _ _\
-				//			y
 
-				//const center = event.center;
-				let clientX = 0;
-				let clientY = 0;
-				const nFingers = this._touchCurrent.length;
+	        _this._scaleMatrix.makeScale(sizeInverse, sizeInverse, sizeInverse);
 
-				for ( let i = 0; i < nFingers; i ++ ) {
+	        _this._translationMatrix.makeTranslation(-_this._v3_1.x, -_this._v3_1.y, -_this._v3_1.z);
 
-					clientX += this._touchCurrent[ i ].clientX;
-					clientY += this._touchCurrent[ i ].clientY;
+	        _this._m4_2.makeTranslation(_this._v3_1.x, _this._v3_1.y, _this._v3_1.z).multiply(_this._scaleMatrix);
 
-				}
+	        _this._m4_2.multiply(_this._translationMatrix); //move camera and gizmos to obtain pinch effect
 
-				this.setCenter( clientX / nFingers, clientY / nFingers );
 
-				const screenNotches = 8;	//how many wheel notches corresponds to a full screen pan
-				this._currentCursorPosition.setY( this.getCursorNDC( _center.x, _center.y, this.domElement ).y * 0.5 );
+	        _scalePointTemp.sub(_this._v3_1);
 
-				const movement = this._currentCursorPosition.y - this._startCursorPosition.y;
+	        var amount = _scalePointTemp.clone().multiplyScalar(sizeInverse);
 
-				let size = 1;
+	        _scalePointTemp.sub(amount);
 
-				if ( movement < 0 ) {
+	        _this._m4_1.makeTranslation(_scalePointTemp.x, _scalePointTemp.y, _scalePointTemp.z);
 
-					size = 1 / ( Math.pow( this.scaleFactor, - movement * screenNotches ) );
+	        _this._m4_2.premultiply(_this._m4_1);
 
-				} else if ( movement > 0 ) {
+	        _this.setTransformationMatrices(_this._m4_1, _this._m4_2);
 
-					size = Math.pow( this.scaleFactor, movement * screenNotches );
+	        return _transformation;
+	      } else if (_this.camera.isPerspectiveCamera) {
+	        _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState);
 
-				}
+	        _this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState); //move camera
 
-				this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
-				const x = this._v3_1.distanceTo( this._gizmos.position );
-				let xNew = x / size; //distance between camera and gizmos if scale(size, scalepoint) would be performed
 
-				//check min and max distance
-				xNew = MathUtils.clamp( xNew, this.minDistance, this.maxDistance );
+	        var distance = _this._v3_1.distanceTo(_scalePointTemp);
 
-				const y = x * Math.tan( MathUtils.DEG2RAD * this._fovState * 0.5 );
+	        var _amount = distance - distance * sizeInverse; //check min and max distance
 
-				//calculate new fov
-				let newFov = MathUtils.RAD2DEG * ( Math.atan( y / xNew ) * 2 );
 
-				//check min and max fov
-				newFov = MathUtils.clamp( newFov, this.minFov, this.maxFov );
+	        var newDistance = distance - _amount;
 
-				const newDistance = y / Math.tan( MathUtils.DEG2RAD * ( newFov / 2 ) );
-				size = x / newDistance;
-				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
+	        if (newDistance < _this.minDistance) {
+	          sizeInverse = _this.minDistance / distance;
+	          _amount = distance - distance * sizeInverse;
+	        } else if (newDistance > _this.maxDistance) {
+	          sizeInverse = _this.maxDistance / distance;
+	          _amount = distance - distance * sizeInverse;
+	        }
 
-				this.setFov( newFov );
-				this.applyTransformMatrix( this.scale( size, this._v3_2, false ) );
+	        _offset.copy(_scalePointTemp).sub(_this._v3_1).normalize().multiplyScalar(_amount);
 
-				//adjusting distance
-				_offset.copy( this._gizmos.position ).sub( this.camera.position ).normalize().multiplyScalar( newDistance / x );
-				this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
+	        _this._m4_1.makeTranslation(_offset.x, _offset.y, _offset.z);
 
-				this.dispatchEvent( _changeEvent$1 );
+	        if (scaleGizmos) {
+	          //scale gizmos so they appear in the same spot having the same dimension
+	          var pos = _this._v3_2;
+	          distance = pos.distanceTo(_scalePointTemp);
+	          _amount = distance - distance * sizeInverse;
 
-			}
+	          _offset.copy(_scalePointTemp).sub(_this._v3_2).normalize().multiplyScalar(_amount);
 
-		};
+	          _this._translationMatrix.makeTranslation(pos.x, pos.y, pos.z);
 
-		onTriplePanEnd = () => {
+	          _this._scaleMatrix.makeScale(sizeInverse, sizeInverse, sizeInverse);
 
-			this.updateTbState( STATE.IDLE, false );
-			this.dispatchEvent( _endEvent );
-			//this.dispatchEvent( _changeEvent );
+	          _this._m4_2.makeTranslation(_offset.x, _offset.y, _offset.z).multiply(_this._translationMatrix);
 
-		};
+	          _this._m4_2.multiply(_this._scaleMatrix);
 
-		/**
-		 * Set _center's x/y coordinates
-		 * @param {Number} clientX
-		 * @param {Number} clientY
-		 */
-		setCenter = ( clientX, clientY ) => {
+	          _this._translationMatrix.makeTranslation(-pos.x, -pos.y, -pos.z);
 
-			_center.x = clientX;
-			_center.y = clientY;
+	          _this._m4_2.multiply(_this._translationMatrix);
 
-		};
+	          _this.setTransformationMatrices(_this._m4_1, _this._m4_2);
+	        } else {
+	          _this.setTransformationMatrices(_this._m4_1);
+	        }
 
-		/**
-		 * Set default mouse actions
-		 */
-		initializeMouseActions = () => {
+	        return _transformation;
+	      }
+	    };
 
-			this.setMouseAction( 'PAN', 0, 'CTRL' );
-			this.setMouseAction( 'PAN', 2 );
+	    _this.setFov = function (value) {
+	      if (_this.camera.isPerspectiveCamera) {
+	        _this.camera.fov = MathUtils.clamp(value, _this.minFov, _this.maxFov);
 
-			this.setMouseAction( 'ROTATE', 0 );
+	        _this.camera.updateProjectionMatrix();
+	      }
+	    };
 
-			this.setMouseAction( 'ZOOM', 'WHEEL' );
-			this.setMouseAction( 'ZOOM', 1 );
+	    _this.zRotate = function (point, angle) {
+	      _this._rotationMatrix.makeRotationAxis(_this._rotationAxis, angle);
 
-			this.setMouseAction( 'FOV', 'WHEEL', 'SHIFT' );
-			this.setMouseAction( 'FOV', 1, 'SHIFT' );
+	      _this._translationMatrix.makeTranslation(-point.x, -point.y, -point.z);
 
+	      _this._m4_1.makeTranslation(point.x, point.y, point.z);
 
-		};
+	      _this._m4_1.multiply(_this._rotationMatrix);
 
-		/**
-		 * Compare two mouse actions
-		 * @param {Object} action1
-		 * @param {Object} action2
-		 * @returns {Boolean} True if action1 and action 2 are the same mouse action, false otherwise
-		 */
-		compareMouseAction = ( action1, action2 ) => {
+	      _this._m4_1.multiply(_this._translationMatrix);
 
-			if ( action1.operation == action2.operation ) {
+	      _this._v3_1.setFromMatrixPosition(_this._gizmoMatrixState).sub(point); //vector from rotation center to gizmos position
 
-				if ( action1.mouse == action2.mouse && action1.key == action2.key ) {
 
-					return true;
+	      _this._v3_2.copy(_this._v3_1).applyAxisAngle(_this._rotationAxis, angle); //apply rotation
 
-				} else {
 
-					return false;
+	      _this._v3_2.sub(_this._v3_1);
 
-				}
+	      _this._m4_2.makeTranslation(_this._v3_2.x, _this._v3_2.y, _this._v3_2.z);
 
-			} else {
+	      _this.setTransformationMatrices(_this._m4_1, _this._m4_2);
 
-				return false;
+	      return _transformation;
+	    };
 
-			}
+	    _this.unprojectOnObj = function (cursor, camera) {
+	      var raycaster = _this.getRaycaster();
 
-		};
+	      raycaster.near = camera.near;
+	      raycaster.far = camera.far;
+	      raycaster.setFromCamera(cursor, camera);
+	      var intersect = raycaster.intersectObjects(_this.scene.children, true);
 
-		/**
-		 * Set a new mouse action by specifying the operation to be performed and a mouse/key combination. In case of conflict, replaces the existing one
-		 * @param {String} operation The operation to be performed ('PAN', 'ROTATE', 'ZOOM', 'FOV)
-		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
-		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
-		 * @returns {Boolean} True if the mouse action has been successfully added, false otherwise
-		 */
-		setMouseAction = ( operation, mouse, key = null ) => {
+	      for (var i = 0; i < intersect.length; i++) {
+	        if (intersect[i].object.uuid != _this._gizmos.uuid && intersect[i].face != null) {
+	          return intersect[i].point.clone();
+	        }
+	      }
 
-			const operationInput = [ 'PAN', 'ROTATE', 'ZOOM', 'FOV' ];
-			const mouseInput = [ 0, 1, 2, 'WHEEL' ];
-			const keyInput = [ 'CTRL', 'SHIFT', null ];
-			let state;
+	      return null;
+	    };
 
-			if ( ! operationInput.includes( operation ) || ! mouseInput.includes( mouse ) || ! keyInput.includes( key ) ) {
+	    _this.unprojectOnTbSurface = function (camera, cursorX, cursorY, canvas, tbRadius) {
+	      if (camera.type == 'OrthographicCamera') {
+	        _this._v2_1.copy(_this.getCursorPosition(cursorX, cursorY, canvas));
 
-				//invalid parameters
-				return false;
+	        _this._v3_1.set(_this._v2_1.x, _this._v2_1.y, 0);
 
-			}
+	        var x2 = Math.pow(_this._v2_1.x, 2);
+	        var y2 = Math.pow(_this._v2_1.y, 2);
+	        var r2 = Math.pow(_this._tbRadius, 2);
 
-			if ( mouse == 'WHEEL' ) {
+	        if (x2 + y2 <= r2 * 0.5) {
+	          //intersection with sphere
+	          _this._v3_1.setZ(Math.sqrt(r2 - (x2 + y2)));
+	        } else {
+	          //intersection with hyperboloid
+	          _this._v3_1.setZ(r2 * 0.5 / Math.sqrt(x2 + y2));
+	        }
 
-				if ( operation != 'ZOOM' && operation != 'FOV' ) {
+	        return _this._v3_1;
+	      } else if (camera.type == 'PerspectiveCamera') {
+	        //unproject cursor on the near plane
+	        _this._v2_1.copy(_this.getCursorNDC(cursorX, cursorY, canvas));
 
-					//cannot associate 2D operation to 1D input
-					return false;
+	        _this._v3_1.set(_this._v2_1.x, _this._v2_1.y, -1);
 
-				}
+	        _this._v3_1.applyMatrix4(camera.projectionMatrixInverse);
 
-			}
+	        var rayDir = _this._v3_1.clone().normalize(); //unprojected ray direction
 
-			switch ( operation ) {
 
-				case 'PAN':
+	        var cameraGizmoDistance = camera.position.distanceTo(_this._gizmos.position);
+	        var radius2 = Math.pow(tbRadius, 2); //	  camera
+	        //		|\
+	        //		| \
+	        //		|  \
+	        //	h	|	\
+	        //		| 	 \
+	        //		| 	  \
+	        //	_ _ | _ _ _\ _ _  near plane
+	        //			l
 
-					state = STATE.PAN;
-					break;
+	        var h = _this._v3_1.z;
+	        var l = Math.sqrt(Math.pow(_this._v3_1.x, 2) + Math.pow(_this._v3_1.y, 2));
 
-				case 'ROTATE':
+	        if (l == 0) {
+	          //ray aligned with camera
+	          rayDir.set(_this._v3_1.x, _this._v3_1.y, tbRadius);
+	          return rayDir;
+	        }
 
-					state = STATE.ROTATE;
-					break;
+	        var m = h / l;
+	        var q = cameraGizmoDistance;
+	        /*
+	         * calculate intersection point between unprojected ray and trackball surface
+	         *|y = m * x + q
+	         *|x^2 + y^2 = r^2
+	         *
+	         * (m^2 + 1) * x^2 + (2 * m * q) * x + q^2 - r^2 = 0
+	         */
 
-				case 'ZOOM':
+	        var a = Math.pow(m, 2) + 1;
+	        var b = 2 * m * q;
+	        var c = Math.pow(q, 2) - radius2;
+	        var delta = Math.pow(b, 2) - 4 * a * c;
 
-					state = STATE.SCALE;
-					break;
+	        if (delta >= 0) {
+	          //intersection with sphere
+	          _this._v2_1.setX((-b - Math.sqrt(delta)) / (2 * a));
 
-				case 'FOV':
+	          _this._v2_1.setY(m * _this._v2_1.x + q);
 
-					state = STATE.FOV;
-					break;
+	          var angle = MathUtils.RAD2DEG * _this._v2_1.angle();
 
-			}
+	          if (angle >= 45) {
+	            //if angle between intersection point and X' axis is >= 45°, return that point
+	            //otherwise, calculate intersection point with hyperboloid
+	            var _rayLength = Math.sqrt(Math.pow(_this._v2_1.x, 2) + Math.pow(cameraGizmoDistance - _this._v2_1.y, 2));
 
-			const action = {
+	            rayDir.multiplyScalar(_rayLength);
+	            rayDir.z += cameraGizmoDistance;
+	            return rayDir;
+	          }
+	        } //intersection with hyperboloid
 
-				operation: operation,
-				mouse: mouse,
-				key: key,
-				state: state
+	        /*
+	         *|y = m * x + q
+	         *|y = (1 / x) * (r^2 / 2)
+	         *
+	         * m * x^2 + q * x - r^2 / 2 = 0
+	         */
 
-			};
 
-			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	        a = m;
+	        b = q;
+	        c = -radius2 * 0.5;
+	        delta = Math.pow(b, 2) - 4 * a * c;
 
-				if ( this.mouseActions[ i ].mouse == action.mouse && this.mouseActions[ i ].key == action.key ) {
+	        _this._v2_1.setX((-b - Math.sqrt(delta)) / (2 * a));
 
-					this.mouseActions.splice( i, 1, action );
-					return true;
+	        _this._v2_1.setY(m * _this._v2_1.x + q);
 
-				}
+	        var rayLength = Math.sqrt(Math.pow(_this._v2_1.x, 2) + Math.pow(cameraGizmoDistance - _this._v2_1.y, 2));
+	        rayDir.multiplyScalar(rayLength);
+	        rayDir.z += cameraGizmoDistance;
+	        return rayDir;
+	      }
+	    };
 
-			}
+	    _this.unprojectOnTbPlane = function (camera, cursorX, cursorY, canvas) {
+	      var initialDistance = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
 
-			this.mouseActions.push( action );
-			return true;
+	      if (camera.type == 'OrthographicCamera') {
+	        _this._v2_1.copy(_this.getCursorPosition(cursorX, cursorY, canvas));
 
-		};
+	        _this._v3_1.set(_this._v2_1.x, _this._v2_1.y, 0);
 
-		/**
-		 * Remove a mouse action by specifying its mouse/key combination
-		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
-		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
-		 * @returns {Boolean} True if the operation has been succesfully removed, false otherwise
-		 */
-		unsetMouseAction = ( mouse, key = null ) => {
+	        return _this._v3_1.clone();
+	      } else if (camera.type == 'PerspectiveCamera') {
+	        _this._v2_1.copy(_this.getCursorNDC(cursorX, cursorY, canvas)); //unproject cursor on the near plane
 
-			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
 
-				if ( this.mouseActions[ i ].mouse == mouse && this.mouseActions[ i ].key == key ) {
+	        _this._v3_1.set(_this._v2_1.x, _this._v2_1.y, -1);
 
-					this.mouseActions.splice( i, 1 );
-					return true;
+	        _this._v3_1.applyMatrix4(camera.projectionMatrixInverse);
 
-				}
+	        var rayDir = _this._v3_1.clone().normalize(); //unprojected ray direction
+	        //	  camera
+	        //		|\
+	        //		| \
+	        //		|  \
+	        //	h	|	\
+	        //		| 	 \
+	        //		| 	  \
+	        //	_ _ | _ _ _\ _ _  near plane
+	        //			l
 
-			}
 
-			return false;
+	        var h = _this._v3_1.z;
+	        var l = Math.sqrt(Math.pow(_this._v3_1.x, 2) + Math.pow(_this._v3_1.y, 2));
+	        var cameraGizmoDistance;
 
-		};
+	        if (initialDistance) {
+	          cameraGizmoDistance = _this._v3_1.setFromMatrixPosition(_this._cameraMatrixState0).distanceTo(_this._v3_2.setFromMatrixPosition(_this._gizmoMatrixState0));
+	        } else {
+	          cameraGizmoDistance = camera.position.distanceTo(_this._gizmos.position);
+	        }
+	        /*
+	         * calculate intersection point between unprojected ray and the plane
+	         *|y = mx + q
+	         *|y = 0
+	         *
+	         * x = -q/m
+	        */
 
-		/**
-		 * Return the operation associated to a mouse/keyboard combination
-		 * @param {*} mouse A mouse button (0, 1, 2) or 'WHEEL' for wheel notches
-		 * @param {*} key The keyboard modifier ('CTRL', 'SHIFT') or null if key is not needed
-		 * @returns The operation if it has been found, null otherwise
-		 */
-		getOpFromAction = ( mouse, key ) => {
 
-			let action;
+	        if (l == 0) {
+	          //ray aligned with camera
+	          rayDir.set(0, 0, 0);
+	          return rayDir;
+	        }
 
-			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	        var m = h / l;
+	        var q = cameraGizmoDistance;
+	        var x = -q / m;
+	        var rayLength = Math.sqrt(Math.pow(q, 2) + Math.pow(x, 2));
+	        rayDir.multiplyScalar(rayLength);
+	        rayDir.z = 0;
+	        return rayDir;
+	      }
+	    };
 
-				action = this.mouseActions[ i ];
-				if ( action.mouse == mouse && action.key == key ) {
+	    _this.updateMatrixState = function () {
+	      //update camera and gizmos state
+	      _this._cameraMatrixState.copy(_this.camera.matrix);
 
-					return action.operation;
+	      _this._gizmoMatrixState.copy(_this._gizmos.matrix);
 
-				}
+	      if (_this.camera.isOrthographicCamera) {
+	        _this._cameraProjectionState.copy(_this.camera.projectionMatrix);
 
-			}
+	        _this.camera.updateProjectionMatrix();
 
-			if ( key != null ) {
+	        _this._zoomState = _this.camera.zoom;
+	      } else if (_this.camera.isPerspectiveCamera) {
+	        _this._fovState = _this.camera.fov;
+	      }
+	    };
 
-				for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	    _this.updateTbState = function (newState, updateMatrices) {
+	      _this._state = newState;
 
-					action = this.mouseActions[ i ];
-					if ( action.mouse == mouse && action.key == null ) {
+	      if (updateMatrices) {
+	        _this.updateMatrixState();
+	      }
+	    };
 
-						return action.operation;
+	    _this.update = function () {
+	      var EPS = 0.000001;
 
-					}
+	      if (_this.target.equals(_this._currentTarget) === false) {
+	        _this._gizmos.position.copy(_this.target); //for correct radius calculation
 
-				}
 
-			}
+	        _this._tbRadius = _this.calculateTbRadius(_this.camera);
 
-			return null;
+	        _this.makeGizmos(_this.target, _this._tbRadius);
 
-		};
+	        _this._currentTarget.copy(_this.target);
+	      } //check min/max parameters
 
-		/**
-		 * Get the operation associated to mouse and key combination and returns the corresponding FSA state
-		 * @param {Number} mouse Mouse button
-		 * @param {String} key Keyboard modifier
-		 * @returns The FSA state obtained from the operation associated to mouse/keyboard combination
-		 */
-		getOpStateFromAction = ( mouse, key ) => {
 
-			let action;
+	      if (_this.camera.isOrthographicCamera) {
+	        //check zoom
+	        if (_this.camera.zoom > _this.maxZoom || _this.camera.zoom < _this.minZoom) {
+	          var newZoom = MathUtils.clamp(_this.camera.zoom, _this.minZoom, _this.maxZoom);
 
-			for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	          _this.applyTransformMatrix(_this.scale(newZoom / _this.camera.zoom, _this._gizmos.position, true));
+	        }
+	      } else if (_this.camera.isPerspectiveCamera) {
+	        //check distance
+	        var distance = _this.camera.position.distanceTo(_this._gizmos.position);
 
-				action = this.mouseActions[ i ];
-				if ( action.mouse == mouse && action.key == key ) {
+	        if (distance > _this.maxDistance + EPS || distance < _this.minDistance - EPS) {
+	          var newDistance = MathUtils.clamp(distance, _this.minDistance, _this.maxDistance);
 
-					return action.state;
+	          _this.applyTransformMatrix(_this.scale(newDistance / distance, _this._gizmos.position));
 
-				}
+	          _this.updateMatrixState();
+	        } //check fov
 
-			}
 
-			if ( key != null ) {
+	        if (_this.camera.fov < _this.minFov || _this.camera.fov > _this.maxFov) {
+	          _this.camera.fov = MathUtils.clamp(_this.camera.fov, _this.minFov, _this.maxFov);
 
-				for ( let i = 0; i < this.mouseActions.length; i ++ ) {
+	          _this.camera.updateProjectionMatrix();
+	        }
 
-					action = this.mouseActions[ i ];
-					if ( action.mouse == mouse && action.key == null ) {
+	        var oldRadius = _this._tbRadius;
+	        _this._tbRadius = _this.calculateTbRadius(_this.camera);
 
-						return action.state;
+	        if (oldRadius < _this._tbRadius - EPS || oldRadius > _this._tbRadius + EPS) {
+	          var scale = (_this._gizmos.scale.x + _this._gizmos.scale.y + _this._gizmos.scale.z) / 3;
+	          var newRadius = _this._tbRadius / scale;
+	          var curve = new EllipseCurve(0, 0, newRadius, newRadius);
+	          var points = curve.getPoints(_this._curvePts);
+	          var curveGeometry = new BufferGeometry().setFromPoints(points);
 
-					}
+	          for (var gizmo in _this._gizmos.children) {
+	            _this._gizmos.children[gizmo].geometry = curveGeometry;
+	          }
+	        }
+	      }
 
-				}
+	      _this.camera.lookAt(_this._gizmos.position);
+	    };
 
-			}
+	    _this.setStateFromJSON = function (json) {
+	      var state = JSON.parse(json);
 
-			return null;
+	      if (state.arcballState != undefined) {
+	        _this._cameraMatrixState.fromArray(state.arcballState.cameraMatrix.elements);
 
-		};
+	        _this._cameraMatrixState.decompose(_this.camera.position, _this.camera.quaternion, _this.camera.scale);
 
-		/**
-		 * Calculate the angle between two pointers
-		 * @param {PointerEvent} p1
-		 * @param {PointerEvent} p2
-		 * @returns {Number} The angle between two pointers in degrees
-		 */
-		getAngle = ( p1, p2 ) => {
+	        _this.camera.up.copy(state.arcballState.cameraUp);
 
-			return Math.atan2( p2.clientY - p1.clientY, p2.clientX - p1.clientX ) * 180 / Math.PI;
+	        _this.camera.near = state.arcballState.cameraNear;
+	        _this.camera.far = state.arcballState.cameraFar;
+	        _this.camera.zoom = state.arcballState.cameraZoom;
 
-		};
+	        if (_this.camera.isPerspectiveCamera) {
+	          _this.camera.fov = state.arcballState.cameraFov;
+	        }
 
-		/**
-		 * Update a PointerEvent inside current pointerevents array
-		 * @param {PointerEvent} event
-		 */
-		updateTouchEvent = ( event ) => {
+	        _this._gizmoMatrixState.fromArray(state.arcballState.gizmoMatrix.elements);
 
-			for ( let i = 0; i < this._touchCurrent.length; i ++ ) {
+	        _this._gizmoMatrixState.decompose(_this._gizmos.position, _this._gizmos.quaternion, _this._gizmos.scale);
 
-				if ( this._touchCurrent[ i ].pointerId == event.pointerId ) {
+	        _this.camera.updateMatrix();
 
-					this._touchCurrent.splice( i, 1, event );
-					break;
+	        _this.camera.updateProjectionMatrix();
 
-				}
+	        _this._gizmos.updateMatrix();
 
-			}
+	        _this._tbRadius = _this.calculateTbRadius(_this.camera);
+	        var gizmoTmp = new Matrix4().copy(_this._gizmoMatrixState0);
 
-		};
+	        _this.makeGizmos(_this._gizmos.position, _this._tbRadius);
 
-		/**
-		 * Apply a transformation matrix, to the camera and gizmos
-		 * @param {Object} transformation Object containing matrices to apply to camera and gizmos
-		 */
-		applyTransformMatrix( transformation ) {
+	        _this._gizmoMatrixState0.copy(gizmoTmp);
 
-			if ( transformation.camera != null ) {
+	        _this.camera.lookAt(_this._gizmos.position);
 
-				this._m4_1.copy( this._cameraMatrixState ).premultiply( transformation.camera );
-				this._m4_1.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
-				this.camera.updateMatrix();
+	        _this.updateTbState(STATE.IDLE, false);
 
-				//update camera up vector
-				if ( this._state == STATE.ROTATE || this._state == STATE.ZROTATE || this._state == STATE.ANIMATION_ROTATE ) {
+	        _this.dispatchEvent(_changeEvent$1);
+	      }
+	    };
 
-					this.camera.up.copy( this._upState ).applyQuaternion( this.camera.quaternion );
+	    _this.camera = null;
+	    _this.domElement = domElement;
+	    _this.scene = scene;
+	    _this.target = new Vector3();
+	    _this._currentTarget = new Vector3();
+	    _this.radiusFactor = 0.67;
+	    _this.mouseActions = [];
+	    _this._mouseOp = null; //global vectors and matrices that are used in some operations to avoid creating new objects every time (e.g. every time cursor moves)
 
-				}
+	    _this._v2_1 = new Vector2();
+	    _this._v3_1 = new Vector3();
+	    _this._v3_2 = new Vector3();
+	    _this._m4_1 = new Matrix4();
+	    _this._m4_2 = new Matrix4();
+	    _this._quat = new Quaternion(); //transformation matrices
 
-			}
+	    _this._translationMatrix = new Matrix4(); //matrix for translation operation
 
-			if ( transformation.gizmos != null ) {
+	    _this._rotationMatrix = new Matrix4(); //matrix for rotation operation
 
-				this._m4_1.copy( this._gizmoMatrixState ).premultiply( transformation.gizmos );
-				this._m4_1.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-				this._gizmos.updateMatrix();
+	    _this._scaleMatrix = new Matrix4(); //matrix for scaling operation
 
-			}
+	    _this._rotationAxis = new Vector3(); //axis for rotate operation
+	    //camera state
 
-			if ( this._state == STATE.SCALE || this._state == STATE.FOCUS || this._state == STATE.ANIMATION_FOCUS ) {
+	    _this._cameraMatrixState = new Matrix4();
+	    _this._cameraProjectionState = new Matrix4();
+	    _this._fovState = 1;
+	    _this._upState = new Vector3();
+	    _this._zoomState = 1;
+	    _this._nearPos = 0;
+	    _this._farPos = 0;
+	    _this._gizmoMatrixState = new Matrix4(); //initial values
 
-				this._tbRadius = this.calculateTbRadius( this.camera );
+	    _this._up0 = new Vector3();
+	    _this._zoom0 = 1;
+	    _this._fov0 = 0;
+	    _this._initialNear = 0;
+	    _this._nearPos0 = 0;
+	    _this._initialFar = 0;
+	    _this._farPos0 = 0;
+	    _this._cameraMatrixState0 = new Matrix4();
+	    _this._gizmoMatrixState0 = new Matrix4(); //pointers array
 
-				if ( this.adjustNearFar ) {
+	    _this._button = -1;
+	    _this._touchStart = [];
+	    _this._touchCurrent = [];
+	    _this._input = INPUT.NONE; //two fingers touch interaction
 
-					const cameraDistance = this.camera.position.distanceTo( this._gizmos.position );
+	    _this._switchSensibility = 32; //minimum movement to be performed to fire single pan start after the second finger has been released
 
-					const bb = new Box3();
-					bb.setFromObject( this._gizmos );
-					const sphere = new Sphere();
-					bb.getBoundingSphere( sphere );
+	    _this._startFingerDistance = 0; //distance between two fingers
 
-					const adjustedNearPosition = Math.max( this._nearPos0, sphere.radius + sphere.center.length() );
-					const regularNearPosition = cameraDistance - this._initialNear;
+	    _this._currentFingerDistance = 0;
+	    _this._startFingerRotation = 0; //amount of rotation performed with two fingers
 
-					const minNearPos = Math.min( adjustedNearPosition, regularNearPosition );
-					this.camera.near = cameraDistance - minNearPos;
+	    _this._currentFingerRotation = 0; //double tap
 
+	    _this._devPxRatio = 0;
+	    _this._downValid = true;
+	    _this._nclicks = 0;
+	    _this._downEvents = [];
+	    _this._downStart = 0; //pointerDown time
 
-					const adjustedFarPosition = Math.min( this._farPos0, - sphere.radius + sphere.center.length() );
-					const regularFarPosition = cameraDistance - this._initialFar;
+	    _this._clickStart = 0; //first click time
 
-					const minFarPos = Math.min( adjustedFarPosition, regularFarPosition );
-					this.camera.far = cameraDistance - minFarPos;
+	    _this._maxDownTime = 250;
+	    _this._maxInterval = 300;
+	    _this._posThreshold = 24;
+	    _this._movementThreshold = 24; //cursor positions
 
-					this.camera.updateProjectionMatrix();
+	    _this._currentCursorPosition = new Vector3();
+	    _this._startCursorPosition = new Vector3(); //grid
 
-				} else {
+	    _this._grid = null; //grid to be visualized during pan operation
 
-					let update = false;
+	    _this._gridPosition = new Vector3(); //gizmos
 
-					if ( this.camera.near != this._initialNear ) {
+	    _this._gizmos = new Group();
+	    _this._curvePts = 128; //animations
 
-						this.camera.near = this._initialNear;
-						update = true;
+	    _this._timeStart = -1; //initial time
 
-					}
+	    _this._animationId = -1; //focus animation
 
-					if ( this.camera.far != this._initialFar ) {
+	    _this.focusAnimationTime = 500; //duration of focus animation in ms
+	    //rotate animation
 
-						this.camera.far = this._initialFar;
-						update = true;
+	    _this._timePrev = 0; //time at which previous rotate operation has been detected
 
-					}
+	    _this._timeCurrent = 0; //time at which current rotate operation has been detected
 
-					if ( update ) {
+	    _this._anglePrev = 0; //angle of previous rotation
 
-						this.camera.updateProjectionMatrix();
+	    _this._angleCurrent = 0; //angle of current rotation
 
-					}
+	    _this._cursorPosPrev = new Vector3(); //cursor position when previous rotate operation has been detected
 
-				}
+	    _this._cursorPosCurr = new Vector3(); //cursor position when current rotate operation has been detected
 
-			}
+	    _this._wPrev = 0; //angular velocity of the previous rotate operation
 
-		}
+	    _this._wCurr = 0; //angular velocity of the current rotate operation
+	    //parameters
 
-		/**
-		 * Calculate the angular speed
-		 * @param {Number} p0 Position at t0
-		 * @param {Number} p1 Position at t1
-		 * @param {Number} t0 Initial time in milliseconds
-		 * @param {Number} t1 Ending time in milliseconds
-		 */
-		calculateAngularSpeed = ( p0, p1, t0, t1 ) => {
+	    _this.adjustNearFar = false;
+	    _this.scaleFactor = 1.1; //zoom/distance multiplier
 
-			const s = p1 - p0;
-			const t = ( t1 - t0 ) / 1000;
-			if ( t == 0 ) {
+	    _this.dampingFactor = 25;
+	    _this.wMax = 20; //maximum angular velocity allowed
 
-				return 0;
+	    _this.enableAnimations = true; //if animations should be performed
 
-			}
+	    _this.enableGrid = false; //if grid should be showed during pan operation
 
-			return s / t;
+	    _this.cursorZoom = false; //if wheel zoom should be cursor centered
 
-		};
+	    _this.minFov = 5;
+	    _this.maxFov = 90;
+	    _this.enabled = true;
+	    _this.enablePan = true;
+	    _this.enableRotate = true;
+	    _this.enableZoom = true;
+	    _this.enableGizmos = true;
+	    _this.minDistance = 0;
+	    _this.maxDistance = Infinity;
+	    _this.minZoom = 0;
+	    _this.maxZoom = Infinity; //trackball parameters
 
-		/**
-		 * Calculate the distance between two pointers
-		 * @param {PointerEvent} p0 The first pointer
-		 * @param {PointerEvent} p1 The second pointer
-		 * @returns {number} The distance between the two pointers
-		 */
-		calculatePointersDistance = ( p0, p1 ) => {
+	    _this._tbRadius = 1; //FSA
 
-			return Math.sqrt( Math.pow( p1.clientX - p0.clientX, 2 ) + Math.pow( p1.clientY - p0.clientY, 2 ) );
+	    _this._state = STATE.IDLE;
 
-		};
+	    _this.setCamera(_camera);
 
-		/**
-		 * Calculate the rotation axis as the vector perpendicular between two vectors
-		 * @param {Vector3} vec1 The first vector
-		 * @param {Vector3} vec2 The second vector
-		 * @returns {Vector3} The normalized rotation axis
-		 */
-		calculateRotationAxis = ( vec1, vec2 ) => {
+	    if (_this.scene != null) {
+	      _this.scene.add(_this._gizmos);
+	    }
 
-			this._rotationMatrix.extractRotation( this._cameraMatrixState );
-			this._quat.setFromRotationMatrix( this._rotationMatrix );
+	    _this.domElement.style.touchAction = 'none';
+	    _this._devPxRatio = window.devicePixelRatio;
 
-			this._rotationAxis.crossVectors( vec1, vec2 ).applyQuaternion( this._quat );
-			return this._rotationAxis.normalize().clone();
+	    _this.initializeMouseActions();
 
-		};
+	    _this.domElement.addEventListener('contextmenu', _this.onContextMenu);
 
-		/**
-		 * Calculate the trackball radius so that gizmo's diamater will be 2/3 of the minimum side of the camera frustum
-		 * @param {Camera} camera
-		 * @returns {Number} The trackball radius
-		 */
-		calculateTbRadius = ( camera ) => {
+	    _this.domElement.addEventListener('wheel', _this.onWheel);
 
-			const distance = camera.position.distanceTo( this._gizmos.position );
+	    _this.domElement.addEventListener('pointerdown', _this.onPointerDown);
 
-			if ( camera.type == 'PerspectiveCamera' ) {
+	    _this.domElement.addEventListener('pointercancel', _this.onPointerCancel);
 
-				const halfFovV = MathUtils.DEG2RAD * camera.fov * 0.5; //vertical fov/2 in radians
-				const halfFovH = Math.atan( ( camera.aspect ) * Math.tan( halfFovV ) ); //horizontal fov/2 in radians
-				return Math.tan( Math.min( halfFovV, halfFovH ) ) * distance * this.radiusFactor;
+	    window.addEventListener('resize', _this.onWindowResize);
+	    return _this;
+	  } //listeners
 
-			} else if ( camera.type == 'OrthographicCamera' ) {
 
-				return Math.min( camera.top, camera.right ) * this.radiusFactor;
+	  _createClass(ArcballControls, [{
+	    key: "applyTransformMatrix",
+	    value:
+	    /**
+	     * Apply a transformation matrix, to the camera and gizmos
+	     * @param {Object} transformation Object containing matrices to apply to camera and gizmos
+	     */
+	    function applyTransformMatrix(transformation) {
+	      if (transformation.camera != null) {
+	        this._m4_1.copy(this._cameraMatrixState).premultiply(transformation.camera);
 
-			}
+	        this._m4_1.decompose(this.camera.position, this.camera.quaternion, this.camera.scale);
 
-		};
+	        this.camera.updateMatrix(); //update camera up vector
 
-		/**
-		 * Focus operation consist of positioning the point of interest in front of the camera and a slightly zoom in
-		 * @param {Vector3} point The point of interest
-		 * @param {Number} size Scale factor
-		 * @param {Number} amount Amount of operation to be completed (used for focus animations, default is complete full operation)
-		 */
-		focus = ( point, size, amount = 1 ) => {
+	        if (this._state == STATE.ROTATE || this._state == STATE.ZROTATE || this._state == STATE.ANIMATION_ROTATE) {
+	          this.camera.up.copy(this._upState).applyQuaternion(this.camera.quaternion);
+	        }
+	      }
 
-			//move center of camera (along with gizmos) towards point of interest
-			_offset.copy( point ).sub( this._gizmos.position ).multiplyScalar( amount );
-			this._translationMatrix.makeTranslation( _offset.x, _offset.y, _offset.z );
+	      if (transformation.gizmos != null) {
+	        this._m4_1.copy(this._gizmoMatrixState).premultiply(transformation.gizmos);
 
-			_gizmoMatrixStateTemp.copy( this._gizmoMatrixState );
-			this._gizmoMatrixState.premultiply( this._translationMatrix );
-			this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
+	        this._m4_1.decompose(this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale);
 
-			_cameraMatrixStateTemp.copy( this._cameraMatrixState );
-			this._cameraMatrixState.premultiply( this._translationMatrix );
-			this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+	        this._gizmos.updateMatrix();
+	      }
 
-			//apply zoom
-			if ( this.enableZoom ) {
+	      if (this._state == STATE.SCALE || this._state == STATE.FOCUS || this._state == STATE.ANIMATION_FOCUS) {
+	        this._tbRadius = this.calculateTbRadius(this.camera);
 
-				this.applyTransformMatrix( this.scale( size, this._gizmos.position ) );
+	        if (this.adjustNearFar) {
+	          var cameraDistance = this.camera.position.distanceTo(this._gizmos.position);
+	          var bb = new Box3();
+	          bb.setFromObject(this._gizmos);
+	          var sphere = new Sphere();
+	          bb.getBoundingSphere(sphere);
+	          var adjustedNearPosition = Math.max(this._nearPos0, sphere.radius + sphere.center.length());
+	          var regularNearPosition = cameraDistance - this._initialNear;
+	          var minNearPos = Math.min(adjustedNearPosition, regularNearPosition);
+	          this.camera.near = cameraDistance - minNearPos;
+	          var adjustedFarPosition = Math.min(this._farPos0, -sphere.radius + sphere.center.length());
+	          var regularFarPosition = cameraDistance - this._initialFar;
+	          var minFarPos = Math.min(adjustedFarPosition, regularFarPosition);
+	          this.camera.far = cameraDistance - minFarPos;
+	          this.camera.updateProjectionMatrix();
+	        } else {
+	          var update = false;
 
-			}
+	          if (this.camera.near != this._initialNear) {
+	            this.camera.near = this._initialNear;
+	            update = true;
+	          }
 
-			this._gizmoMatrixState.copy( _gizmoMatrixStateTemp );
-			this._cameraMatrixState.copy( _cameraMatrixStateTemp );
+	          if (this.camera.far != this._initialFar) {
+	            this.camera.far = this._initialFar;
+	            update = true;
+	          }
 
-		};
+	          if (update) {
+	            this.camera.updateProjectionMatrix();
+	          }
+	        }
+	      }
+	    }
+	    /**
+	     * Calculate the angular speed
+	     * @param {Number} p0 Position at t0
+	     * @param {Number} p1 Position at t1
+	     * @param {Number} t0 Initial time in milliseconds
+	     * @param {Number} t1 Ending time in milliseconds
+	     */
 
-		/**
-		 * Draw a grid and add it to the scene
-		 */
-		drawGrid = () => {
+	  }, {
+	    key: "setGizmosVisible",
+	    value:
+	    /**
+	     * Set gizmos visibility
+	     * @param {Boolean} value Value of gizmos visibility
+	     */
+	    function setGizmosVisible(value) {
+	      this._gizmos.visible = value;
+	      this.dispatchEvent(_changeEvent$1);
+	    }
+	    /**
+	     * Set gizmos radius factor and redraws gizmos
+	     * @param {Float} value Value of radius factor
+	     */
 
-			if ( this.scene != null ) {
+	  }, {
+	    key: "setTbRadius",
+	    value: function setTbRadius(value) {
+	      this.radiusFactor = value;
+	      this._tbRadius = this.calculateTbRadius(this.camera);
+	      var curve = new EllipseCurve(0, 0, this._tbRadius, this._tbRadius);
+	      var points = curve.getPoints(this._curvePts);
+	      var curveGeometry = new BufferGeometry().setFromPoints(points);
 
-				const color = 0x888888;
-				const multiplier = 3;
-				let size, divisions, maxLength, tick;
+	      for (var gizmo in this._gizmos.children) {
+	        this._gizmos.children[gizmo].geometry = curveGeometry;
+	      }
 
-				if ( this.camera.isOrthographicCamera ) {
+	      this.dispatchEvent(_changeEvent$1);
+	    }
+	    /**
+	     * Creates the rotation gizmos matching trackball center and radius
+	     * @param {Vector3} tbCenter The trackball center
+	     * @param {number} tbRadius The trackball radius
+	     */
 
-					const width = this.camera.right - this.camera.left;
-					const height = this.camera.bottom - this.camera.top;
+	  }, {
+	    key: "setTransformationMatrices",
+	    value:
+	    /**
+	     * Set values in transformation object
+	     * @param {Matrix4} camera Transformation to be applied to the camera
+	     * @param {Matrix4} gizmos Transformation to be applied to gizmos
+	     */
+	    function setTransformationMatrices() {
+	      var camera = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	      var gizmos = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
-					maxLength = Math.max( width, height );
-					tick = maxLength / 20;
+	      if (camera != null) {
+	        if (_transformation.camera != null) {
+	          _transformation.camera.copy(camera);
+	        } else {
+	          _transformation.camera = camera.clone();
+	        }
+	      } else {
+	        _transformation.camera = null;
+	      }
 
-					size = maxLength / this.camera.zoom * multiplier;
-					divisions = size / tick * this.camera.zoom;
+	      if (gizmos != null) {
+	        if (_transformation.gizmos != null) {
+	          _transformation.gizmos.copy(gizmos);
+	        } else {
+	          _transformation.gizmos = gizmos.clone();
+	        }
+	      } else {
+	        _transformation.gizmos = null;
+	      }
+	    }
+	    /**
+	     * Rotate camera around its direction axis passing by a given point by a given angle
+	     * @param {Vector3} point The point where the rotation axis is passing trough
+	     * @param {Number} angle Angle in radians
+	     * @returns The computed transormation matix
+	     */
 
-				} else if ( this.camera.isPerspectiveCamera ) {
+	  }, {
+	    key: "getRaycaster",
+	    value: function getRaycaster() {
+	      return _raycaster$1;
+	    }
+	    /**
+	     * Unproject the cursor on the 3D object surface
+	     * @param {Vector2} cursor Cursor coordinates in NDC
+	     * @param {Camera} camera Virtual camera
+	     * @returns {Vector3} The point of intersection with the model, if exist, null otherwise
+	     */
 
-					const distance = this.camera.position.distanceTo( this._gizmos.position );
-					const halfFovV = MathUtils.DEG2RAD * this.camera.fov * 0.5;
-					const halfFovH = Math.atan( ( this.camera.aspect ) * Math.tan( halfFovV ) );
+	  }]);
 
-					maxLength = Math.tan( Math.max( halfFovV, halfFovH ) ) * distance * 2;
-					tick = maxLength / 20;
-
-					size = maxLength * multiplier;
-					divisions = size / tick;
-
-				}
-
-				if ( this._grid == null ) {
-
-					this._grid = new GridHelper( size, divisions, color, color );
-					this._grid.position.copy( this._gizmos.position );
-					this._gridPosition.copy( this._grid.position );
-					this._grid.quaternion.copy( this.camera.quaternion );
-					this._grid.rotateX( Math.PI * 0.5 );
-
-					this.scene.add( this._grid );
-
-				}
-
-			}
-
-		};
-
-		/**
-		 * Remove all listeners, stop animations and clean scene
-		 */
-		dispose = () => {
-
-			if ( this._animationId != - 1 ) {
-
-				window.cancelAnimationFrame( this._animationId );
-
-			}
-
-			this.domElement.removeEventListener( 'pointerdown', this.onPointerDown );
-			this.domElement.removeEventListener( 'pointercancel', this.onPointerCancel );
-			this.domElement.removeEventListener( 'wheel', this.onWheel );
-			this.domElement.removeEventListener( 'contextmenu', this.onContextMenu );
-
-			window.removeEventListener( 'pointermove', this.onPointerMove );
-			window.removeEventListener( 'pointerup', this.onPointerUp );
-
-			window.removeEventListener( 'resize', this.onWindowResize );
-
-			if ( this.scene !== null ) this.scene.remove( this._gizmos );
-			this.disposeGrid();
-
-		};
-
-		/**
-		 * remove the grid from the scene
-		 */
-		disposeGrid = () => {
-
-			if ( this._grid != null && this.scene != null ) {
-
-				this.scene.remove( this._grid );
-				this._grid = null;
-
-			}
-
-		};
-
-		/**
-		 * Compute the easing out cubic function for ease out effect in animation
-		 * @param {Number} t The absolute progress of the animation in the bound of 0 (beginning of the) and 1 (ending of animation)
-		 * @returns {Number} Result of easing out cubic at time t
-		 */
-		easeOutCubic = ( t ) => {
-
-			return 1 - Math.pow( 1 - t, 3 );
-
-		};
-
-		/**
-		 * Make rotation gizmos more or less visible
-		 * @param {Boolean} isActive If true, make gizmos more visible
-		 */
-		activateGizmos = ( isActive ) => {
-
-			const gizmoX = this._gizmos.children[ 0 ];
-			const gizmoY = this._gizmos.children[ 1 ];
-			const gizmoZ = this._gizmos.children[ 2 ];
-
-			if ( isActive ) {
-
-				gizmoX.material.setValues( { opacity: 1 } );
-				gizmoY.material.setValues( { opacity: 1 } );
-				gizmoZ.material.setValues( { opacity: 1 } );
-
-			} else {
-
-				gizmoX.material.setValues( { opacity: 0.6 } );
-				gizmoY.material.setValues( { opacity: 0.6 } );
-				gizmoZ.material.setValues( { opacity: 0.6 } );
-
-			}
-
-		};
-
-		/**
-		 * Calculate the cursor position in NDC
-		 * @param {number} x Cursor horizontal coordinate within the canvas
-		 * @param {number} y Cursor vertical coordinate within the canvas
-		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
-		 * @returns {Vector2} Cursor normalized position inside the canvas
-		 */
-		getCursorNDC = ( cursorX, cursorY, canvas ) => {
-
-			const canvasRect = canvas.getBoundingClientRect();
-			this._v2_1.setX( ( ( cursorX - canvasRect.left ) / canvasRect.width ) * 2 - 1 );
-			this._v2_1.setY( ( ( canvasRect.bottom - cursorY ) / canvasRect.height ) * 2 - 1 );
-			return this._v2_1.clone();
-
-		};
-
-		/**
-		 * Calculate the cursor position inside the canvas x/y coordinates with the origin being in the center of the canvas
-		 * @param {Number} x Cursor horizontal coordinate within the canvas
-		 * @param {Number} y Cursor vertical coordinate within the canvas
-		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
-		 * @returns {Vector2} Cursor position inside the canvas
-		 */
-		getCursorPosition = ( cursorX, cursorY, canvas ) => {
-
-			this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
-			this._v2_1.x *= ( this.camera.right - this.camera.left ) * 0.5;
-			this._v2_1.y *= ( this.camera.top - this.camera.bottom ) * 0.5;
-			return this._v2_1.clone();
-
-		};
-
-		/**
-		 * Set the camera to be controlled
-		 * @param {Camera} camera The virtual camera to be controlled
-		 */
-		setCamera = ( camera ) => {
-
-			camera.lookAt( this.target );
-			camera.updateMatrix();
-
-			//setting state
-			if ( camera.type == 'PerspectiveCamera' ) {
-
-				this._fov0 = camera.fov;
-				this._fovState = camera.fov;
-
-			}
-
-			this._cameraMatrixState0.copy( camera.matrix );
-			this._cameraMatrixState.copy( this._cameraMatrixState0 );
-			this._cameraProjectionState.copy( camera.projectionMatrix );
-			this._zoom0 = camera.zoom;
-			this._zoomState = this._zoom0;
-
-			this._initialNear = camera.near;
-			this._nearPos0 = camera.position.distanceTo( this.target ) - camera.near;
-			this._nearPos = this._initialNear;
-
-			this._initialFar = camera.far;
-			this._farPos0 = camera.position.distanceTo( this.target ) - camera.far;
-			this._farPos = this._initialFar;
-
-			this._up0.copy( camera.up );
-			this._upState.copy( camera.up );
-
-			this.camera = camera;
-			this.camera.updateProjectionMatrix();
-
-			//making gizmos
-			this._tbRadius = this.calculateTbRadius( camera );
-			this.makeGizmos( this.target, this._tbRadius );
-
-		};
-
-		/**
-		 * Set gizmos visibility
-		 * @param {Boolean} value Value of gizmos visibility
-		 */
-		setGizmosVisible( value ) {
-
-			this._gizmos.visible = value;
-			this.dispatchEvent( _changeEvent$1 );
-
-		}
-
-		/**
-		 * Set gizmos radius factor and redraws gizmos
-		 * @param {Float} value Value of radius factor
-		 */
-		setTbRadius( value ) {
-
-			this.radiusFactor = value;
-			this._tbRadius = this.calculateTbRadius( this.camera );
-
-			const curve = new EllipseCurve( 0, 0, this._tbRadius, this._tbRadius );
-			const points = curve.getPoints( this._curvePts );
-			const curveGeometry = new BufferGeometry().setFromPoints( points );
-
-
-			for ( const gizmo in this._gizmos.children ) {
-
-				this._gizmos.children[ gizmo ].geometry = curveGeometry;
-
-			}
-
-			this.dispatchEvent( _changeEvent$1 );
-
-		}
-
-		/**
-		 * Creates the rotation gizmos matching trackball center and radius
-		 * @param {Vector3} tbCenter The trackball center
-		 * @param {number} tbRadius The trackball radius
-		 */
-		makeGizmos = ( tbCenter, tbRadius ) => {
-
-			const curve = new EllipseCurve( 0, 0, tbRadius, tbRadius );
-			const points = curve.getPoints( this._curvePts );
-
-			//geometry
-			const curveGeometry = new BufferGeometry().setFromPoints( points );
-
-			//material
-			const curveMaterialX = new LineBasicMaterial( { color: 0xff8080, fog: false, transparent: true, opacity: 0.6 } );
-			const curveMaterialY = new LineBasicMaterial( { color: 0x80ff80, fog: false, transparent: true, opacity: 0.6 } );
-			const curveMaterialZ = new LineBasicMaterial( { color: 0x8080ff, fog: false, transparent: true, opacity: 0.6 } );
-
-			//line
-			const gizmoX = new Line( curveGeometry, curveMaterialX );
-			const gizmoY = new Line( curveGeometry, curveMaterialY );
-			const gizmoZ = new Line( curveGeometry, curveMaterialZ );
-
-			const rotation = Math.PI * 0.5;
-			gizmoX.rotation.x = rotation;
-			gizmoY.rotation.y = rotation;
-
-
-			//setting state
-			this._gizmoMatrixState0.identity().setPosition( tbCenter );
-			this._gizmoMatrixState.copy( this._gizmoMatrixState0 );
-
-			if ( this.camera.zoom != 1 ) {
-
-				//adapt gizmos size to camera zoom
-				const size = 1 / this.camera.zoom;
-				this._scaleMatrix.makeScale( size, size, size );
-				this._translationMatrix.makeTranslation( - tbCenter.x, - tbCenter.y, - tbCenter.z );
-
-				this._gizmoMatrixState.premultiply( this._translationMatrix ).premultiply( this._scaleMatrix );
-				this._translationMatrix.makeTranslation( tbCenter.x, tbCenter.y, tbCenter.z );
-				this._gizmoMatrixState.premultiply( this._translationMatrix );
-
-			}
-
-			this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-
-			this._gizmos.clear();
-
-			this._gizmos.add( gizmoX );
-			this._gizmos.add( gizmoY );
-			this._gizmos.add( gizmoZ );
-
-		};
-
-		/**
-		 * Perform animation for focus operation
-		 * @param {Number} time Instant in which this function is called as performance.now()
-		 * @param {Vector3} point Point of interest for focus operation
-		 * @param {Matrix4} cameraMatrix Camera matrix
-		 * @param {Matrix4} gizmoMatrix Gizmos matrix
-		 */
-		onFocusAnim = ( time, point, cameraMatrix, gizmoMatrix ) => {
-
-			if ( this._timeStart == - 1 ) {
-
-				//animation start
-				this._timeStart = time;
-
-			}
-
-			if ( this._state == STATE.ANIMATION_FOCUS ) {
-
-				const deltaTime = time - this._timeStart;
-				const animTime = deltaTime / this.focusAnimationTime;
-
-				this._gizmoMatrixState.copy( gizmoMatrix );
-
-				if ( animTime >= 1 ) {
-
-					//animation end
-
-					this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-
-					this.focus( point, this.scaleFactor );
-
-					this._timeStart = - 1;
-					this.updateTbState( STATE.IDLE, false );
-					this.activateGizmos( false );
-
-					this.dispatchEvent( _changeEvent$1 );
-
-				} else {
-
-					const amount = this.easeOutCubic( animTime );
-					const size = ( ( 1 - amount ) + ( this.scaleFactor * amount ) );
-
-					this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-					this.focus( point, size, amount );
-
-					this.dispatchEvent( _changeEvent$1 );
-					const self = this;
-					this._animationId = window.requestAnimationFrame( function ( t ) {
-
-						self.onFocusAnim( t, point, cameraMatrix, gizmoMatrix.clone() );
-
-					} );
-
-				}
-
-			} else {
-
-				//interrupt animation
-
-				this._animationId = - 1;
-				this._timeStart = - 1;
-
-			}
-
-		};
-
-		/**
-		 * Perform animation for rotation operation
-		 * @param {Number} time Instant in which this function is called as performance.now()
-		 * @param {Vector3} rotationAxis Rotation axis
-		 * @param {number} w0 Initial angular velocity
-		 */
-		onRotationAnim = ( time, rotationAxis, w0 ) => {
-
-			if ( this._timeStart == - 1 ) {
-
-				//animation start
-				this._anglePrev = 0;
-				this._angleCurrent = 0;
-				this._timeStart = time;
-
-			}
-
-			if ( this._state == STATE.ANIMATION_ROTATE ) {
-
-				//w = w0 + alpha * t
-				const deltaTime = ( time - this._timeStart ) / 1000;
-				const w = w0 + ( ( - this.dampingFactor ) * deltaTime );
-
-				if ( w > 0 ) {
-
-					//tetha = 0.5 * alpha * t^2 + w0 * t + tetha0
-					this._angleCurrent = 0.5 * ( - this.dampingFactor ) * Math.pow( deltaTime, 2 ) + w0 * deltaTime + 0;
-					this.applyTransformMatrix( this.rotate( rotationAxis, this._angleCurrent ) );
-					this.dispatchEvent( _changeEvent$1 );
-					const self = this;
-					this._animationId = window.requestAnimationFrame( function ( t ) {
-
-						self.onRotationAnim( t, rotationAxis, w0 );
-
-					} );
-
-				} else {
-
-					this._animationId = - 1;
-					this._timeStart = - 1;
-
-					this.updateTbState( STATE.IDLE, false );
-					this.activateGizmos( false );
-
-					this.dispatchEvent( _changeEvent$1 );
-
-				}
-
-			} else {
-
-				//interrupt animation
-
-				this._animationId = - 1;
-				this._timeStart = - 1;
-
-				if ( this._state != STATE.ROTATE ) {
-
-					this.activateGizmos( false );
-					this.dispatchEvent( _changeEvent$1 );
-
-				}
-
-			}
-
-		};
-
-
-		/**
-		 * Perform pan operation moving camera between two points
-		 * @param {Vector3} p0 Initial point
-		 * @param {Vector3} p1 Ending point
-		 * @param {Boolean} adjust If movement should be adjusted considering camera distance (Perspective only)
-		 */
-		pan = ( p0, p1, adjust = false ) => {
-
-			const movement = p0.clone().sub( p1 );
-
-			if ( this.camera.isOrthographicCamera ) {
-
-				//adjust movement amount
-				movement.multiplyScalar( 1 / this.camera.zoom );
-
-			} else if ( this.camera.isPerspectiveCamera && adjust ) {
-
-				//adjust movement amount
-				this._v3_1.setFromMatrixPosition( this._cameraMatrixState0 );	//camera's initial position
-				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState0 );	//gizmo's initial position
-				const distanceFactor = this._v3_1.distanceTo( this._v3_2 ) / this.camera.position.distanceTo( this._gizmos.position );
-				movement.multiplyScalar( 1 / distanceFactor );
-
-			}
-
-			this._v3_1.set( movement.x, movement.y, 0 ).applyQuaternion( this.camera.quaternion );
-
-			this._m4_1.makeTranslation( this._v3_1.x, this._v3_1.y, this._v3_1.z );
-
-			this.setTransformationMatrices( this._m4_1, this._m4_1 );
-			return _transformation;
-
-		};
-
-		/**
-		 * Reset trackball
-		 */
-		reset = () => {
-
-			this.camera.zoom = this._zoom0;
-
-			if ( this.camera.isPerspectiveCamera ) {
-
-				this.camera.fov = this._fov0;
-
-			}
-
-			this.camera.near = this._nearPos;
-			this.camera.far = this._farPos;
-			this._cameraMatrixState.copy( this._cameraMatrixState0 );
-			this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
-			this.camera.up.copy( this._up0 );
-
-			this.camera.updateMatrix();
-			this.camera.updateProjectionMatrix();
-
-			this._gizmoMatrixState.copy( this._gizmoMatrixState0 );
-			this._gizmoMatrixState0.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-			this._gizmos.updateMatrix();
-
-			this._tbRadius = this.calculateTbRadius( this.camera );
-			this.makeGizmos( this._gizmos.position, this._tbRadius );
-
-			this.camera.lookAt( this._gizmos.position );
-
-			this.updateTbState( STATE.IDLE, false );
-
-			this.dispatchEvent( _changeEvent$1 );
-
-		};
-
-		/**
-		 * Rotate the camera around an axis passing by trackball's center
-		 * @param {Vector3} axis Rotation axis
-		 * @param {number} angle Angle in radians
-		 * @returns {Object} Object with 'camera' field containing transformation matrix resulting from the operation to be applied to the camera
-		 */
-		rotate = ( axis, angle ) => {
-
-			const point = this._gizmos.position; //rotation center
-			this._translationMatrix.makeTranslation( - point.x, - point.y, - point.z );
-			this._rotationMatrix.makeRotationAxis( axis, - angle );
-
-			//rotate camera
-			this._m4_1.makeTranslation( point.x, point.y, point.z );
-			this._m4_1.multiply( this._rotationMatrix );
-			this._m4_1.multiply( this._translationMatrix );
-
-			this.setTransformationMatrices( this._m4_1 );
-
-			return _transformation;
-
-		};
-
-		copyState = () => {
-
-			let state;
-			if ( this.camera.isOrthographicCamera ) {
-
-				state = JSON.stringify( { arcballState: {
-
-					cameraFar: this.camera.far,
-					cameraMatrix: this.camera.matrix,
-					cameraNear: this.camera.near,
-					cameraUp: this.camera.up,
-					cameraZoom: this.camera.zoom,
-					gizmoMatrix: this._gizmos.matrix
-
-				} } );
-
-			} else if ( this.camera.isPerspectiveCamera ) {
-
-				state = JSON.stringify( { arcballState: {
-					cameraFar: this.camera.far,
-					cameraFov: this.camera.fov,
-					cameraMatrix: this.camera.matrix,
-					cameraNear: this.camera.near,
-					cameraUp: this.camera.up,
-					cameraZoom: this.camera.zoom,
-					gizmoMatrix: this._gizmos.matrix
-
-				} } );
-
-			}
-
-			navigator.clipboard.writeText( state );
-
-		};
-
-		pasteState = () => {
-
-			const self = this;
-			navigator.clipboard.readText().then( function resolved( value ) {
-
-				self.setStateFromJSON( value );
-
-			} );
-
-		};
-
-		/**
-		 * Save the current state of the control. This can later be recover with .reset
-		 */
-		saveState = () => {
-
-			this._cameraMatrixState0.copy( this.camera.matrix );
-			this._gizmoMatrixState0.copy( this._gizmos.matrix );
-			this._nearPos = this.camera.near;
-			this._farPos = this.camera.far;
-			this._zoom0 = this.camera.zoom;
-			this._up0.copy( this.camera.up );
-
-			if ( this.camera.isPerspectiveCamera ) {
-
-				this._fov0 = this.camera.fov;
-
-			}
-
-		};
-
-		/**
-		 * Perform uniform scale operation around a given point
-		 * @param {Number} size Scale factor
-		 * @param {Vector3} point Point around which scale
-		 * @param {Boolean} scaleGizmos If gizmos should be scaled (Perspective only)
-		 * @returns {Object} Object with 'camera' and 'gizmo' fields containing transformation matrices resulting from the operation to be applied to the camera and gizmos
-		 */
-		scale = ( size, point, scaleGizmos = true ) => {
-
-			_scalePointTemp.copy( point );
-			let sizeInverse = 1 / size;
-
-			if ( this.camera.isOrthographicCamera ) {
-
-				//camera zoom
-				this.camera.zoom = this._zoomState;
-				this.camera.zoom *= size;
-
-				//check min and max zoom
-				if ( this.camera.zoom > this.maxZoom ) {
-
-					this.camera.zoom = this.maxZoom;
-					sizeInverse = this._zoomState / this.maxZoom;
-
-				} else if ( this.camera.zoom < this.minZoom ) {
-
-					this.camera.zoom = this.minZoom;
-					sizeInverse = this._zoomState / this.minZoom;
-
-				}
-
-				this.camera.updateProjectionMatrix();
-
-				this._v3_1.setFromMatrixPosition( this._gizmoMatrixState );	//gizmos position
-
-				//scale gizmos so they appear in the same spot having the same dimension
-				this._scaleMatrix.makeScale( sizeInverse, sizeInverse, sizeInverse );
-				this._translationMatrix.makeTranslation( - this._v3_1.x, - this._v3_1.y, - this._v3_1.z );
-
-				this._m4_2.makeTranslation( this._v3_1.x, this._v3_1.y, this._v3_1.z ).multiply( this._scaleMatrix );
-				this._m4_2.multiply( this._translationMatrix );
-
-
-				//move camera and gizmos to obtain pinch effect
-				_scalePointTemp.sub( this._v3_1 );
-
-				const amount = _scalePointTemp.clone().multiplyScalar( sizeInverse );
-				_scalePointTemp.sub( amount );
-
-				this._m4_1.makeTranslation( _scalePointTemp.x, _scalePointTemp.y, _scalePointTemp.z );
-				this._m4_2.premultiply( this._m4_1 );
-
-				this.setTransformationMatrices( this._m4_1, this._m4_2 );
-				return _transformation;
-
-			} else if ( this.camera.isPerspectiveCamera ) {
-
-				this._v3_1.setFromMatrixPosition( this._cameraMatrixState );
-				this._v3_2.setFromMatrixPosition( this._gizmoMatrixState );
-
-				//move camera
-				let distance = this._v3_1.distanceTo( _scalePointTemp );
-				let amount = distance - ( distance * sizeInverse );
-
-				//check min and max distance
-				const newDistance = distance - amount;
-				if ( newDistance < this.minDistance ) {
-
-					sizeInverse = this.minDistance / distance;
-					amount = distance - ( distance * sizeInverse );
-
-				} else if ( newDistance > this.maxDistance ) {
-
-					sizeInverse = this.maxDistance / distance;
-					amount = distance - ( distance * sizeInverse );
-
-				}
-
-				_offset.copy( _scalePointTemp ).sub( this._v3_1 ).normalize().multiplyScalar( amount );
-
-				this._m4_1.makeTranslation( _offset.x, _offset.y, _offset.z );
-
-
-				if ( scaleGizmos ) {
-
-					//scale gizmos so they appear in the same spot having the same dimension
-					const pos = this._v3_2;
-
-					distance = pos.distanceTo( _scalePointTemp );
-					amount = distance - ( distance * sizeInverse );
-					_offset.copy( _scalePointTemp ).sub( this._v3_2 ).normalize().multiplyScalar( amount );
-
-					this._translationMatrix.makeTranslation( pos.x, pos.y, pos.z );
-					this._scaleMatrix.makeScale( sizeInverse, sizeInverse, sizeInverse );
-
-					this._m4_2.makeTranslation( _offset.x, _offset.y, _offset.z ).multiply( this._translationMatrix );
-					this._m4_2.multiply( this._scaleMatrix );
-
-					this._translationMatrix.makeTranslation( - pos.x, - pos.y, - pos.z );
-
-					this._m4_2.multiply( this._translationMatrix );
-					this.setTransformationMatrices( this._m4_1, this._m4_2 );
-
-
-				} else {
-
-					this.setTransformationMatrices( this._m4_1 );
-
-				}
-
-				return _transformation;
-
-			}
-
-		};
-
-		/**
-		 * Set camera fov
-		 * @param {Number} value fov to be setted
-		 */
-		setFov = ( value ) => {
-
-			if ( this.camera.isPerspectiveCamera ) {
-
-				this.camera.fov = MathUtils.clamp( value, this.minFov, this.maxFov );
-				this.camera.updateProjectionMatrix();
-
-			}
-
-		};
-
-		/**
-		 * Set values in transformation object
-		 * @param {Matrix4} camera Transformation to be applied to the camera
-		 * @param {Matrix4} gizmos Transformation to be applied to gizmos
-		 */
-		 setTransformationMatrices( camera = null, gizmos = null ) {
-
-			if ( camera != null ) {
-
-				if ( _transformation.camera != null ) {
-
-					_transformation.camera.copy( camera );
-
-				} else {
-
-					_transformation.camera = camera.clone();
-
-				}
-
-			} else {
-
-				_transformation.camera = null;
-
-			}
-
-			if ( gizmos != null ) {
-
-				if ( _transformation.gizmos != null ) {
-
-					_transformation.gizmos.copy( gizmos );
-
-				} else {
-
-					_transformation.gizmos = gizmos.clone();
-
-				}
-
-			} else {
-
-				_transformation.gizmos = null;
-
-			}
-
-		}
-
-		/**
-		 * Rotate camera around its direction axis passing by a given point by a given angle
-		 * @param {Vector3} point The point where the rotation axis is passing trough
-		 * @param {Number} angle Angle in radians
-		 * @returns The computed transormation matix
-		 */
-		zRotate = ( point, angle ) => {
-
-			this._rotationMatrix.makeRotationAxis( this._rotationAxis, angle );
-			this._translationMatrix.makeTranslation( - point.x, - point.y, - point.z );
-
-			this._m4_1.makeTranslation( point.x, point.y, point.z );
-			this._m4_1.multiply( this._rotationMatrix );
-			this._m4_1.multiply( this._translationMatrix );
-
-			this._v3_1.setFromMatrixPosition( this._gizmoMatrixState ).sub( point );	//vector from rotation center to gizmos position
-			this._v3_2.copy( this._v3_1 ).applyAxisAngle( this._rotationAxis, angle );	//apply rotation
-			this._v3_2.sub( this._v3_1 );
-
-			this._m4_2.makeTranslation( this._v3_2.x, this._v3_2.y, this._v3_2.z );
-
-			this.setTransformationMatrices( this._m4_1, this._m4_2 );
-			return _transformation;
-
-		};
-
-
-		getRaycaster() {
-
-			return _raycaster$1;
-
-		}
-
-
-		/**
-		 * Unproject the cursor on the 3D object surface
-		 * @param {Vector2} cursor Cursor coordinates in NDC
-		 * @param {Camera} camera Virtual camera
-		 * @returns {Vector3} The point of intersection with the model, if exist, null otherwise
-		 */
-		unprojectOnObj = ( cursor, camera ) => {
-
-			const raycaster = this.getRaycaster();
-			raycaster.near = camera.near;
-			raycaster.far = camera.far;
-			raycaster.setFromCamera( cursor, camera );
-
-			const intersect = raycaster.intersectObjects( this.scene.children, true );
-
-			for ( let i = 0; i < intersect.length; i ++ ) {
-
-				if ( intersect[ i ].object.uuid != this._gizmos.uuid && intersect[ i ].face != null ) {
-
-					return intersect[ i ].point.clone();
-
-				}
-
-			}
-
-			return null;
-
-		};
-
-		/**
-		 * Unproject the cursor on the trackball surface
-		 * @param {Camera} camera The virtual camera
-		 * @param {Number} cursorX Cursor horizontal coordinate on screen
-		 * @param {Number} cursorY Cursor vertical coordinate on screen
-		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
-		 * @param {number} tbRadius The trackball radius
-		 * @returns {Vector3} The unprojected point on the trackball surface
-		 */
-		unprojectOnTbSurface = ( camera, cursorX, cursorY, canvas, tbRadius ) => {
-
-			if ( camera.type == 'OrthographicCamera' ) {
-
-				this._v2_1.copy( this.getCursorPosition( cursorX, cursorY, canvas ) );
-				this._v3_1.set( this._v2_1.x, this._v2_1.y, 0 );
-
-				const x2 = Math.pow( this._v2_1.x, 2 );
-				const y2 = Math.pow( this._v2_1.y, 2 );
-				const r2 = Math.pow( this._tbRadius, 2 );
-
-				if ( x2 + y2 <= r2 * 0.5 ) {
-
-					//intersection with sphere
-					this._v3_1.setZ( Math.sqrt( r2 - ( x2 + y2 ) ) );
-
-				} else {
-
-					//intersection with hyperboloid
-					this._v3_1.setZ( ( r2 * 0.5 ) / ( Math.sqrt( x2 + y2 ) ) );
-
-				}
-
-				return this._v3_1;
-
-			} else if ( camera.type == 'PerspectiveCamera' ) {
-
-				//unproject cursor on the near plane
-				this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
-
-				this._v3_1.set( this._v2_1.x, this._v2_1.y, - 1 );
-				this._v3_1.applyMatrix4( camera.projectionMatrixInverse );
-
-				const rayDir = this._v3_1.clone().normalize(); //unprojected ray direction
-				const cameraGizmoDistance = camera.position.distanceTo( this._gizmos.position );
-				const radius2 = Math.pow( tbRadius, 2 );
-
-				//	  camera
-				//		|\
-				//		| \
-				//		|  \
-				//	h	|	\
-				//		| 	 \
-				//		| 	  \
-				//	_ _ | _ _ _\ _ _  near plane
-				//			l
-
-				const h = this._v3_1.z;
-				const l = Math.sqrt( Math.pow( this._v3_1.x, 2 ) + Math.pow( this._v3_1.y, 2 ) );
-
-				if ( l == 0 ) {
-
-					//ray aligned with camera
-					rayDir.set( this._v3_1.x, this._v3_1.y, tbRadius );
-					return rayDir;
-
-				}
-
-				const m = h / l;
-				const q = cameraGizmoDistance;
-
-				/*
-				 * calculate intersection point between unprojected ray and trackball surface
-				 *|y = m * x + q
-				 *|x^2 + y^2 = r^2
-				 *
-				 * (m^2 + 1) * x^2 + (2 * m * q) * x + q^2 - r^2 = 0
-				 */
-				let a = Math.pow( m, 2 ) + 1;
-				let b = 2 * m * q;
-				let c = Math.pow( q, 2 ) - radius2;
-				let delta = Math.pow( b, 2 ) - ( 4 * a * c );
-
-				if ( delta >= 0 ) {
-
-					//intersection with sphere
-					this._v2_1.setX( ( - b - Math.sqrt( delta ) ) / ( 2 * a ) );
-					this._v2_1.setY( m * this._v2_1.x + q );
-
-					const angle = MathUtils.RAD2DEG * this._v2_1.angle();
-
-					if ( angle >= 45 ) {
-
-						//if angle between intersection point and X' axis is >= 45°, return that point
-						//otherwise, calculate intersection point with hyperboloid
-
-						const rayLength = Math.sqrt( Math.pow( this._v2_1.x, 2 ) + Math.pow( ( cameraGizmoDistance - this._v2_1.y ), 2 ) );
-						rayDir.multiplyScalar( rayLength );
-						rayDir.z += cameraGizmoDistance;
-						return rayDir;
-
-					}
-
-				}
-
-				//intersection with hyperboloid
-				/*
-				 *|y = m * x + q
-				 *|y = (1 / x) * (r^2 / 2)
-				 *
-				 * m * x^2 + q * x - r^2 / 2 = 0
-				 */
-
-				a = m;
-				b = q;
-				c = - radius2 * 0.5;
-				delta = Math.pow( b, 2 ) - ( 4 * a * c );
-				this._v2_1.setX( ( - b - Math.sqrt( delta ) ) / ( 2 * a ) );
-				this._v2_1.setY( m * this._v2_1.x + q );
-
-				const rayLength = Math.sqrt( Math.pow( this._v2_1.x, 2 ) + Math.pow( ( cameraGizmoDistance - this._v2_1.y ), 2 ) );
-
-				rayDir.multiplyScalar( rayLength );
-				rayDir.z += cameraGizmoDistance;
-				return rayDir;
-
-			}
-
-		};
-
-
-		/**
-		 * Unproject the cursor on the plane passing through the center of the trackball orthogonal to the camera
-		 * @param {Camera} camera The virtual camera
-		 * @param {Number} cursorX Cursor horizontal coordinate on screen
-		 * @param {Number} cursorY Cursor vertical coordinate on screen
-		 * @param {HTMLElement} canvas The canvas where the renderer draws its output
-		 * @param {Boolean} initialDistance If initial distance between camera and gizmos should be used for calculations instead of current (Perspective only)
-		 * @returns {Vector3} The unprojected point on the trackball plane
-		 */
-		unprojectOnTbPlane = ( camera, cursorX, cursorY, canvas, initialDistance = false ) => {
-
-			if ( camera.type == 'OrthographicCamera' ) {
-
-				this._v2_1.copy( this.getCursorPosition( cursorX, cursorY, canvas ) );
-				this._v3_1.set( this._v2_1.x, this._v2_1.y, 0 );
-
-				return this._v3_1.clone();
-
-			} else if ( camera.type == 'PerspectiveCamera' ) {
-
-				this._v2_1.copy( this.getCursorNDC( cursorX, cursorY, canvas ) );
-
-				//unproject cursor on the near plane
-				this._v3_1.set( this._v2_1.x, this._v2_1.y, - 1 );
-				this._v3_1.applyMatrix4( camera.projectionMatrixInverse );
-
-				const rayDir = this._v3_1.clone().normalize(); //unprojected ray direction
-
-				//	  camera
-				//		|\
-				//		| \
-				//		|  \
-				//	h	|	\
-				//		| 	 \
-				//		| 	  \
-				//	_ _ | _ _ _\ _ _  near plane
-				//			l
-
-				const h = this._v3_1.z;
-				const l = Math.sqrt( Math.pow( this._v3_1.x, 2 ) + Math.pow( this._v3_1.y, 2 ) );
-				let cameraGizmoDistance;
-
-				if ( initialDistance ) {
-
-					cameraGizmoDistance = this._v3_1.setFromMatrixPosition( this._cameraMatrixState0 ).distanceTo( this._v3_2.setFromMatrixPosition( this._gizmoMatrixState0 ) );
-
-				} else {
-
-					cameraGizmoDistance = camera.position.distanceTo( this._gizmos.position );
-
-				}
-
-				/*
-				 * calculate intersection point between unprojected ray and the plane
-				 *|y = mx + q
-				 *|y = 0
-				 *
-				 * x = -q/m
-				*/
-				if ( l == 0 ) {
-
-					//ray aligned with camera
-					rayDir.set( 0, 0, 0 );
-					return rayDir;
-
-				}
-
-				const m = h / l;
-				const q = cameraGizmoDistance;
-				const x = - q / m;
-
-				const rayLength = Math.sqrt( Math.pow( q, 2 ) + Math.pow( x, 2 ) );
-				rayDir.multiplyScalar( rayLength );
-				rayDir.z = 0;
-				return rayDir;
-
-			}
-
-		};
-
-		/**
-		 * Update camera and gizmos state
-		 */
-		updateMatrixState = () => {
-
-			//update camera and gizmos state
-			this._cameraMatrixState.copy( this.camera.matrix );
-			this._gizmoMatrixState.copy( this._gizmos.matrix );
-
-			if ( this.camera.isOrthographicCamera ) {
-
-				this._cameraProjectionState.copy( this.camera.projectionMatrix );
-				this.camera.updateProjectionMatrix();
-				this._zoomState = this.camera.zoom;
-
-			} else if ( this.camera.isPerspectiveCamera ) {
-
-				this._fovState = this.camera.fov;
-
-			}
-
-		};
-
-		/**
-		 * Update the trackball FSA
-		 * @param {STATE} newState New state of the FSA
-		 * @param {Boolean} updateMatrices If matriices state should be updated
-		 */
-		updateTbState = ( newState, updateMatrices ) => {
-
-			this._state = newState;
-			if ( updateMatrices ) {
-
-				this.updateMatrixState();
-
-			}
-
-		};
-
-		update = () => {
-
-			const EPS = 0.000001;
-
-			if ( this.target.equals( this._currentTarget ) === false ) {
-
-				this._gizmos.position.copy( this.target );	//for correct radius calculation
-				this._tbRadius = this.calculateTbRadius( this.camera );
-				this.makeGizmos( this.target, this._tbRadius );
-				this._currentTarget.copy( this.target );
-
-			}
-
-			//check min/max parameters
-			if ( this.camera.isOrthographicCamera ) {
-
-				//check zoom
-				if ( this.camera.zoom > this.maxZoom || this.camera.zoom < this.minZoom ) {
-
-					const newZoom = MathUtils.clamp( this.camera.zoom, this.minZoom, this.maxZoom );
-					this.applyTransformMatrix( this.scale( newZoom / this.camera.zoom, this._gizmos.position, true ) );
-
-				}
-
-			} else if ( this.camera.isPerspectiveCamera ) {
-
-				//check distance
-				const distance = this.camera.position.distanceTo( this._gizmos.position );
-
-				if ( distance > this.maxDistance + EPS || distance < this.minDistance - EPS ) {
-
-					const newDistance = MathUtils.clamp( distance, this.minDistance, this.maxDistance );
-					this.applyTransformMatrix( this.scale( newDistance / distance, this._gizmos.position ) );
-					this.updateMatrixState();
-
-				 }
-
-				//check fov
-				if ( this.camera.fov < this.minFov || this.camera.fov > this.maxFov ) {
-
-					this.camera.fov = MathUtils.clamp( this.camera.fov, this.minFov, this.maxFov );
-					this.camera.updateProjectionMatrix();
-
-				}
-
-				const oldRadius = this._tbRadius;
-				this._tbRadius = this.calculateTbRadius( this.camera );
-
-				if ( oldRadius < this._tbRadius - EPS || oldRadius > this._tbRadius + EPS ) {
-
-					const scale = ( this._gizmos.scale.x + this._gizmos.scale.y + this._gizmos.scale.z ) / 3;
-					const newRadius = this._tbRadius / scale;
-					const curve = new EllipseCurve( 0, 0, newRadius, newRadius );
-					const points = curve.getPoints( this._curvePts );
-					const curveGeometry = new BufferGeometry().setFromPoints( points );
-
-					for ( const gizmo in this._gizmos.children ) {
-
-						this._gizmos.children[ gizmo ].geometry = curveGeometry;
-
-					}
-
-				}
-
-			}
-
-			this.camera.lookAt( this._gizmos.position );
-
-		};
-
-		setStateFromJSON = ( json ) => {
-
-			const state = JSON.parse( json );
-
-			if ( state.arcballState != undefined ) {
-
-				this._cameraMatrixState.fromArray( state.arcballState.cameraMatrix.elements );
-				this._cameraMatrixState.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
-
-				this.camera.up.copy( state.arcballState.cameraUp );
-				this.camera.near = state.arcballState.cameraNear;
-				this.camera.far = state.arcballState.cameraFar;
-
-				this.camera.zoom = state.arcballState.cameraZoom;
-
-				if ( this.camera.isPerspectiveCamera ) {
-
-					this.camera.fov = state.arcballState.cameraFov;
-
-				}
-
-				this._gizmoMatrixState.fromArray( state.arcballState.gizmoMatrix.elements );
-				this._gizmoMatrixState.decompose( this._gizmos.position, this._gizmos.quaternion, this._gizmos.scale );
-
-				this.camera.updateMatrix();
-				this.camera.updateProjectionMatrix();
-
-				this._gizmos.updateMatrix();
-
-				this._tbRadius = this.calculateTbRadius( this.camera );
-				const gizmoTmp = new Matrix4().copy( this._gizmoMatrixState0 );
-				this.makeGizmos( this._gizmos.position, this._tbRadius );
-				this._gizmoMatrixState0.copy( gizmoTmp );
-
-				this.camera.lookAt( this._gizmos.position );
-				this.updateTbState( STATE.IDLE, false );
-
-				this.dispatchEvent( _changeEvent$1 );
-
-			}
-
-		};
-
-	}
+	  return ArcballControls;
+	}(EventDispatcher);
 
 	const _raycaster = new Raycaster();
 
@@ -37930,140 +37498,6 @@
 
 	}
 
-	function _classCallCheck(instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	}
-
-	function _defineProperties(target, props) {
-	  for (var i = 0; i < props.length; i++) {
-	    var descriptor = props[i];
-	    descriptor.enumerable = descriptor.enumerable || false;
-	    descriptor.configurable = true;
-	    if ("value" in descriptor) descriptor.writable = true;
-	    Object.defineProperty(target, descriptor.key, descriptor);
-	  }
-	}
-
-	function _createClass(Constructor, protoProps, staticProps) {
-	  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-	  if (staticProps) _defineProperties(Constructor, staticProps);
-	  return Constructor;
-	}
-
-	function _inherits(subClass, superClass) {
-	  if (typeof superClass !== "function" && superClass !== null) {
-	    throw new TypeError("Super expression must either be null or a function");
-	  }
-
-	  subClass.prototype = Object.create(superClass && superClass.prototype, {
-	    constructor: {
-	      value: subClass,
-	      writable: true,
-	      configurable: true
-	    }
-	  });
-	  if (superClass) _setPrototypeOf(subClass, superClass);
-	}
-
-	function _getPrototypeOf(o) {
-	  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-	    return o.__proto__ || Object.getPrototypeOf(o);
-	  };
-	  return _getPrototypeOf(o);
-	}
-
-	function _setPrototypeOf(o, p) {
-	  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-	    o.__proto__ = p;
-	    return o;
-	  };
-
-	  return _setPrototypeOf(o, p);
-	}
-
-	function _isNativeReflectConstruct() {
-	  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-	  if (Reflect.construct.sham) return false;
-	  if (typeof Proxy === "function") return true;
-
-	  try {
-	    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
-	    return true;
-	  } catch (e) {
-	    return false;
-	  }
-	}
-
-	function _assertThisInitialized(self) {
-	  if (self === void 0) {
-	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-	  }
-
-	  return self;
-	}
-
-	function _possibleConstructorReturn(self, call) {
-	  if (call && (typeof call === "object" || typeof call === "function")) {
-	    return call;
-	  }
-
-	  return _assertThisInitialized(self);
-	}
-
-	function _createSuper(Derived) {
-	  var hasNativeReflectConstruct = _isNativeReflectConstruct();
-
-	  return function _createSuperInternal() {
-	    var Super = _getPrototypeOf(Derived),
-	        result;
-
-	    if (hasNativeReflectConstruct) {
-	      var NewTarget = _getPrototypeOf(this).constructor;
-
-	      result = Reflect.construct(Super, arguments, NewTarget);
-	    } else {
-	      result = Super.apply(this, arguments);
-	    }
-
-	    return _possibleConstructorReturn(this, result);
-	  };
-	}
-
-	function _toConsumableArray(arr) {
-	  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
-	}
-
-	function _arrayWithoutHoles(arr) {
-	  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
-	}
-
-	function _iterableToArray(iter) {
-	  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-	}
-
-	function _unsupportedIterableToArray(o, minLen) {
-	  if (!o) return;
-	  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-	  var n = Object.prototype.toString.call(o).slice(8, -1);
-	  if (n === "Object" && o.constructor) n = o.constructor.name;
-	  if (n === "Map" || n === "Set") return Array.from(o);
-	  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-	}
-
-	function _arrayLikeToArray(arr, len) {
-	  if (len == null || len > arr.length) len = arr.length;
-
-	  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-
-	  return arr2;
-	}
-
-	function _nonIterableSpread() {
-	  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-	}
-
 	function html2element(html) {
 	  var template = document.createElement('template');
 	  template.innerHTML = html.trim(); // Never return a text node of whitespace as the result
@@ -38475,6 +37909,8 @@
 	  function VolumeAnnotation(camera) {
 	    _classCallCheck(this, VolumeAnnotation);
 
+	    this.selected = [];
+	    this.hidden = [];
 	    var obj = this; // The camera is required to adjust the glow correctly.
 
 	    obj.camera = camera; // Create a group here.
@@ -38569,112 +38005,72 @@
 	      });
 	    } // update
 
+	  }, {
+	    key: "ontransform",
+	    value: function ontransform() {
+	      var obj = this;
+	      var adjustedSphere = obj.selected[0];
+
+	      for (var i = 1; i < obj.selected.length; i++) {
+	        obj.selected[i].position.copy(adjustedSphere.position);
+	      } // for
+
+	    } // ontransform
+
 	  }]);
 
 	  return VolumeAnnotation;
 	}(); // VolumeAnnotation
 
-	/*
-	This interface should be positioned left, it should have a form on the top, and the comments below.
-	*/
+	var Annotation3DForm = /*#__PURE__*/function () {
+	  function Annotation3DForm(lilguimenu, renderer, scene, camera) {
+	    _classCallCheck(this, Annotation3DForm);
 
-	var css$3 = {
-	  iconbutton: "\n    cursor: pointer;\n    color: LightGray;\n    font-size: 14px;\n  "
-	}; // css
-
-	var template$8 = "\n<div>\n  <div>\n    <button class=\"icon place\" style=\"".concat(css$3.iconbutton, "\">Place\uD83D\uDCCC</button>\n\t<button class=\"icon edit\" style=\"").concat(css$3.iconbutton, "\">Edit\uD83D\uDD27</button>\n\t<button class=\"icon remove\" style=\"").concat(css$3.iconbutton, "\">Erase\uD83E\uDDFD</button>\n  </div>\n  <div class=\"editmenu\" style=\"display: none;\">\n\t<table>\n\t  <tr>\n\t\t<th>Depth</th>\n\t\t<td>\n\t\t  <input class=\"range\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n\t\t</td>\n\t  </tr>\n\t  <tr>\n\t\t<th>Size</th>\n\t\t<td>\n\t\t  <input class=\"size\" type=\"range\" min=\"-1\" max=\"1\" value=\"0\" step=\"0.05\">\n\t\t</td>\n\t  </tr>\n\t</table>\n  </div>\n</div>\n"); //    <button class="icon add">🎯</button>
-	//	<button class="icon edit">🔧</button>
-
-	/*
-	This will be a subform of the commenting, and will only appear when the correct button is pressed.
-	*/
-
-	var TagGeometryForm = /*#__PURE__*/function () {
-	  function TagGeometryForm(renderer, scene, camera) {
-	    _classCallCheck(this, TagGeometryForm);
-
-	    this.buttonSelected = "";
-	    this.scale = 0.1;
 	    var obj = this;
-	    obj.node = html2element(template$8); // Buttons that control hte annotation creation/editing/removal modes.
+	    obj.tag = {
+	      name: ""
+	    }; // Geometry could be adapted to send otehr data as well, such as the different axis scales.
 
-	    obj.placeSphereButton = obj.node.querySelector("button.place");
-	    obj.editSphereButton = obj.node.querySelector("button.edit");
-	    obj.removeSphereButton = obj.node.querySelector("button.remove");
+	    obj.config = {
+	      place: false,
+	      erase: false,
+	      position: false,
+	      scale: 0.1,
+	      submit: function submit() {
+	        obj.geometry = JSON.stringify(obj.annotations.geometry);
+	        obj.send(obj.tag);
+	        obj.clear();
+	      }
+	    }; // tagFormConfig
 
-	    function toggleButton(name) {
-	      // Toggle the button, and change its appearance.
-	      obj.buttonSelected = obj.buttonSelected == name ? "" : name;
-	      var a = [obj.buttonSelected == "place", obj.buttonSelected == "edit", obj.buttonSelected == "remove"];
-	      obj.placeSphereButton.style.border = "2px solid ".concat(a[0] ? "gainsboro" : "black");
-	      obj.editSphereButton.style.border = "2px solid ".concat(a[1] ? "gainsboro" : "black");
-	      obj.removeSphereButton.style.border = "2px solid ".concat(a[2] ? "gainsboro" : "black");
-	      obj.node.querySelector("div.editmenu").style.display = obj.buttonSelected == "edit" ? "" : "none";
-	    } // toggleButtons
+	    obj.controllers = {};
+	    obj.controllers.name = lilguimenu.add(obj.tag, "name");
+	    obj.controllers.place = lilguimenu.add(obj.config, "place").name("Place📌");
+	    obj.controllers.position = lilguimenu.add(obj.config, "position").name("Position");
+	    obj.controllers.scale = lilguimenu.add(obj.config, "scale").name("Scale");
+	    obj.controllers.erase = lilguimenu.add(obj.config, "erase").name("Erase🧽");
+	    obj.controllers.submit = lilguimenu.add(obj.config, "submit");
+	    obj.activate();
+	    obj.controllers.name.onChange(function (v) {
+	      obj.activate();
+	    }); // Ensure that only one tickbox is active at a time.
 
-
-	    obj.placeSphereButton.onclick = function () {
-	      toggleButton("place");
-	    }; // onclick
-
-
-	    obj.editSphereButton.onclick = function () {
-	      toggleButton("edit");
-	    }; // onclick
-
-
-	    obj.removeSphereButton.onclick = function () {
-	      toggleButton("remove");
-	    }; // onclick
-	    // The inputs are used as controllers - -1 is negative and +1 is positive increment.
-
-
-	    obj.distanceInput = obj.node.querySelector("input.range");
-	    obj.radiusInput = obj.node.querySelector("input.size"); // Add functionality
-
-	    obj.distanceInput.addEventListener("mouseout", function () {
-	      obj.distanceInput.value = 0;
+	    obj.controllers.place.onChange(function (v) {
+	      obj.coordinate(0, v);
 	    });
-	    obj.distanceInput.addEventListener("mouseup", function () {
-	      obj.distanceInput.value = 0;
+	    obj.controllers.position.onChange(function (v) {
+	      obj.coordinate(1, v);
 	    });
-	    obj.radiusInput.addEventListener("mouseout", function () {
-	      obj.radiusInput.value = 0;
-	    });
-	    obj.radiusInput.addEventListener("mouseup", function () {
-	      obj.radiusInput.value = 0;
-	    }); // Allow adjusting the sphere radius.
-
-	    obj.radiusInput.addEventListener("input", function (e) {
-	      // Change the radius of the currently selected sphere.
-	      var ds = Number(obj.radiusInput.value) / 50;
-	      obj.annotations.selected.forEach(function (sphere) {
-	        sphere.scale.addScalar(ds);
-	        obj.scale = sphere.scale.x;
-	      });
-	    }); // addEventListener
-
-	    obj.distanceInput.addEventListener("input", function (e) {
-	      // Add a vector to the sphere. The vector should go from the camera point through the center of the sphere.
-	      var v = Number(obj.distanceInput.value);
-	      obj.annotations.selected.forEach(function (sphere) {
-	        var p = sphere.position;
-	        var x = p.x + 0.01 * v * (p.x - camera.position.x);
-	        var y = p.y + 0.01 * v * (p.y - camera.position.y);
-	        var z = p.z + 0.01 * v * (p.z - camera.position.z);
-	        sphere.position.set(x, y, z);
-	      }); // forEach
-	    }); // addEventListener
-	    // Actual annotations;
+	    obj.controllers.erase.onChange(function (v) {
+	      obj.coordinate(2, v);
+	    }); // Actual annotations;
 
 	    obj.annotations = new VolumeAnnotation(camera);
-	    console.log(obj.annotations);
+	    scene.add(obj.annotations.group);
 	    obj.pointer = new Vector2();
 	    obj.scene = scene;
 	    obj.camera = camera;
-	    obj.raycaster = new Raycaster(); // The annotations are added to the group, which is already a child of the scene.
-
-	    obj.scene.add(obj.annotations.group);
+	    obj.raycaster = new Raycaster();
 	    renderer.domElement.addEventListener("mousemove", function (e) {
 	      obj.pointer.x = e.clientX / window.innerWidth * 2 - 1;
 	      obj.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -38690,21 +38086,23 @@
 	      // Has the mouse moved since mousedown?
 	      if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
 	        e.preventDefault(); // How to switch between hte currently active annotation spheres? Longpress? Or should there be an adjust button that brings out the sliders? And a place button that allows annotation adding to be disabled?
+	        // check which tickboxes are active and execute.
 
-	        switch (obj.buttonSelected) {
-	          case "place":
-	            obj.placeVolumeAnnotation();
-	            break;
+	        if (obj.controllers.place.getValue()) {
+	          obj.placeVolumeAnnotation();
+	          obj.activate();
+	        } // if
 
-	          case "edit":
-	            // Select a new sphere to edit.
-	            obj.selectVolumeAnnotation();
-	            break;
 
-	          case "erase":
-	            obj.eraseVolumeAnnotation();
-	            break;
-	        } // switch
+	        if (obj.controllers.position.getValue()) {
+	          obj.selectVolumeAnnotation();
+	        } // if
+
+
+	        if (obj.controllers.erase.getValue()) {
+	          obj.eraseVolumeAnnotation();
+	          obj.activate();
+	        } // if
 
 	      } // if
 
@@ -38712,13 +38110,18 @@
 	  } // constructor
 
 
-	  _createClass(TagGeometryForm, [{
-	    key: "toggle",
-	    value: function toggle(active) {
+	  _createClass(Annotation3DForm, [{
+	    key: "coordinate",
+	    value: function coordinate(i, v) {
 	      var obj = this;
-	      var current = obj.node.style.display;
-	      obj.node.style.display = active != undefined ? active : current == "none" ? "" : "none";
-	    } // toggle
+	      obj.config.place = i == 0 ? v : false;
+	      obj.config.position = i == 1 ? v : false;
+	      obj.config.erase = i == 2 ? v : false;
+	      obj.controllers.place.updateDisplay();
+	      obj.controllers.position.updateDisplay();
+	      obj.controllers.erase.updateDisplay();
+	      obj.changeTransformObject(obj.config.position);
+	    } // coordinate
 
 	  }, {
 	    key: "placeVolumeAnnotation",
@@ -38730,7 +38133,7 @@
 	      var p = obj.returnFirstIntersection();
 
 	      if (p) {
-	        var addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.scale);
+	        var addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.config.scale);
 	        obj.annotations.select([addedSphere]);
 	      } else {
 	        // No intersection was found, but an annotation should still be placed.
@@ -38751,7 +38154,10 @@
 	        // First deselect all other annotations.
 	        obj.annotations.select([p.object]);
 	      } // if
+	      // The positioning tools should respond.
 
+
+	      obj.changeTransformObject(obj.config.position);
 	    } // selectVolumeAnnotation
 
 	  }, {
@@ -38769,14 +38175,6 @@
 	      } // if
 
 	    } // eraseVolumeAnnotation
-
-	  }, {
-	    key: "geometry",
-	    get: function get() {
-	      // The geometry should only be added if the form is maximised? Should toggling wipe the form? 
-	      var obj = this;
-	      return obj.annotations.geometry;
-	    } // get tagGeometry
 
 	  }, {
 	    key: "returnFirstIntersection",
@@ -38798,142 +38196,38 @@
 	      var intersects = obj.raycaster.intersectObjects(meshes.concat(groups), false);
 	      return intersects[0];
 	    } // returnFirstIntersection
+	    // Dummy function.
 
-	  }]);
-
-	  return TagGeometryForm;
-	}(); // TagGeometryForm
-
-	function mouseEventMovementDistanceSquared(origin, finish) {
-	  return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
-	} // mouseEventMovementDistanceSquared
-
-	var css$2 = {
-	  button: "\n    border: none;\n\tcursor: pointer;\n\tborder-radius: 0px;\n\tbackground-color: LightGray;\n\tcolor: black;\n  ",
-	  input: "\n    border-radius: 0px;\n    border: none;\n    background-color: LightGray;\n  ",
-	  iconbutton: "\n    font-size: 11px;\n  "
-	}; // css
-
-	var template$7 = "\n<div style=\"width: 300px\">\n  <div>\n    <input class=\"username\" type=\"text\" placeholder=\"username\" style=\"".concat(css$2.input, " width: 65px;\"></input>\n\n    <input class=\"tagname\" type=\"text\" placeholder=\"#tag-name\" style=\"").concat(css$2.input, " width: 65px;\"></input>\n  \n    <input class=\"tagvalue\" type=\"text\" placeholder=\"value\" style=\"").concat(css$2.input, " width: 35px;\"></input>\n  \n  </div>\n  \n  <div class=\"buttons\" style=\"margin-top: 5px;\">\n      <button class=\"geom2d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCD0</button>\n\t  <button class=\"geom3d\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDCA1</button>\n\t  <button class=\"vista\" style=\"").concat(css$2.button, " ").concat(css$2.iconbutton, "\">\uD83D\uDD2D</button>\n      <button class=\"submit\" style=\"").concat(css$2.button, "\">Submit</button>\n  </div>\n  \n  <div class=\"subforms\" style=\"margin-top: 5px;\">\n  </div>\n  \n  \n</div>\n"); // template
-	// This is more than the chapterform, it is the entirety of the forms.
-
-	var TagForm = /*#__PURE__*/function () {
-	  function TagForm(renderer, scene, camera) {
-	    _classCallCheck(this, TagForm);
-
-	    var obj = this;
-	    obj.node = html2element(template$7);
-	    obj.userinput = obj.node.querySelector("input.username");
-	    obj.nameinput = obj.node.querySelector("input.tagname");
-	    obj.valueinput = obj.node.querySelector("input.tagvalue");
-	    obj.buttons = obj.node.querySelector("div.buttons"); // This value will be overwritten during interactions, and is where the tag manager collects the time for the timestamps.
-
-	    obj.clear(); // The button should cycle through black, green, and red. It will need some way of tracking its current state, and a way to load in existing tags! This will allow users to subsequently change the tag if needed? Maybe this is a bit much for now. It will need a submit button.
-	    // If the tag is loaded and the button switches to timestamping then any user can add the ned timesteps. Then the users name needs to be checked in addition. Maybe some way of filtering out the tags that are added? How would that work?
-	    // For now add 3 buttons. A starttime endtime and submit button. For the submit button only the start and name need to be filled in. The buttons must also show the selected times!
-
-	    obj.nameinput.onmousedown = function (e) {
-	      e.stopPropagation();
-	    }; // onmousedown
-	    // Update the form when the text is typed in to activate the submit button.
-
-
-	    obj.nameinput.oninput = function () {
-	      obj.update();
-	    }; // oninput
-
-
-	    obj.submitButton = obj.node.querySelector("button.submit");
-
-	    obj.submitButton.onmousedown = function (e) {
-	      e.stopPropagation();
-	      var tag = obj.tag;
-
-	      if (tag) {
-	        obj.submit(tag);
-	        obj.clear();
-	      } // if
-
-	    }; // onmousedown
-	    // Add in hte sub-forms.
-
-
-	    obj.volumetags = new TagGeometryForm(renderer, scene, camera);
-	    obj.node.querySelector("div.subforms").appendChild(obj.volumetags.node);
-
-	    obj.node.querySelector("button.geom3d").onclick = function () {
-	      obj.volumetags.toggle();
-	    }; // onclick
-
-	  } // constructor
-
-
-	  _createClass(TagForm, [{
-	    key: "update",
-	    value: function update() {
-	      var obj = this; // The button is black by default, and making it look disabled is a bit more involved.
-
-	      var button = obj.node.querySelector("button.submit");
-
-	      if (obj.userinput.value && obj.nameinput.value) {
-	        // Enable.
-	        button.style.backgroundColor = "yellowgreen";
-	      } else {
-	        button.style.backgroundColor = "LightGray";
-	      } // if
-
-	    } // update
+	  }, {
+	    key: "changeTransformObject",
+	    value: function changeTransformObject(v) {}
+	  }, {
+	    key: "send",
+	    value: function send(tag) {// Dummy function.
+	    } // send
 
 	  }, {
 	    key: "clear",
 	    value: function clear() {
 	      var obj = this;
-	      obj.nameinput.value = "";
-	      obj.valueinput.value = "";
-	      obj.update();
+	      obj.tag.name = "";
 	    } // clear
 
 	  }, {
-	    key: "author",
-	    get: function get() {
+	    key: "activate",
+	    value: function activate() {
 	      var obj = this;
-	      var author = obj.userinput.value;
-
-	      if (!author) {
-	        alert("You need to log in");
-	        return false;
-	      } // if
-
-
-	      return author;
-	    } // get author
-
-	  }, {
-	    key: "tag",
-	    get: function get() {
-	      // Chapter tag should belong to the task id so that the observations across multiple slices are available together to the user.
-	      var obj = this; // Geometry must be stringified ahead of the rest of hte object, otherwise the server side JSON.parse will turn it back into array, which will be converted into incorrect string for storage in SQL.
-
-	      var tag = {
-	        author: obj.author,
-	        name: obj.nameinput.value,
-	        value: obj.valueinput.value,
-	        geometry: JSON.stringify(obj.volumetags.geometry)
-	      }; // tag
-
-	      return tag.author && tag.name ? tag : false;
-	    } // tag
-	    // Is this necessary?? Or should we just use an outside method?
-	    // Placeholder for communication between classes.
-
-	  }, {
-	    key: "submit",
-	    value: function submit(tag) {} // submit
+	      obj.controllers.submit.enable(obj.tag.name && obj.annotations.geometry.length > 0);
+	    } // activate
 
 	  }]);
 
-	  return TagForm;
-	}(); // TagForm
+	  return Annotation3DForm;
+	}(); // Annotation3DForm
+
+	function mouseEventMovementDistanceSquared(origin, finish) {
+	  return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
+	} // mouseEventMovementDistanceSquared
 
 	var TagButton = /*#__PURE__*/function () {
 	  function TagButton(tag) {
@@ -39013,7 +38307,7 @@
 	  return Tag3DGeometryButton;
 	}(TagButton); // Tag3DGeometryButton
 
-	var template$6 = "<div style=\"width: 300px; margin-top: 5px;\"></div>";
+	var template$5 = "<div style=\"width: 300px; margin-top: 5px;\"></div>";
 
 	var TagOverview = /*#__PURE__*/function () {
 	  function TagOverview(scene, camera) {
@@ -39023,7 +38317,7 @@
 	    this.buttons = [];
 	    this.needsupdating = [];
 	    var obj = this;
-	    obj.node = html2element(template$6);
+	    obj.node = html2element(template$5);
 	    obj.scene = scene;
 	    obj.camera = camera; // The tag visualisation should happen here also.
 	  } // constructor
@@ -39114,7 +38408,7 @@
 	  submitbutton: "\n    color: black;\n\tbackground-color: LightGray;\n\tborder-radius: 0px;\n    border: none;\n\tcursor: pointer;\n\tmargin-top: 7px;\n  "
 	}; // css
 
-	var template$5 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
+	var template$4 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
 
 	var AddCommentForm = /*#__PURE__*/function () {
 	  function AddCommentForm() {
@@ -39122,7 +38416,7 @@
 
 	    this._user = "";
 	    var obj = this;
-	    obj.node = html2element(template$5); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
+	    obj.node = html2element(template$4); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
 
 	    obj.commentinput = obj.node.querySelector("textarea.comment");
 	    obj.submitbutton = obj.node.querySelector("button.submit");
@@ -39186,7 +38480,7 @@
 	  timestampspan: "\n\tfont-size: 14px;\n\tmargin-left: 12px;\n  "
 	}; // css
 
-	var template$4 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
+	var template$3 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
 
 	var Comment = /*#__PURE__*/function () {
 	  // available tags.
@@ -39197,7 +38491,7 @@
 	    this.availabletags = [];
 	    var obj = this; // Make a new node.
 
-	    obj.node = html2element(template$4); // Fill the template with the options from the config. There must be a comment, and there must be an author.
+	    obj.node = html2element(template$3); // Fill the template with the options from the config. There must be a comment, and there must be an author.
 
 	    obj.config = config; // Fill some options that may not be defined in config.
 
@@ -39387,7 +38681,7 @@
 	// Sort the comments before passing them to the comments below. How will replies be updated? Ultimately everything should be coming from the server??
 	// This is just a template for the controls which allow the replies to be expanded or collapsed. These are invisible at first.
 
-	var template$3 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
+	var template$2 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
 
 	var GeneralComment = /*#__PURE__*/function (_Comment) {
 	  _inherits(GeneralComment, _Comment);
@@ -39406,7 +38700,7 @@
 
 	    obj.replybutton = obj.node.querySelector("button.reply"); // The general comment can have replies associated with it. Handle these here. Furthermore an additional control for expanding, reducing hte comments is required.
 
-	    obj.replynode = html2element(template$3);
+	    obj.replynode = html2element(template$2);
 	    obj.node.appendChild(obj.replynode); // Add the functionality to the caret.
 
 	    obj.repliesExpanded = false;
@@ -39493,7 +38787,7 @@
 	}(Comment); // GeneralComment
 	 // findArrayItemById
 
-	var template$2 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
+	var template$1 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
 
 	var CommentingManager = /*#__PURE__*/function () {
 	  function CommentingManager() {
@@ -39503,7 +38797,7 @@
 	    this.generalcommentobjs = [];
 	    this.availabletags = [];
 	    var obj = this;
-	    obj.node = html2element(template$2); // Make the form;
+	    obj.node = html2element(template$1); // Make the form;
 
 	    obj.form = new AddCommentForm();
 	    obj.node.querySelector("div.comment-form").appendChild(obj.form.node); // Finally add teh controls that completely hide comments.
@@ -39657,25 +38951,32 @@
 	}(); // CommentingManager
 	 // arrayIncludesAll
 
-	/* COMMENTING SYSTEM
+	var template = "\n<div class=\"hud\">\n  <div class=\"stats\"></div>\n  <div class=\"lefttop\"></div>\n  <div class=\"righttop\"></div>\n</div>\n";
 
-	A class that handles all of the commenting system. Should be minimisable!!
-
-	*/
-
-	var template$1 = "\n<div style=\"user-select: none; webkit-user-select: none;\"></div>\n"; // template
-	// Add top caret that hides the whole thing!! And the chapterform should maybe include a draw button.
-
-	var AnnotationSystem = /*#__PURE__*/function () {
-	  function AnnotationSystem(taskId, renderer, scene, camera) {
-	    _classCallCheck(this, AnnotationSystem);
+	var SessionGUI = /*#__PURE__*/function () {
+	  function SessionGUI(elementOptions, renderer, scene, camera) {
+	    _classCallCheck(this, SessionGUI);
 
 	    var obj = this;
-	    obj.sessionId = taskId;
-	    obj.dom = html2element(template$1); // How will the chapter form know which time is currently selected? Should there be a dummy version that is assigned from the outside? So that the accessing can be done only when needed?
+	    obj.sessionId = "Delta wing";
+	    obj.dom = html2element(template); // Add the Stats object.
 
-	    obj.tagform = new TagForm(renderer, scene, camera);
-	    obj.dom.appendChild(obj.tagform.node); // TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
+	    obj.stats = new stats_min();
+	    obj.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+
+	    obj.dom.querySelector("div.stats").appendChild(obj.stats.dom);
+	    obj.stats.dom.style.left = "";
+	    obj.stats.dom.style.top = "";
+	    obj.stats.dom.style.right = "0px";
+	    obj.stats.dom.style.bottom = "0px"; // The overall gui should only contain folders.
+
+	    obj.session = new g({
+	      container: obj.dom.querySelector("div.righttop"),
+	      title: "Session controls"
+	    }); // Folder for individual elements
+
+	    obj.elements = obj.session.addFolder("Elements");
+	    obj.addElementOptions(elementOptions); // TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
 
 	    obj.tagoverview = new TagOverview(scene, camera);
 	    obj.dom.appendChild(obj.tagoverview.node); // Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
@@ -39753,15 +39054,14 @@
 	      }; // onclose
 
 	    } // setupWebSocket
-	    // Commenting needs to know the current user so it can highlight the vote buttons correctly.
 
 
-	    obj.tagform.userinput.oninput = function () {
-	      obj.commenting.user = obj.tagform.userinput.value;
-	    }; // oninput
+	    var author = "Aljaz";
+	    obj.annotations = obj.session.addFolder("3D Annotation"); // Create a lil-gui version o fthe 3D annotation form.
 
+	    obj.volumetags = new Annotation3DForm(obj.annotations, renderer, scene, camera);
 
-	    obj.tagform.submit = function (tag) {
+	    obj.volumetags.send = function (tag) {
 	      // Tag comes with at least the tag name from tagform.
 	      // The author and taskId are obligatory
 	      //Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
@@ -39775,12 +39075,10 @@
 
 	    obj.commenting.form.submit = function (comment) {
 	      // Commenting only requires the author.
-	      var username = obj.tagform.author;
-
-	      if (comment && username) {
+	      if (comment && author) {
 	        var tag = {
 	          taskId: obj.sessionId,
-	          author: username,
+	          author: author,
 	          comment: comment,
 	          type: "tag"
 	        };
@@ -39801,10 +39099,51 @@
 
 	    }; // submitvote
 
-	  } // constuctor
+	  } // constructor
 
 
-	  _createClass(AnnotationSystem, [{
+	  _createClass(SessionGUI, [{
+	    key: "update",
+	    value: function update() {
+	      var obj = this;
+	      obj.stats.update();
+	      obj.volumetags.annotations.update();
+	      obj.tagoverview.update();
+	    } // update
+
+	  }, {
+	    key: "addElementOptions",
+	    value: function addElementOptions(elementOptions) {
+	      var obj = this;
+
+	      if (elementOptions) {
+	        // Folder for addition of elements, which should have a dropdown to select element type, 
+	        // textbox to specify the file name, and a submit button.
+	        var addElementGUI = obj.session.addFolder("Add element"); // The button should open a modal, or append a selection to the GUI to configure the element to be added.
+
+	        var addElementConfig = {
+	          type: '',
+	          name: 'type in asset address',
+	          add: function add(el) {
+	            // Evaluate the current config and clear it.
+	            if (elementOptions[addElementConfig.type]) {
+	              var f = elementOptions[addElementConfig.type];
+	              f(addElementConfig.name);
+	            } // if
+
+	          } // add
+
+	        };
+	        addElementGUI.add(addElementConfig, "type", [''].concat(Object.keys(elementOptions))); // dropdown
+
+	        addElementGUI.add(addElementConfig, "name"); // text field
+
+	        addElementGUI.add(addElementConfig, "add"); // button
+	      } // if
+
+	    } // addElementOptions
+
+	  }, {
 	    key: "purge",
 	    value: function purge() {
 	      var obj = this;
@@ -39867,76 +39206,6 @@
 	      }); // forEach
 	    } // processvote
 
-	  }]);
-
-	  return AnnotationSystem;
-	}(); // AnnotationSystem
-
-	var template = "\n<div class=\"hud\">\n  <div class=\"stats\"></div>\n  <div class=\"lefttop\"></div>\n  <div class=\"righttop\"></div>\n</div>\n";
-
-	var SessionGUI = /*#__PURE__*/function () {
-	  function SessionGUI(elementOptions, renderer, scene, camera) {
-	    _classCallCheck(this, SessionGUI);
-
-	    var obj = this;
-	    obj.dom = html2element(template); // Add the Stats object.
-
-	    obj.stats = new stats_min();
-	    obj.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-
-	    obj.dom.querySelector("div.stats").appendChild(obj.stats.dom);
-	    obj.stats.dom.style.left = "";
-	    obj.stats.dom.style.top = "";
-	    obj.stats.dom.style.right = "0px";
-	    obj.stats.dom.style.bottom = "0px"; // The overall gui should only contain folders.
-
-	    obj.session = new g({
-	      container: obj.dom.querySelector("div.righttop"),
-	      title: "Session controls"
-	    }); // Folder for individual elements
-
-	    obj.elements = obj.session.addFolder("Elements");
-
-	    if (elementOptions) {
-	      // Folder for addition of elements, which should have a dropdown to select element type, 
-	      // textbox to specify the file name, and a submit button.
-	      var addElementGUI = obj.session.addFolder("Add element"); // The button should open a modal, or append a selection to the GUI to configure the element to be added.
-
-	      var addElementConfig = {
-	        type: '',
-	        name: 'type in asset address',
-	        add: function add(el) {
-	          // Evaluate the current config and clear it.
-	          if (elementOptions[addElementConfig.type]) {
-	            var f = elementOptions[addElementConfig.type];
-	            f(addElementConfig.name);
-	          } // if
-
-	        } // add
-
-	      };
-	      addElementGUI.add(addElementConfig, "type", [''].concat(Object.keys(elementOptions))); // dropdown
-
-	      addElementGUI.add(addElementConfig, "name"); // text field
-
-	      addElementGUI.add(addElementConfig, "add"); // button
-	    } // if
-	    // Annotations. Input is a `taskId'
-
-
-	    obj.annotations = new AnnotationSystem("Delta wing", renderer, scene, camera);
-	    obj.dom.querySelector("div.righttop").appendChild(obj.annotations.dom);
-	  } // constructor
-
-
-	  _createClass(SessionGUI, [{
-	    key: "update",
-	    value: function update() {
-	      var obj = this;
-	      obj.stats.update();
-	      obj.annotations.tagform.volumetags.annotations.update();
-	      obj.annotations.tagoverview.update();
-	    }
 	  }]);
 
 	  return SessionGUI;
@@ -40292,6 +39561,19 @@
 	  document.body.appendChild(gui.dom); // The glow of the annotations needs to be updated.
 
 	  elementsThatNeedToBeUpdated.push(gui);
+	  var tc = gui.annotations.controllers.find(function (c) {
+	    return c.property == "position";
+	  });
+	  allTransformControllers.push(tc);
+
+	  gui.volumetags.changeTransformObject = function (v) {
+	    var current = gui.volumetags.annotations.selected[0];
+	    v = current ? v : false;
+	    switchTransformObject(v, tc, current, function () {
+	      gui.volumetags.annotations.ontransform();
+	    });
+	  }; // changeTransformObject
+
 	} // setupHUD
 	// CONTROLS - ADDED TO CSS RENDERER!!!!
 
@@ -40301,20 +39583,24 @@
 	  arcballcontrols.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
-	  arcballcontrols.update();
-	  console.log(setGizmoOpacity);
-	  console.log(arcballcontrols);
+	  arcballcontrols.update(); // console.log(setGizmoOpacity)
+
+	  console.log(arcballcontrols, getVista, moveToVista);
 	} // addArcballControls
+	// These two work, just some easing still needs to be applied, and the vista should be stored in the database!
 
 
-	function setGizmoOpacity(active) {
-	  arcballcontrols._gizmos.children.forEach(function (gizmoLine) {
-	    gizmoLine.material.setValues({
-	      opacity: 1 * active
-	    });
-	  }); // forEach
+	function moveToVista(af, cp) {
+	  // Set the arcballcontrols focus to `af', and move the camera to the relevant position 'cp'.
+	  arcballcontrols.focus(af.point, af.size, af.amount);
+	  camera.position.set(cp.x, cp.y, cp.z);
+	  arcballcontrols.update();
+	} // moveToVista
 
-	} // setGizmoOpacity
+
+	function getVista() {
+	  return [arcballcontrols.retrieveCurrentFocus(), camera.position.clone()];
+	} // getVista
 
 
 	function addTransformControls() {

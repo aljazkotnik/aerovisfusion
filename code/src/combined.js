@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
+import { ArcballControls } from "./GUI/ArcballControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
 
@@ -279,6 +279,16 @@ function setupHUD(){
 	
 	// The glow of the annotations needs to be updated.
 	elementsThatNeedToBeUpdated.push( gui )
+	
+	
+	
+	const tc = gui.annotations.controllers.find(c=>c.property=="position");
+	allTransformControllers.push(tc);
+	gui.volumetags.changeTransformObject = function(v){
+		let current = gui.volumetags.annotations.selected[0];
+		v = current ? v : false;
+		switchTransformObject( v, tc, current, function(){gui.volumetags.annotations.ontransform()} );
+	} // changeTransformObject
 
 } // setupHUD
 
@@ -294,17 +304,33 @@ function addArcballControls(){
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	arcballcontrols.update();
 
-	console.log(setGizmoOpacity)
-	console.log(arcballcontrols)
+	// console.log(setGizmoOpacity)
+	console.log(arcballcontrols, getVista, moveToVista)
 	
 } // addArcballControls
 
 
+// CONVENIENCE FUNCTIONS
 function setGizmoOpacity(active){
 	arcballcontrols._gizmos.children.forEach(function(gizmoLine){
 		gizmoLine.material.setValues( { opacity: 1*active } );
 	}) // forEach
 } // setGizmoOpacity
+
+
+// These two work, just some easing still needs to be applied, and the vista should be stored in the database!
+function moveToVista(af, cp){
+	// Set the arcballcontrols focus to `af', and move the camera to the relevant position 'cp'.
+	arcballcontrols.focus( af.point, af.size, af.amount );
+	camera.position.set( cp.x, cp.y, cp.z );
+	arcballcontrols.update();
+} // moveToVista
+
+function getVista(){
+	return [arcballcontrols.retrieveCurrentFocus(), camera.position.clone()]
+} // getVista
+
+
 
 
 

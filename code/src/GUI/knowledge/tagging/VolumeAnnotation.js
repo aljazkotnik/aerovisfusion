@@ -51,6 +51,10 @@ var annotationSphereGeom = new THREE.SphereGeometry(1, 32, 16);
 
 
 export default class VolumeAnnotation{
+	
+	selected = [];
+	hidden = [];
+	
 	constructor(camera){
 		let obj = this;
 		
@@ -153,6 +157,15 @@ export default class VolumeAnnotation{
 		
 		
 	} // update
+	
+	
+	ontransform(){
+		let obj = this;
+		let adjustedSphere = obj.selected[0];
+		for(let i=1; i<obj.selected.length; i++){
+			obj.selected[i].position.copy( adjustedSphere.position );
+		} // for
+	} // ontransform
 	
 	
 } // VolumeAnnotation

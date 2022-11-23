@@ -28,19 +28,13 @@ let template = `
 <div style="width: 300px">
   <div>
     <input class="username" type="text" placeholder="username" style="${css.input} width: 65px;"></input>
-
     <input class="tagname" type="text" placeholder="#tag-name" style="${css.input} width: 65px;"></input>
   
-    <input class="tagvalue" type="text" placeholder="value" style="${css.input} width: 35px;"></input>
+    <button class="geom3d" style="${ css.button } ${css.iconbutton}">💡</button>
+	<button class="submit" style="${ css.button }">Submit</button>
   
   </div>
   
-  <div class="buttons" style="margin-top: 5px;">
-      <button class="geom2d" style="${ css.button } ${css.iconbutton}">📐</button>
-	  <button class="geom3d" style="${ css.button } ${css.iconbutton}">💡</button>
-	  <button class="vista" style="${ css.button } ${css.iconbutton}">🔭</button>
-      <button class="submit" style="${ css.button }">Submit</button>
-  </div>
   
   <div class="subforms" style="margin-top: 5px;">
   </div>
@@ -59,7 +53,6 @@ export default class TagForm{
 	
 	obj.userinput = obj.node.querySelector("input.username");
 	obj.nameinput = obj.node.querySelector("input.tagname");
-	obj.valueinput = obj.node.querySelector("input.tagvalue");
 	obj.buttons = obj.node.querySelector("div.buttons");
 	
 	// This value will be overwritten during interactions, and is where the tag manager collects the time for the timestamps.
@@ -124,7 +117,6 @@ export default class TagForm{
   clear(){
 	let obj = this;
 	obj.nameinput.value = "";
-	obj.valueinput.value = "";
 	obj.update();
   } // clear
   
@@ -148,7 +140,6 @@ export default class TagForm{
 	let tag = { 
 	    author: obj.author,
 		name: obj.nameinput.value,
-		value: obj.valueinput.value,
 		geometry: JSON.stringify( obj.volumetags.geometry )
 	} // tag
 	
