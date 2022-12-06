@@ -1,6 +1,0 @@
-{
-"name": "Delta wing",
-"vertices": "./assets/deltawing/wing/vertices.bin",
-"indices": "./assets/deltawing/wing/indices.bin",
-"values": "./assets/deltawing/wing/mach.bin"
-}

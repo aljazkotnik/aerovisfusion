@@ -65,8 +65,8 @@ export default class AnimatedStaticStreamlines{
 	// So instead there should be a remainder that gets transformed.
 	t0 = performance.now();
 	CurrentShowTime = 0
-	IntegrationSpan = [-0.009302791000000, 0.014919188];
-	CycleDuration = 20*1e3; // [ms];
+	IntegrationSpan = [0, 1];
+	CycleDuration = 10*1e3; // [ms];
 	
 	
 	
@@ -95,6 +95,10 @@ export default class AnimatedStaticStreamlines{
 
 		obj.streamlineLoadPromise = fetch( source )
 		  .then(res=>res.json())
+		  .then(json=>{
+			  obj.IntegrationSpan = json.IntegrationSpan;
+			  return json.data;
+		  })
 
 
 		obj.dataPromise = obj.streamlineLoadPromise.then(sa=>{
@@ -123,7 +127,7 @@ export default class AnimatedStaticStreamlines{
 		
 		// Calculate the current integration time
 		if(obj.animated){
-			const t = ((performance.now() - obj.t0) % obj.CycleDuration)/obj.CycleDuration
+			const t = ((performance.now() - obj.t0) % obj.CycleDuration)/obj.CycleDuration;
 			obj.show(t);
 		}
 		
@@ -143,7 +147,7 @@ export default class AnimatedStaticStreamlines{
 
 
 		let line = new THREE.Line(geometry, obj.streamlinematerial.clone());
-		line.tOffset = Math.random()*obj.CycleDuration;
+		line.tOffset = Math.random();
 		line.times = streamlineJson.IntegrationTime.reverse(); // reverse so checking for last element under time.
 	  
 		obj.lines.push(line);
@@ -175,10 +179,11 @@ export default class AnimatedStaticStreamlines{
 		let obj = this;
 		// Fadeout was achieved by changing hte color on-the-go....
 		// That was a lot of work being done all the time - constant traversal of the data, constant communication with the GPU...
-		let L = 5;
+
 		obj.CurrentShowTime = t;
 		
 		obj.lines.forEach(line=>{
+			if(line.userData.attached){
 			// Even if I have the streamlines precomputed I still only move based on hte index position in hte array - still cannot simulate the actual velocity... Ok, but does it just advance to the point while keeping hte ones in hte back?
 			
 			// Don't increment every redraw, but instead find the index to the correct timestep. That should be the last timestep behind - always lagging a bit?
@@ -189,11 +194,17 @@ export default class AnimatedStaticStreamlines{
 			// What to do when the reverse index isn't found? Then 0 should be output. Furthermore, stagger the indices by the random offset. But this offset should be in time!!
 			
 			// Multiply with animated to allow for synchronised view.
-			let tShow = (t + obj.animated*line.tOffset)%1*(obj.IntegrationSpan[1]-obj.IntegrationSpan[0]) + obj.IntegrationSpan[0];
+			let tLead = (t + obj.animated*line.tOffset)%1*(obj.IntegrationSpan[1]-obj.IntegrationSpan[0]) + obj.IntegrationSpan[0];
+			let tTail = Math.max( tLead - 5*0.00012, obj.IntegrationSpan[0] );
+			
 			
 			// Age will always be > 0. t e[0,1], tOffset e[0,1]
-			let revi = line.times.findIndex(function(v){return v <= tShow});
+			let iLead = (line.times.length-1) - line.times.findIndex(function(v){return v <= tLead});
+			let iTail = (line.times.length-1) - line.times.findIndex(function(v){return v <= tTail});
 			
+			if(obj.collect && line.userData.attached){
+			    console.log(iLead, iTail)	
+			}
 			
 			/*
 			Model it as the end of the line moving and dragging the lines behind itself?
@@ -206,21 +217,13 @@ export default class AnimatedStaticStreamlines{
 			
 			*/
 			
-			// It's forward drawing: start at i and draw n vertices;
-			// Fade in: until age >= L, i=0, and n=age
-			// Fade out: if age > maxAge, 
-			
-			// Implement the fadeout and fade in. fadeout is easy - just let the index go past the maximum. For fadeIn the 
-			
-			
-			revi = revi < 0 ? 0 : line.times.length-1-revi;
-			let start = Math.max(0, revi - 5);
-			let count = revi-L < 0 ? start : (revi+5>line.times.length ? line.times.length-revi : 5 );
+			let start = iLead;
+			let count = iLead - iTail;
 			
 					
-			line.geometry.setDrawRange( start, count)
+			line.geometry.setDrawRange( start, count )
 			
-			
+			} // if
 		}) // forEach
 		
 	} // show

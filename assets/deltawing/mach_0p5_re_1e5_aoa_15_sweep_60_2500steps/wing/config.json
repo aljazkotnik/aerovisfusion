@@ -1,0 +1,24 @@
+{
+"name": "Delta wing",
+"domain": {
+"x": [
+-0.2883799970149994,
+1.039628267288208
+],
+"y": [
+99.99981689453125,
+101.0000228881836
+],
+"z": [
+-4.039999978999731e-08,
+0.18765991926193237
+],
+"mach": [
+0.23245540261268616,
+0.7805201411247253
+]
+},
+"vertices": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/wing/vertices.bin",
+"indices": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/wing/indices.bin",
+"mach": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/wing/mach.bin"
+}

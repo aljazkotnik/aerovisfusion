@@ -154,6 +154,10 @@ export default class ColorBar{
 	let obj = this;
 	
 	
+	// Prevent alpha from being out of bounds.
+	alpha = Math.min(alpha, obj.maxV)
+	alpha = Math.max(alpha, obj.minV)
+	
 	// Now loop through the predefined colormap values and see where the alpha value sits.
 	for(let j=0; j<obj._colormap.map.length-1; j ++ ){
 	  // Check if alpha is within this predefined color band.
@@ -174,6 +178,12 @@ export default class ColorBar{
 	return "incorrect input";
 	
   } // interpolateAlpha
+  
+  
+  getColor(v){
+	let obj = this;
+	return obj.interpolateAlpha( 1-(v-obj.minV)/(obj.maxV-obj.minV) );
+  } // getColor
   
   
   

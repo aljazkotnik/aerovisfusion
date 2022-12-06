@@ -11,8 +11,14 @@ import IframeVideo from "./components/IframeVideo.js";
 import StaticImage from "./components/StaticImage.js";
 import ContouredMesh from "./components/ContouredMesh.js";
 import Decal from "./components/Decal.js";
+
 import IsoSurface from "./components/IsoSurface.js";
+// import IsoSurface from "./components/DummyIsoSurface.js";
+
 import AnimatedStaticStreamlines from "./components/AnimatedStaticStreamlines.js";
+
+
+
 
 // GUI
 import SessionGUI from "./GUI/SessionGUI.js";
@@ -54,7 +60,7 @@ var sceneCSS, rendererCSS;
 
 // Colorbar
 const color = new THREE.Color();
-const colorbar = new ColorBar(0.14, 0.44);
+const colorbar = new ColorBar(0.23, 0.78);
 colorbar.colormap = "d3Spectral";
 
 
@@ -86,13 +92,15 @@ function init() {
 	
 	
 	
+	const task = "./assets/deltawing/" + "mach_0p5_re_1e5_aoa_15_sweep_60_2500steps";
+	
 	// For development
-	addWingGeometry('./assets/deltawing/wing/config_deltawing.json');
-	// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	// addDecal('assets/20220125_143807_gray.jpg');
-	// addIsoSurface('./assets/deltawing/block/config_isosurface.json');
-	// addAnimatedStreamlines('./assets/deltawing/streamlines/streamlines_suction_side_min.json');
+	addWingGeometry( task + '/wing/config.json');
+	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	addDecal('assets/20220125_143807_gray.jpg');
+	addIsoSurface(task + '/block/config.json');
+	addAnimatedStreamlines(task + '/streamlines/vortex.json');
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -113,9 +121,55 @@ function setupScene(){
 	sceneWebGL.name = "sceneWebGL";
 	sceneCSS.name = "sceneCSS";
 	
-	// LIGHTS - ambient light seems to be sufficient.
+	// LIGHTS - ambient light shows everything, but does not allow for shadows to be cast.
 	var ambientLight = new THREE.AmbientLight( 0xaaaaaa );
 	sceneWebGL.add( ambientLight );
+
+
+	// Position lights to cast shadows around hte scene.
+	const light1 = new THREE.PointLight( 0xffffff, 0.2 );
+	const light2 = new THREE.PointLight( 0xffffff, 0.2 );
+	const light3 = new THREE.PointLight( 0xffffff, 0.2 );
+	const light4 = new THREE.PointLight( 0xffffff, 0.2 );
+	const light5 = new THREE.PointLight( 0xffffff, 0.2 );
+	const light6 = new THREE.PointLight( 0xffffff, 0.2 );
+
+	let xMid = domainMidPoint.x;
+	let yMid = domainMidPoint.y;
+	let zMid = domainMidPoint.z;
+
+	// These are different lights for different faces.
+	light1.position.set( xMid, yMid, zMid + 2 );
+	light2.position.set( xMid, yMid, zMid - 2 );
+	light3.position.set( xMid + 2, yMid, zMid  );
+	light4.position.set( xMid - 2, yMid, zMid );
+	light5.position.set( xMid, yMid + 2, zMid  );
+	light6.position.set( xMid, yMid - 2, zMid );
+
+
+	sceneWebGL.add(light1)
+	sceneWebGL.add(light2)
+	sceneWebGL.add(light3)
+	sceneWebGL.add(light4)
+	sceneWebGL.add(light5)
+	sceneWebGL.add(light6)
+	
+	/*
+	const lightHelper1 = new THREE.PointLightHelper(light1, 0.01);
+	const lightHelper2 = new THREE.PointLightHelper(light2, 0.01);
+	const lightHelper3 = new THREE.PointLightHelper(light3, 0.01);
+	const lightHelper4 = new THREE.PointLightHelper(light4, 0.01);
+	const lightHelper5 = new THREE.PointLightHelper(light5, 0.01);
+	const lightHelper6 = new THREE.PointLightHelper(light6, 0.01);
+	
+	sceneWebGL.add( lightHelper1 );
+	sceneWebGL.add( lightHelper2 );
+	sceneWebGL.add( lightHelper3 );
+	sceneWebGL.add( lightHelper4 );
+	sceneWebGL.add( lightHelper5 );
+	sceneWebGL.add( lightHelper6 );
+	*/
+	
 
 	
 	// RENDERERS - css for video, webgl for CFD geometry
@@ -127,7 +181,7 @@ function setupScene(){
 	rendererCSS.name = "rendererCSS";
     
     rendererWebGL = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    rendererWebGL.setClearColor( 0x000000, 0 );
+    rendererWebGL.setClearColor( 0x000000, 1 );
     rendererWebGL.setPixelRatio( window.devicePixelRatio );
     rendererWebGL.setSize( window.innerWidth, window.innerHeight );
     rendererWebGL.shadowMap.enabled = true;
@@ -208,7 +262,7 @@ function addStaticImage(id, w, x, y, z, rx, ry, rz){
 	allTransformControllers.push(tc);
 	tc.onChange(function(v){
 		// If the value is false, then nothing should happen.
-		obj.created.then( webGLImage=>{
+		im.created.then( webGLImage=>{
 			switchTransformObject( v, tc, webGLImage )
 		}); // then
 	});
@@ -235,10 +289,12 @@ function addDecal( decalImageFilename ){
 
 function addIsoSurface( configFilename ){
 	
-	const iso = new IsoSurface( configFilename );
+	const iso = new IsoSurface( configFilename, colorbar );
 	iso.addTo( sceneWebGL );
 	iso.addGUI( gui.elements );
 	
+	
+	console.log("Isosurface", iso)
 } // addIsoSurface
 
 
@@ -251,7 +307,7 @@ function addAnimatedStreamlines( configFilename ){
 	// Streamlines need to be made aware of an external update.
 	elementsThatNeedToBeUpdated.push(streamlines);
 	
-	streamlines.nlines(0,100);
+	streamlines.nlines(0,2000);
 	console.log(streamlines)
 } // addAnimatedStreamlines
 
@@ -282,6 +338,15 @@ function setupHUD(){
 	
 	
 	
+	
+	// Append the colorbar somewhere.
+	// gui.dom.querySelector("div.righttop").appendChild( colorbar.canvas )
+	
+	
+	
+	
+	
+	// Allow selected 3D annotations to be repositioned using transform controls.
 	const tc = gui.annotations.controllers.find(c=>c.property=="position");
 	allTransformControllers.push(tc);
 	gui.volumetags.changeTransformObject = function(v){
@@ -304,8 +369,8 @@ function addArcballControls(){
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	arcballcontrols.update();
 
-	// console.log(setGizmoOpacity)
-	console.log(arcballcontrols, getVista, moveToVista)
+	console.log(setGizmoOpacity)
+	// console.log(arcballcontrols, getVista, moveToVista)
 	
 } // addArcballControls
 

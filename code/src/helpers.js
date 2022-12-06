@@ -12,6 +12,30 @@ export function svg2element(svg){
 
 
 
+export function getArrayMax(arr) {
+    let len = arr.length;
+    let max = -Infinity;
+
+    while (len--) {
+        max = arr[len] > max ? arr[len] : max;
+    }
+    return max;
+}
+
+
+export function getArrayMin(arr) {
+    let len = arr.length;
+    let min = Infinity;
+
+    while (len--) {
+        min = arr[len] < min ? arr[len] : min;
+    }
+    return min;
+}
+
+
+
+
 
 export function text2csv(t){
 	// Read a regular table and create json objects based on the rows.

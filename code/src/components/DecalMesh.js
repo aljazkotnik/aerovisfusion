@@ -46,8 +46,7 @@ export default class DecalMesh{
 			depthWrite: false,
 			polygonOffset: true,
 			polygonOffsetFactor: - 4,
-			wireframe: false,
-			blending: THREE.AdditiveBlending
+			wireframe: false
 		} );
 		const placeholderGeometry = new THREE.BufferGeometry();
 		

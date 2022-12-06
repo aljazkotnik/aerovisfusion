@@ -206,7 +206,7 @@ export default class ContouredMesh{
 			let indicesPromise = fetch( json.indices )
 			  .then(res=>res.arrayBuffer())
 			  .then(ab=>{return new Uint32Array(ab)}); // uint32
-			let valuePromise = fetch( json.values )
+			let valuePromise = fetch( json.mach )
 			  .then(res=>res.arrayBuffer())
 			  .then(ab=>{return new Float32Array(ab)}); // float32
 		

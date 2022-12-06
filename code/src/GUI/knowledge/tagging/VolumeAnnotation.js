@@ -66,7 +66,7 @@ export default class VolumeAnnotation{
 		// Create a group here.
 		obj.group = new THREE.Group();
 		
-		
+		console.log(obj)
 	} // constructor
 	
 	

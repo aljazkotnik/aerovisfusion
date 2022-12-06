@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { generateMeshVTK } from "./marching.js";
-import { trimStringToLength } from "../helpers.js";
+import { trimStringToLength, getArrayMin, getArrayMax } from "../helpers.js";
 
 export default class IsoSurface{
 	
@@ -9,9 +9,10 @@ export default class IsoSurface{
 	step = 0.05
 	value = 0
 	
-	constructor( configFilename ){
+	constructor( configFilename, colorbar ){
 		let obj = this;
 		
+		obj.colorbar = colorbar;
 		
 		obj.config = {
 			visible: true,
@@ -34,7 +35,7 @@ export default class IsoSurface{
 			let indicesPromise = fetch( json.indices )
 			  .then(res=>res.arrayBuffer())
 			  .then(ab=>{return new Uint32Array(ab)}); // uint32
-			let valuePromise = fetch( json.values )
+			let valuePromise = fetch( json.mach )
 			  .then(res=>res.arrayBuffer())
 			  .then(ab=>{return new Float32Array(ab)}); // float32
 			  
@@ -67,9 +68,13 @@ export default class IsoSurface{
 			const surface = generateMeshVTK(d, obj.config.threshold );
 			
 			
+			
+			
+		
+			
 			// Material.
-			const material = new THREE.MeshBasicMaterial( { 
-				color: 0xDCDCDC,
+			const material = new THREE.MeshLambertMaterial( { 
+				color: obj.colorbar.getColor( obj.config.threshold ),
 				side: THREE.DoubleSide
 			} );
 			
@@ -81,6 +86,7 @@ export default class IsoSurface{
 			geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ));
 			geometry.attributes.position.usage = THREE.DynamicDrawUsage;
 			geometry.setIndex( new THREE.BufferAttribute( indices, 1) );
+			geometry.computeVertexNormals();
 			
 			const mesh = new THREE.Mesh( geometry, material );
 			mesh.name = obj.config.source;
@@ -119,10 +125,12 @@ export default class IsoSurface{
 			geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
 			geometry.attributes.position.usage = THREE.DynamicDrawUsage;
 			geometry.setIndex( new THREE.BufferAttribute( indices, 1) );
+			geometry.computeVertexNormals();
 	
 			mesh.geometry.dispose();
 			mesh.geometry = geometry;
 			
+			mesh.material.color.set( obj.colorbar.getColor( obj.threshold ) )
 		}) // Promise.all
 		
 	} // update
@@ -131,8 +139,8 @@ export default class IsoSurface{
 	updateControlsToValuesRange(values){
 		let obj = this;
 		
-		let a = parseFloat( Math.min.apply( null, values ).toPrecision(3) )
-		let b = parseFloat( Math.max.apply( null, values ).toPrecision(3) )
+		let a = parseFloat( getArrayMin(values).toPrecision(3) )
+		let b = parseFloat( getArrayMax(values).toPrecision(3) )
 		let step = (b-a)/100;
 		
 		obj.step = step;
@@ -201,9 +209,6 @@ function bin2array(binarray, ncomp){
 	} // for
 	return r
 } // bin2array
-
-
-
 
 
 

@@ -29,7 +29,6 @@ export default class DecalTextureUI{
 		obj.node = html2element(template);
 		
 		
-		
 		// Create the canvas to draw and edit the texture on.
 		let canvas = obj.node.querySelector("canvas");
 		// document.createElement('canvas');
@@ -61,6 +60,11 @@ export default class DecalTextureUI{
 		obj.maskUI.onpointermove = function(){
 			obj.render();
 		}
+		
+		
+		
+		obj.trackpad = new TrackpadImage();
+		
 		
 		
 		// Add in the GUI.
@@ -116,6 +120,7 @@ export default class DecalTextureUI{
 
 		/// draw the image to be clipped
 		obj.rawImage.draw();
+		obj.rawImage.draw();
 	} // preview
 	
 	
@@ -135,6 +140,8 @@ export default class DecalTextureUI{
 	
 	show(){
 		let obj = this;
+		obj.node.style.width = `${ window.innerWidth }px`;
+		obj.node.style.height = `${ window.innerHeight }px`;
 		obj.node.style.display = "";
 	} // show
 	
@@ -310,13 +317,14 @@ class MaskEditor{
 		
 		ctx.canvas.addEventListener("pointerdown", function(event){
 			// Register the relevant geometry, and the initial clicked point. But how will the redrawing work? For that I need the original image.
+			event.stopPropagation()
 			pointerDown = event;
 			moved = false;
 			obj.applyGeometrySelection(event);
 		})
 		
 		ctx.canvas.addEventListener("pointermove", function(event){
-
+            event.stopPropagation()
 			if(pointerDown && distPx( obj.event2canvas(pointerDown) , obj.event2canvas(event) )>5**2){
 				moved = true;
 				
@@ -330,6 +338,7 @@ class MaskEditor{
 		}) // pointermove
 		// At move end the correction has to be applied permanently
 		ctx.canvas.addEventListener("pointerup", function(event){
+			event.stopPropagation()
 			if(!moved){
 				obj.addPoint(event)
 			}; // if
@@ -339,6 +348,7 @@ class MaskEditor{
 		}) // pointerup
 		
 		ctx.canvas.addEventListener("pointerout", function(event){
+			event.stopPropagation()
 			obj.applyMoveCorrections();
 			pointerDown = undefined;
 			moved = false;
@@ -613,6 +623,19 @@ class MaskEditor{
 	
 
 } // MaskEditor
+
+
+class TrackpadImage{
+	constructor(){
+		let obj = this;
+		obj.node = document.createElement("canvas");
+		
+		obj.node.width = 256;
+		obj.node.height = 256;
+	} // constructor
+} // TrackpadImage
+
+
 
 
 function distPx(p0, p1){

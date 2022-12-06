@@ -133,7 +133,7 @@ export default class Decal{
 		
 		// Need to know the controller, config, property, callback
 		applyIncrementalBehavior(rc, obj.config, "rotation", function(phi){
-			obj.config.active = v;
+			obj.config.active = phi;
 			ac.updateDisplay();
 			
 			obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
@@ -142,12 +142,17 @@ export default class Decal{
 		});
 		
 		applyIncrementalBehavior(sc, obj.config, "size", function(k){
-			obj.config.active = v;
+			obj.config.active = k;
 			ac.updateDisplay();
 			
 			obj.decal.scale *= k;
 			obj.decal.transform();
 		});
+		
+		
+		
+		// Add in a trackpad and preview.
+		obj.gui.domElement.querySelector("div.children").appendChild( obj.editor.trackpad.node );
 		
 		
 		return obj.gui;

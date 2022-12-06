@@ -1,0 +1,6 @@
+{
+"name": "Isosurface",
+"vertices": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/block/vertices.bin",
+"indices": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/block/indices.bin",
+"mach": "./assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/block/mach.bin"
+}

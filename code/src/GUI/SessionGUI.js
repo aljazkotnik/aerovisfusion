@@ -37,7 +37,8 @@ export default class SessionGUI{
 		// The overall gui should only contain folders.
 		obj.session = new GUI({
 			container: obj.dom.querySelector("div.righttop"),
-			title: "Session controls"
+			title: "Session controls",
+			width: 256+7
 		});
 		
 		// Folder for individual elements
@@ -52,11 +53,11 @@ export default class SessionGUI{
 		
 		// TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
 		obj.tagoverview = new TagOverview(scene, camera);
-		obj.dom.appendChild( obj.tagoverview.node );
+		// obj.dom.appendChild( obj.tagoverview.node );
 		
 		// Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
 		obj.commenting = new CommentingManager();
-		obj.dom.appendChild( obj.commenting.node );
+		// obj.dom.appendChild( obj.commenting.node );
 		
 		
 		
@@ -65,7 +66,7 @@ export default class SessionGUI{
 		
 		// Setup the connection with the server.
 		const serverAddress = "wss://mighty-gentle-silence.glitch.me"; 
-		setupWebSocket();
+		// setupWebSocket();
 
 		function setupWebSocket(){
 			/*

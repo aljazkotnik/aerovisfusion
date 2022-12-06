@@ -23,7 +23,7 @@
 <body>
 
 
-<h1>AEROSENSORFUSION PROJECT</h1>
+<h1>AEROVISFUSION PROJECT</h1>
 
   <div>
   
@@ -35,25 +35,10 @@
 	  </figure>
 	</div>
 
-	<p>During an aerodynamic design evaluation effort several different types of data are collected.
-The task for the aerodynamicist is to formulate an explanation of the observed behavior that
-takes into consideration the features shown in this multimodal data, and make decisions based
-on it. The fusion of data features into a coherent explanation of the observed behaviour is
-usually done solely in the mind of the expert. This paper presents a web-based approach that
-reduces the burden placed on the expert by: (1) allowing image based data, for example oil or
-flow-visualisation paint images to be visually fused with relevant CFD and experimental data,
-such as area traverse measurements, in a common 3D coordinate system, and (2) supporting
-collaborative data analysis and capture of experts’ observations by adding 3D annotation
-shapes, and text comments. The web-based implementation allows for collaborative work, and
-is portable between commercial electronic devices, such as smartphones and tablets, which in
-turn allow portability of the analysis location, and allow the aerodynamicist to easily capture
-additional image-based data using the devices’ cameras.</p>
+	<p>During an aerodynamic design evaluation effort, several different types of data are often collected. The task for the aerodynamicist is to formulate an explanation of the observed behavior that takes into consideration the features shown in this multimodal data, so that design decisions can be made. The fusion of data features into a coherent explanation of the observed behaviour is usually done solely in the mind of the expert. This paper presents a web-based approach that reduces the burden placed on the expert by: (1) allowing image based data, for example oil or flow-visualisation paint images to be visually fused with relevant CFD and experimental data, such as area traverse measurements, in a common 3D coordinate system, and (2) supporting collaborative data analysis and capture of experts' observations by adding 3D annotation shapes, capturing particular views, and text comments. The web-based implementation enables collaborative work, and is portable between commercial electronic devices, such as smartphones and tablets. Such devices not only allow the engineer to move to a new location for the analysis, but also enable the aerodynamicist to easily capture additional image-based data using the devices' cameras.</p>
 
 
-<p>Alternately, the project can be seen as a 3D scientific data visualisation analogue of videos shared online. In the ASME GT 2022 "Industrializing Terabytes for Propulsion and Power" plenary session a desire for shareable open datasets, and ability to capture and transfer insights between engineers effectively was expressed. Focus was put on the scientific community to provide these solutions, and, as many attendees lamented afterwards, not many specific ideas were put forward. This project can be seen to address the challenges posed by the plenary members by providing (1) a web-based environment to share ready made interactive 3D design, simulation, and experimental measurement data visualisations, and (2) the tools to capture insights and annotations collaboratively within the 3D environment.</p>
-
-
-<p>Below the individual components of the proposed environment are discussed in dedicated demos. Clicking on the image takes you to the demo itself.</p>
+<!--p>Alternately, the project can be seen as a 3D scientific data visualisation analogue of videos shared online. In the ASME GT 2022 "Industrializing Terabytes for Propulsion and Power" plenary session a desire for shareable open datasets, and ability to capture and transfer insights between engineers effectively was expressed. Focus was put on the scientific community to provide these solutions, and, as many attendees lamented afterwards, not many specific ideas were put forward. This project can be seen to address the challenges posed by the plenary members by providing (1) a web-based environment to share ready made interactive 3D design, simulation, and experimental measurement data visualisations, and (2) the tools to capture insights and annotations collaboratively within the 3D environment.</p-->
 
 <!--
 
@@ -73,144 +58,19 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
   </div>
 
 
-<h2><span>Annotations</span></h2>
+<h2><span>Demo</span></h2>
 
   <div>
     <div style="max-width: 900px;">
 	  <figure>
-	    <a href="./annotations.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_annotations.JPG" alt="alt1">
+	    <a href="./combined.html" style="text-decoration: none;">
+	      <img src="./assets/combined_teaser.JPG" alt="alt1">
 	    </a>
 	  </figure>
 	</div>
 
-	<p>The demo is set in space because the geometry creation was easy. The user can position yellow glowing annotation spheres on top of the box-satellites by clicking on them. Positioning of spheres in free space is not activated in this demo. By activating the sponge button the user can enter the mode in which clicking on the box satellites removes the spheres.</p>
-
-	<p>To adjust the depth/radius of individual spheres the user must first select the sphere to adjust. By clicking on a sphere its glow turns red indicating that it is selected. The sliders in the top right corner work as incremental controls - grabbing the handle and moving it left adds a negative increment to the relevant property for each change in the input state. This allows for coarse adjustments in the extreme position, and fine adjustments near the center. After letting go the controls re-center.</p>
   </div>
 
-<h2><span>Streamlines</span></h2>
-
-  <div>
-    <div style="max-width: 900px;">
-	  <figure>
-	    <a href="./streamlines.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_streamlines.JPG" alt="alt1"-->
-	    </a>
-	  </figure>
-	</div>
-	
-	
-	<p>This demo uses the delta wing data collected in the Flow Visualisation ExA. CFD is one of the data streams, and to capture knowledge about it some of it must be visualised. This could be a good opportunity to showcase some of Thanassis' work also. It takes some time to load in the streamline data.</p>
-
-	<p>The movement of the 'streamlets' (streamline particle) encodes local flow direction, the color encodes the local Mach number, the length encodes the velocity magnitude. More specifically, the length is the distance that the leading point of the streamlet travelled in the last five re-renders. We've seen a similar visualisation before: a global wind visualisation app PolarGlobe (in the PPD report). Similarly ParaView supports drawing of streamlets. The disadvantage of both the PolarGlobe and ParaView approaches is that for every camera change the seeds need to be reinitialised, and the trace is lost. Furthermore, PolarGlobe selects points in the domain and just adds the local velocity times a delta time to the current point. The delta time is used to control the speed of the animation, but changing it means that the streamlines potentially change also - the authors themselves noted this in their paper.</p>
-
-	<p>My approach relies on ParaView to calculate some streamlines, which I save into a csv file, and subsequently load into the JavaScript environment. The animation is created by only rendering n-points (n=5) at once, and sequentially changing which n vertices are connected with the line. In contrast to the PolarGlobe the vertices to be drawn are on a fixed line, therefore the shape of the line is preserved regardless of animation speed.</p>
-
-	<p>The vertices to be drawn are re-set on every render draw to create the animation. However, camera navigation events trigger additional render calls, which means that camera navigation accelerates the animation. To correct for this the streamline updating can be limited to one draw for a given timestep.</p>
-
-	<p>ParaView does not export points along streamlines at the same integration timesteps - this means that the velocity encoding as length is not really true, as streamlets with larger dt between their constitutive point will artificially appear faster. To address this the ParaView csv data can be re-interpolated to find points comparable timesteps apart.</p>
-
-
-	<p>Another approach is to prescribe the global integration time to all lines, and allow the closest timestep to be selected as the first point of the streamlet. Then a common time offset can be used to find the last streamlet point. This will still not accurately capture integrated velocity as length, because of the need to find the closest timestep, which depends on discretisation.</p>
-
-	<p>Controlling the animation speed. Using the debounced indexing approach the minimum speed relies on the discretisation - if the streamlet refresh rate is too low the streamlets will not move smoothly. Furthermore, the maximum speed is also limited by the discretisation - for very high streamline refresh rates the streamlines are updated every render call, which just advances the index by one, hence the discretisation controls the maximum speed.</p>
-
-	<p>Another consideration is the framerate, which is not always consistent. Therefore to be able to track particles in real time the time prescription method is more applicable. As mentioned above this also controls the speed at which the streamlet advances through the domain. By prescribing two timesteps the start and finish of the streamlet can be defined, which can allow the length of the streamlet to be better controlled. Discretisation still plays a role, as it determines the resolution.</p>
-
-	<p>Streamlines in ParaView were created using the sphere seed geometry: ParaView selects n random intitial streamline positions within the sphere, and starts moving down and upstream of these points to find the lines. Because the streamlines all start relatively close together the streamlets also start together, and move through the domain together. Although such a visualisation may be useful, to visualise the entire flow field with moving streamlines the streamlets need to be offset.</p>
-
-	<p>Fade in, and fade out are controlled by controlling the indexing, dynamically changing the number of vertices to draw from 0 at the beginning to n, and vice versa. An alternate approach is to just find the start/end index based on the timestamps. Then the finding of the correct times handles the fade in and out effects.</p>
- </div>
-	
-<h2><span>Decals</span></h2>
-
- <div>
-    <div style="max-width: 900px;">
-	  <figure>
-	    <a href="./decals.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_decals.JPG" alt="alt1"-->
-	    </a>
-	  </figure>
-	</div>
-	
-	
-	<p><b>Decal approach.</b> Decals are added into the scene as additional scene objects, specifically meshes comprised of a 'DecalGeometry' object, and a material object. DecalGeometry takes as the input the support mesh, a position, orinetation, and size. Based on the latter three parameters a cutout of the support mesh is extracted as the DecalGeometry, and the material is applied to it.</p>
-	
-	
-	<p><b>Decal placement, positioning, orientation, size, and removal.</b> When hovering over geometries that support decal addition an aiming line shows where the center of the decal will be placed, and surface normal at that point. The decals can be placed by clicking on such geometries. After placement the decals can be rotated and resized to allow finer adjustments with the HUD sliders. Repositioning the center of the decal is not supported yet.</p>
-	
-	<p>For any transformation of the decals the target decal needs to first be selected. The selection is done by a long-press gesture, after which the glow of the decal indicates that it has been selected. A single decal can be selected at any time.The same long-press gesture is used to deselect the decal.</p>
-	
-	<p>Because decals are cutouts of the supporting geometry, moving them requires the cutout to be re-done for every interaction. Rotating and resizing primarily change the orientation and size of the cutout-box that is used to cutout the supporting geometry. Repositioning requires the center, which is positioned on the support geometry surface using a raycaster, of the cutout-box to be moved. Simply applying x/y/z offsets to this point will move the center of the cutout-box off of the support geometry surface, which may lead to a part, or all, of the decal disappearing. Instead, the offset point needs to first be re-cast to the surface. The offset itself can be provided using sliders, or by allowing the user to reposition the decal by clicking on the surface again. Dragging gestures to reposition the decal are not available because dragging is already used for general navigation.</p>
-	
-	<p>An alternate positioning option is to duplicate and use the entire mesh as the cutout geometry, and subsequently manipulate the image that is used as the decal to achieve the repositioning. This approach could be to cumbersome for large meshes. However, it could serve the goal of finer repositioning once the initial placement has been performed. The image could have a black border added around it to facilitate repositioning without clipping hte decal. Instead of interacting with the 3D decal, the user could have an image-view open, with the current center drawn on. Then they can move the image around to define a new centerpoint, which will then reposition the decal on the model. Thus just the finer positioning can be achieved through underlying decal image manipulation.</p>
-	
-	<p>Decals can be erased one-by-one by first selecting hte decal to be removed, and then clicking on hte sponge button.</p>
-
-	<p><b>Decal color</b>Decals are currently coloured using a randomly selected color for demo purposes. The wing geometry will ultimately have it's surface coloring changed to represent a physical quantity. At that point the decal should be coloured to represnt that as well.</p>
-
-	
-	<p><b>Why is a dark triangle placed on the other side?</b> For thin geometries the cutting of the support geometries can result in vertices from both sides being selected. Selecting a smaller z component of the cutout size, or updating pushDecalVertex to only select vertices facing towards the clicked-on surface, removes the additional decal on the opposing side. The decals appear black if they are not illuminated by a light.</p>
-	
-		
-	
-	
- </div>	
-	
-<h2><span>Pictures and Videos</span></h2>
-
-  <div>
-  <div style="max-width: 900px;">
-	  <figure>
-	    <a href="./images.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_images.JPG" alt="alt1"-->
-	    </a>
-	  </figure>
-  </div>
-
-
-  <p><b>Embedding videos:</b> We want to draw a video into a scene. The challenges are: hosting a video, drawing it as a texture, and implementing the necessary controls. YouTube already provides a hosting service, and YouTube and Video HTML tags provide some play controls. However, placing them into a WebGL rendered scene renders them as textures, and the interactivity with the video controls is lost.</p>
-  
-  <p>THREEjs provides a CSS3DRenderer that can render an iFrame into the 3D scene, while maintaining interactivity. However, this means that the CSS3DRenderer must work alongside the WebGLRenderer. To achieve this two scenes can be created, one holding hte WebGL rendered elements, and the other CSS elements. By using the same camera for both of them, the same view from both scenes can be overlapped. The CSS scene rendering canvas is overlaid on the WebGL canvas to keep the iFrame interactions, and the camera is controlled through the CSS canvas interactions. However, the elements of both scenes will not intersect. To achieve this effect a plane geometry of the same size as the embedded iFrame is introduced into the WebGL scene - now this plane provides the necessary cuts in the WebGL scene, and is subsequently overlaid with the CSS iFrame. Opacity can be adjusted.</p>
-
-  <p><b>Adding static images:</b> This is straight forward - the image is loaded as a texture. A plane geometry of the same size is created to host it. The texture is applied in the geometry material, and the objsect is sized and poitioned. Opacity can be adjusted.</p>
-
-  <p>CSS rendering allows interactive notes to be posted directly in the 3D environment. Furthermore, the embedding of iFrames allows other interactive visualisations (e.g. from Obsevrable) to be embedded directly into the 3D environment.</p>
-
-  </div>
-  
-  
-  <h2><span>Iso Surfaces</span></h2>
-
-  <div>
-  <div style="max-width: 900px;">
-	  <figure>
-	    <a href="./marchingcubes.html" style="text-decoration: none;">
-	      <img src="./assets/teaser_isosurface.JPG" alt="alt1"-->
-	    </a>
-	  </figure>
-  </div>
-
-
-  <p>Basic integration of Thanassis' early marching cubes code, evaluated using javascript in the browser. This is just an initial demo to make some figures for the paper.</p>
-
-  </div>
-
-
-<h2>Future Work Ideas</h2>
-
-  <div>
-	<p>The application we are making can also be seen as the 3D small multiple rendering inset - much like the unsteady turbine example was a 2D inset. A large part of that work was data handling, and in this project we have the time to attempt to use compressed data that is uncompressed on the GPU. Thanassis already worked on extracting only subsets of relevant 3D data. In addition we could also attempt to perform data tiling. This section of the title could be framed as a challenge to find the largest CFD simulation possible to visualise in the browser. Again we can discuss the idea of 4GB per screen area.</p>
-
-
-	<p>One apparent aspect of ParaView animated streamlets is that they occupy the entire domain, and that the user cannot (is this true?) control the seeding. Streamlet seeding is a similar problem to sampling, e.g. selecting points for traverse measurements. GPR (Gaussian Process Regression) is a common statistical technique that can be applied to determine the locations with the highest/lowest uncertainties, which can help identifiy valuable sampling points. GPR can therefore be used to place streamlets in the most uncertain points of the velocity field, which are the domain points with the largest velocity changes. Maybe a good first approach is to create a model in Matlab and load the line selection in, as opposed to doing it on the fly.</p>
-
-
-	<p>Try to implement virtual smoke visualisation by seeding particles. The particles move along streamlines, but implicitly - their path is influenced at every step. By adjusting their weight, and subsequently inertia the impact of the differences in fluid properties (smoke vs air) could be assessed. Similarly: by adding bounce-stick mechanics to the seeding particles could be allowed to deposit themselves on the surface. By associating a potential flow doublet of a specific strength with the particle could the flow-field velocity be adjusted for following particles without recalculating the base CFD? The potential flow approach could also allow particles to be modelled as something else than a sphere.</p>
-	
-	<p>It's possible to animate the camera to move in the 3D space - this could allow for interactive presentations with the 3D environment in the background. The images and videos could appear as needed!</p>
-  </div>
 
 <h2><span>Authors</span></h2>
 
@@ -229,6 +89,23 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
 			<span>
 			  <i class="fa fa-github"></i>
 			  <a href="https://github.com/aljazkotnik" target="_blank" slot="github">aljazkotnik</a>
+			</span>
+		  </div>
+		</div>
+	  </li>
+	  
+	  <li>
+		<div>
+		  <h4 class="author-name">
+			<span slot="name">Thanassis Frank</span>
+		  </h4>
+		  <div>
+			<span slot="affiliation">University of Cambridge</span>
+		  </div>
+		  <div>
+			<span>
+			  <i class="fa fa-github"></i>
+			  <a href="https://github.com/TFrank366" target="_blank" slot="github">TFrank366</a>
 			</span>
 		  </div>
 		</div>
@@ -263,16 +140,6 @@ ParaView isn't online, and features have some issues. ParaView is staging enviro
   </div>
   
   
-<h2><span>Miscellaneous</span></h2>
-  <div>
-    
-	<p>Ultimately the entry point for the user is the dbslice dash. The user filters out subsets, and observes high level data behavior. Then through the data levels they arrive to the detailed data. At the detailed data the actual flow insights are gathered.</p>
-
-	<p>A design, or concept exploration process is done step by step, and new data is generated every step. The web based dbslice available to users should have an option to upload new data on-the-go. Maybe the metadata can be stored in a background SQL database. An initial query can be made to retrieve all the tasks, at which point the crossfilter indexing is set up to support the interactions.</p>
-
-	<p>Datetime of the simulation should be a parameter in dbslice, that way new users can see the progression of the designs.</p>
-	
-  </div>
 
 </body>
 

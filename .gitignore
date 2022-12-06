@@ -1,1 +1,11 @@
 /code/node_modules/
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/basic_setup.pvsm
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/block.vtu
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/flow-1.vtu
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/flow-2.vtu
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/vortex_streamlines.csv
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/vortex_streamlines_1000.csv
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/vortex_streamlines_5000.csv
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/wing.vtu
+/assets/deltawing/mach_0p5_re_1e5_aoa_15_sweep_60_2500steps/__pycache__
+

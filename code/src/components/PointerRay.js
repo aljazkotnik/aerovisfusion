@@ -41,7 +41,9 @@ export default class PointerRay{
 		const geometry = new THREE.BufferGeometry();
 		geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), 
 								  new THREE.Vector3(0.384, 100, 0.173) ] );
-		obj.line = new THREE.Line( geometry, new THREE.LineBasicMaterial() );
+		obj.line = new THREE.Line( geometry, new THREE.LineBasicMaterial({
+			color: 0x000000
+		}) );
 		
 		
 		
@@ -75,7 +77,7 @@ export default class PointerRay{
 		// For now just focus on adding the pointer helper.
 		window.addEventListener( 'pointermove', function (event){
 			obj.checkIntersection( event.clientX, event.clientY, obj.geometries );
-			obj.pointermove(event);
+			// obj.pointermove(event);
 		}); // onPointerMove
 	
 	} // constructor

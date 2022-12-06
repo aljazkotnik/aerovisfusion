@@ -27,9 +27,29 @@ d.ravel().astype('int32').tofile( open( path+fileout,"w") )
 
 
 import csv
-import json
+import numpy as np
 
-def file2json( fullfilename ):
+
+def getdomain(V):
+    return [np.min(V).tolist(), np.max(V).tolist()]
+
+
+
+
+
+
+def streamlinesParaview2THREE(filename):
+    data = csvFilename2json( filename )
+    streamlines = csvStreamline2jsonStreamline(data)
+    return {
+        "IntegrationSpan": getdomain( [row["IntegrationTime"] for row in data] ),
+        "data": row2array(streamlines)
+    }
+
+
+
+
+def csvFilename2json( fullfilename ):
     data = []
     with open( fullfilename ) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -113,33 +133,28 @@ def csvStreamline2jsonStreamline(c):
 	
 
 
-
-path = "C:\\Users\\ak2164\\Documents\\CAMBRIDGE\\PhD\\github_repos\\aerovisfusion\\assets\\deltawing\\streamlines\\"
-filenamein = "streamlines_suction_side_min.csv"
-filenameout = "streamlines_suction_side_min.json" 
-data = file2json( path+filenamein )
-streamlines = csvStreamline2jsonStreamline(data)
-
-# And now, finally refactor the streamlines.
-s_transformed = []
-for s in streamlines:
-    # I need .Points, .Values, and IntegrationTime
-    points = []
-    values = []
-    times = []
+# And now, finally refactor the streamlines from a series of rows with all the 
+# variables to separate variables holding ll values in an array.
+def row2array(streamlines):
+    s_transformed = []
+    for s in streamlines:
+        # I need .Points, .Values, and IntegrationTime
+        points = []
+        values = []
+        times = []
+        
+        for p in s:
+            points.append(p["Points:0"])
+            points.append(p["Points:1"])
+            points.append(p["Points:2"])
     
-    for p in s:
-        points.append(p["Points:0"])
-        points.append(p["Points:1"])
-        points.append(p["Points:2"])
+            values.append(p["Mach"])
+            times.append(p["IntegrationTime"])
+    
+        s_transformed.append({
+            "Points": points,
+            "Values": values,
+            "IntegrationTime": times
+        })
+    return s_transformed
 
-        values.append(p["Mach"])
-        times.append(p["IntegrationTime"])
-
-    s_transformed.append({
-        "Points": points,
-        "Values": values,
-        "IntegrationTime": times
-    })
-
-json.dump(s_transformed, open(path+filenameout,"w"),indent=4)
