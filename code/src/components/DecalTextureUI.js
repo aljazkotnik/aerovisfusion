@@ -36,14 +36,15 @@ export default class DecalTextureUI{
 		
 		
 		// create an additional alphamap texture.
+		// document.createElement("canvas");
 		obj.texture = new THREE.CanvasTexture(canvas);
 		obj.ctx = canvas.getContext('2d');
 		let ctx = obj.ctx;
 		
 		
 		// The canvas width and height should be determined based on hte image aspect ratio.
-		ctx.canvas.width = 512; // window.innerWidth;
-		ctx.canvas.height = 512; // window.innerHeight;
+		ctx.canvas.width = 2048; // window.innerWidth;
+		ctx.canvas.height = 2048; // window.innerHeight;
 		
 		// Get the raw image.
 		obj.rawImage = new ImageTexture(ctx, source);
@@ -63,8 +64,11 @@ export default class DecalTextureUI{
 		
 		
 		
-		obj.trackpad = new TrackpadImage();
-		
+		// Trackpad to allow the user to adjust the texture. When should the changes be discarded?
+		obj.trackpad = new TrackpadImage(ctx.canvas);
+		obj.trackpad.onadjust = function(){
+			obj.adjust();
+		}
 		
 		
 		// Add in the GUI.
@@ -84,9 +88,11 @@ export default class DecalTextureUI{
 				
 				
 				// Make the main texture
-				guiconfig.preview();
-				obj.texture.needsUpdate = true;
 				obj.hide();
+				obj.adjust();
+				
+				// Update the trackpad image here. The trackpad image will be static anyway.
+				obj.trackpad.render();
 			}
 		}; // guiconfig
 		
@@ -103,8 +109,14 @@ export default class DecalTextureUI{
 		
 	} // constructor
 	
+	adjust(){
+		let obj = this;
+		obj.preview();
+		obj.texture.needsUpdate = true;
+	} // adjust
 	
 	preview(){
+		// What happens if there is no geometry? Then the whole image should be used as a decal. This should be handled in the maskUI.
 		let obj = this;
 		let ctx = obj.ctx;
 		
@@ -112,15 +124,17 @@ export default class DecalTextureUI{
 		ctx.reset();
 		ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
 		
-		/// draw the shape we want to use for clipping
-		obj.maskUI.drawClip();
+		let cs = obj.calculateCenterShift();
+		if( obj.maskUI.maskDrawn() ){			
+			/// draw the shape we want to use for clipping
+			obj.maskUI.drawClip(cs.x, cs.y);
+			
+			/// change composite mode to use that shape. Source-over is default
+			ctx.globalCompositeOperation = 'source-in';
+		} // if
+		/// draw the image to be clipped. But draw it offset, like the mask was offset to be in the middle of the screen.
+		obj.rawImage.draw(cs.x, cs.y);
 		
-		/// change composite mode to use that shape. Source-over is default
-		ctx.globalCompositeOperation = 'source-in';
-
-		/// draw the image to be clipped
-		obj.rawImage.draw();
-		obj.rawImage.draw();
 	} // preview
 	
 	
@@ -140,6 +154,7 @@ export default class DecalTextureUI{
 	
 	show(){
 		let obj = this;
+		
 		obj.node.style.width = `${ window.innerWidth }px`;
 		obj.node.style.height = `${ window.innerHeight }px`;
 		obj.node.style.display = "";
@@ -155,6 +170,21 @@ export default class DecalTextureUI{
 		// Resize the manager given the width and height of the window.
 		
 	}
+	
+	calculateCenterShift(){
+	    // This calculates the offset such that the clipped image will end up centered on hte texture.
+	    let obj = this;
+	   
+	    let canvas = obj.ctx.canvas;
+	    let mask = obj.maskUI.maskRectangle();
+		let adjustments = obj.trackpad.offset();
+	   
+	    return {
+			x: -( canvas.width  - mask.width  ) / 2 + adjustments[0],
+			y: -( canvas.height - mask.height ) / 2 + adjustments[1]
+	    }  
+			
+	} // calculateCenterShift
 	
 } // DecalTextureUI
 
@@ -235,9 +265,12 @@ class ImageTexture{
 	} // unit2px
 	
 	
-	draw(){
+	draw(xoffset, yoffset){
 		let obj = this;
 		let ctx = obj.ctx;
+		
+		let x0 = xoffset ? xoffset : 0;
+		let y0 = yoffset ? yoffset : 0;
 		
 		if(obj.im){
 			// Get the current canvas width and height.
@@ -249,7 +282,7 @@ class ImageTexture{
 			let sh = obj.im.height;
 			
 			// If the canvas is resized here, then everything before this point is thrown away!!
-			ctx.drawImage(obj.im, 0, 0, sw, sh, 0, 0, cw, ch);
+			ctx.drawImage(obj.im, 0, 0, sw, sh, x0, y0, cw, ch);
 		} // if
 	} // draw
 	
@@ -515,23 +548,29 @@ class MaskEditor{
 	} // draw
 	
 	
-	drawClip(){
+	drawClip(xoffset, yoffset){
 		let obj = this;
 		let ctx = obj.ctx;
+		
+		// Include the offset.
+		let x0 = xoffset ? xoffset : 0;
+		let y0 = yoffset ? yoffset : 0;
+		
+		
 		// Draw the current clip
 		ctx.fillStyle = '#FFFFFF';
-		
 		ctx.beginPath();
 		
-		obj.geometries.filter(geometry=>geometry.closed).forEach(closedgeometry=>{
+		let closedGeometries = obj.geometries.filter(geometry=>geometry.closed);
+		
+		closedGeometries.forEach(closedgeometry=>{
 			let points = closedgeometry.map(p=>obj.unit2px(p));
 			
-			ctx.moveTo( points[0][0], points[0][1] );
+			ctx.moveTo( x0+points[0][0], y0+points[0][1] );
 			for(let i=0; i<points.length;i++){
-				ctx.lineTo( points[i][0], points[i][1] );
+				ctx.lineTo( x0+points[i][0], y0+points[i][1] );
 			} // for
-			ctx.fill();
-			
+			ctx.fill();	
 		}) // forEach
 		
 		ctx.clip();
@@ -597,13 +636,22 @@ class MaskEditor{
 	} // drawPoint
 	
 	
+	maskDrawn(){
+		let obj = this;
+		let closedGeometries = obj.geometries
+		  .filter(function(geometry){return geometry.closed})
+		return closedGeometries.length > 0;
+	} // maskDrawn
+	
 	maskRectangle(){
 		let obj = this;
 		
 		// Loop over geometries and find min and max in pixels.
 		let x = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
 		let y = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
-		obj.geometries.forEach(function(geometry){
+		obj.geometries
+		  .filter(function(geometry){return geometry.closed})
+		  .forEach(function(geometry){
 			let points = geometry.map(p=>obj.unit2px(p));
 			points.forEach(function(point){
 				x[0] = x[0] < point[0] ? x[0] : point[0];
@@ -613,11 +661,21 @@ class MaskEditor{
 				y[1] = y[1] > point[1] ? y[1] : point[1];				
 			}) // forEach
 		}) // forEach
+		
+		
+		// If there were no filled geometries then adjust the x and y values.
+		x[0] = x[0]==Number.POSITIVE_INFINITY ? 0 : x[0];
+		x[1] = x[1]==Number.NEGATIVE_INFINITY ? obj.ctx.canvas.width : x[1];
+		
+		y[0] = y[0]==Number.POSITIVE_INFINITY ? 0 : y[0];
+		y[1] = y[1]==Number.NEGATIVE_INFINITY ? obj.ctx.canvas.height : y[1];
+		
+		
 		return {
-			x: x[0], 
+			x: x[0],
 			y: y[0],
-			w: x[1]-x[0],
-			h: y[1]-y[0]
+			width: x[1]-x[0],
+			height: y[1]-y[0]
 		}
 	} // maskRectangle
 	
@@ -626,13 +684,85 @@ class MaskEditor{
 
 
 class TrackpadImage{
-	constructor(){
+	
+	// A list of interactive adjustments made.
+	adjusts = [[0,0]]
+	
+	// Ongoing adjustment.
+	delta = [0,0]
+	
+	constructor(original){
 		let obj = this;
+		
+		// Keep a reference to the original canvas.
+		obj.original = original;
+		
+		// This is the node that is added to the GUI.
 		obj.node = document.createElement("canvas");
+		obj.ctx = obj.node.getContext('2d');
 		
 		obj.node.width = 256;
 		obj.node.height = 256;
+		
+		
+		// There should be a red dot on the canvas that can be dragged around to allow the user to adjust the center of the image.
+		let initialPoint = undefined;
+		obj.node.addEventListener("pointerdown", function(e){
+			// Register the initial event.
+			initialPoint = e;
+			obj.delta = [0,0];
+		}) // pointerdown
+		
+		obj.node.addEventListener("pointermove", function(e){
+			// Update the image.
+			if(initialPoint){
+				obj.delta[0] = e.clientX - initialPoint.clientX;
+				obj.delta[1] = e.clientY - initialPoint.clientY;
+				obj.render();
+				obj.onadjust();
+			} // if
+		}) // pointermove
+		
+		obj.node.addEventListener("pointerup", function(e){
+			// Stop the editing.
+			initialPoint = undefined;
+			obj.adjusts.push(obj.delta);
+			obj.delta = [0,0];
+		}) // pointerup
+		
+		
 	} // constructor
+	
+	
+	offset(){
+		// Return the total offset from all previous interactions, as well as the ongoing one.
+		let obj = this;
+		
+		let previous = obj.adjusts.reduce(function(acc,item){
+			return [acc[0]+item[0], acc[1]+item[1]]
+		}) // reduce
+		
+		return [
+		    obj.delta[0] + previous[0], 
+			obj.delta[1] + previous[1]
+		]
+	} // offset
+	
+	render(){
+		let obj = this;
+		
+		let offset = obj.offset();
+		let canvas = obj.ctx.canvas;
+		
+		// ratio is original px per canvas px.
+		let ratio = Math.min( canvas.width/obj.original.width, canvas.height/obj.original.height )
+		
+		obj.ctx.clearRect(0,0, canvas.width, canvas.height)
+		obj.ctx.drawImage(obj.original, 0,0, obj.original.width, obj.original.height, obj.delta[0] + offset[0], obj.delta[1] + offset[1], obj.original.width*ratio, obj.original.height*ratio)
+	} // render
+	
+	onadjust(){} // onadjust
+	
 } // TrackpadImage
 
 

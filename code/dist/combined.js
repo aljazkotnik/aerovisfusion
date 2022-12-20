@@ -37787,27 +37787,6 @@
 	  return template.content.firstChild;
 	} // html2element
 
-	function getArrayMax(arr) {
-	  var len = arr.length;
-	  var max = -Infinity;
-
-	  while (len--) {
-	    max = arr[len] > max ? arr[len] : max;
-	  }
-
-	  return max;
-	}
-	function getArrayMin(arr) {
-	  var len = arr.length;
-	  var min = Infinity;
-
-	  while (len--) {
-	    min = arr[len] < min ? arr[len] : min;
-	  }
-
-	  return min;
-	}
-
 
 	function trimStringToLength(s, n) {
 	  // n has to be > 3.
@@ -38026,9 +38005,9 @@
 	  return StaticImage;
 	}(); // StaticImage
 
-	var vertexShader$1 = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
+	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
 
-	var fragmentShader$1 = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
+	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
 
 	/* Uniforms controlled by the colorbar GUI:
 	obj.uniforms = {
@@ -38095,8 +38074,8 @@
 	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
 	        var distinctContouringMaterial = new ShaderMaterial({
 	          uniforms: uniforms,
-	          vertexShader: vertexShader$1,
-	          fragmentShader: fragmentShader$1,
+	          vertexShader: vertexShader,
+	          fragmentShader: fragmentShader,
 	          side: DoubleSide
 	        }); // distinctContouringMaterial
 	        // Create teh geometry basics.
@@ -38188,7 +38167,7 @@
 	    var geometry = new BufferGeometry();
 	    geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
 	    obj.line = new Line(geometry, new LineBasicMaterial({
-	      color: 0x000000
+	      color: 0xFFFFFF
 	    })); // Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
 
 	    window.addEventListener('pointerdown', function (event) {
@@ -38716,14 +38695,15 @@
 	    var canvas = obj.node.querySelector("canvas"); // document.createElement('canvas');
 	    // obj.node.querySelector("div.editor").appendChild(canvas)
 	    // create an additional alphamap texture.
+	    // document.createElement("canvas");
 
 	    obj.texture = new CanvasTexture(canvas);
 	    obj.ctx = canvas.getContext('2d');
 	    var ctx = obj.ctx; // The canvas width and height should be determined based on hte image aspect ratio.
 
-	    ctx.canvas.width = 512; // window.innerWidth;
+	    ctx.canvas.width = 2048; // window.innerWidth;
 
-	    ctx.canvas.height = 512; // window.innerHeight;
+	    ctx.canvas.height = 2048; // window.innerHeight;
 	    // Get the raw image.
 
 	    obj.rawImage = new ImageTexture(ctx, source); // Configure the editor
@@ -38741,9 +38721,15 @@
 
 	    obj.maskUI.onpointermove = function () {
 	      obj.render();
-	    };
+	    }; // Trackpad to allow the user to adjust the texture. When should the changes be discarded?
 
-	    obj.trackpad = new TrackpadImage(); // Add in the GUI.
+
+	    obj.trackpad = new TrackpadImage(ctx.canvas);
+
+	    obj.trackpad.onadjust = function () {
+	      obj.adjust();
+	    }; // Add in the GUI.
+
 
 	    var guiconfig = {
 	      preview: function preview() {
@@ -38757,9 +38743,10 @@
 	        // Would be good to somehow enlarge the clipped are to make the whole canvas area available. Enlarging should be easy, it's more about positioning the clip over the image correctly...
 	        // Would be good if the user could select the center of the decal...
 	        // Make the main texture
-	        guiconfig.preview();
-	        obj.texture.needsUpdate = true;
 	        obj.hide();
+	        obj.adjust(); // Update the trackpad image here. The trackpad image will be static anyway.
+
+	        obj.trackpad.render();
 	      }
 	    }; // guiconfig
 	    // Add a gui before the canvas
@@ -38775,20 +38762,34 @@
 
 
 	  _createClass(DecalTextureUI, [{
+	    key: "adjust",
+	    value: function adjust() {
+	      var obj = this;
+	      obj.preview();
+	      obj.texture.needsUpdate = true;
+	    } // adjust
+
+	  }, {
 	    key: "preview",
 	    value: function preview() {
+	      // What happens if there is no geometry? Then the whole image should be used as a decal. This should be handled in the maskUI.
 	      var obj = this;
 	      var ctx = obj.ctx; // Clear everything
 
 	      ctx.reset();
-	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); /// draw the shape we want to use for clipping
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	      var cs = obj.calculateCenterShift();
 
-	      obj.maskUI.drawClip(); /// change composite mode to use that shape. Source-over is default
+	      if (obj.maskUI.maskDrawn()) {
+	        /// draw the shape we want to use for clipping
+	        obj.maskUI.drawClip(cs.x, cs.y); /// change composite mode to use that shape. Source-over is default
 
-	      ctx.globalCompositeOperation = 'source-in'; /// draw the image to be clipped
+	        ctx.globalCompositeOperation = 'source-in';
+	      } // if
+	      /// draw the image to be clipped. But draw it offset, like the mask was offset to be in the middle of the screen.
 
-	      obj.rawImage.draw();
-	      obj.rawImage.draw();
+
+	      obj.rawImage.draw(cs.x, cs.y);
 	    } // preview
 
 	  }, {
@@ -38823,6 +38824,20 @@
 	    key: "resize",
 	    value: function resize(w, h) {// Resize the manager given the width and height of the window.
 	    }
+	  }, {
+	    key: "calculateCenterShift",
+	    value: function calculateCenterShift() {
+	      // This calculates the offset such that the clipped image will end up centered on hte texture.
+	      var obj = this;
+	      var canvas = obj.ctx.canvas;
+	      var mask = obj.maskUI.maskRectangle();
+	      var adjustments = obj.trackpad.offset();
+	      return {
+	        x: -(canvas.width - mask.width) / 2 + adjustments[0],
+	        y: -(canvas.height - mask.height) / 2 + adjustments[1]
+	      };
+	    } // calculateCenterShift
+
 	  }]);
 
 	  return DecalTextureUI;
@@ -38908,9 +38923,11 @@
 
 	  }, {
 	    key: "draw",
-	    value: function draw() {
+	    value: function draw(xoffset, yoffset) {
 	      var obj = this;
 	      var ctx = obj.ctx;
+	      var x0 = xoffset ? xoffset : 0;
+	      var y0 = yoffset ? yoffset : 0;
 
 	      if (obj.im) {
 	        // Get the current canvas width and height.
@@ -38920,7 +38937,7 @@
 	        var sw = obj.im.width;
 	        var sh = obj.im.height; // If the canvas is resized here, then everything before this point is thrown away!!
 
-	        ctx.drawImage(obj.im, 0, 0, sw, sh, 0, 0, cw, ch);
+	        ctx.drawImage(obj.im, 0, 0, sw, sh, x0, y0, cw, ch);
 	      } // if
 
 	    } // draw
@@ -39196,22 +39213,26 @@
 
 	  }, {
 	    key: "drawClip",
-	    value: function drawClip() {
+	    value: function drawClip(xoffset, yoffset) {
 	      var obj = this;
-	      var ctx = obj.ctx; // Draw the current clip
+	      var ctx = obj.ctx; // Include the offset.
+
+	      var x0 = xoffset ? xoffset : 0;
+	      var y0 = yoffset ? yoffset : 0; // Draw the current clip
 
 	      ctx.fillStyle = '#FFFFFF';
 	      ctx.beginPath();
-	      obj.geometries.filter(function (geometry) {
+	      var closedGeometries = obj.geometries.filter(function (geometry) {
 	        return geometry.closed;
-	      }).forEach(function (closedgeometry) {
+	      });
+	      closedGeometries.forEach(function (closedgeometry) {
 	        var points = closedgeometry.map(function (p) {
 	          return obj.unit2px(p);
 	        });
-	        ctx.moveTo(points[0][0], points[0][1]);
+	        ctx.moveTo(x0 + points[0][0], y0 + points[0][1]);
 
 	        for (var i = 0; i < points.length; i++) {
-	          ctx.lineTo(points[i][0], points[i][1]);
+	          ctx.lineTo(x0 + points[i][0], y0 + points[i][1]);
 	        } // for
 
 
@@ -39279,13 +39300,25 @@
 	    } // drawPoint
 
 	  }, {
+	    key: "maskDrawn",
+	    value: function maskDrawn() {
+	      var obj = this;
+	      var closedGeometries = obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      });
+	      return closedGeometries.length > 0;
+	    } // maskDrawn
+
+	  }, {
 	    key: "maskRectangle",
 	    value: function maskRectangle() {
 	      var obj = this; // Loop over geometries and find min and max in pixels.
 
 	      var x = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
 	      var y = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
-	      obj.geometries.forEach(function (geometry) {
+	      obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      }).forEach(function (geometry) {
 	        var points = geometry.map(function (p) {
 	          return obj.unit2px(p);
 	        });
@@ -39296,12 +39329,17 @@
 	          y[1] = y[1] > point[1] ? y[1] : point[1];
 	        }); // forEach
 	      }); // forEach
+	      // If there were no filled geometries then adjust the x and y values.
 
+	      x[0] = x[0] == Number.POSITIVE_INFINITY ? 0 : x[0];
+	      x[1] = x[1] == Number.NEGATIVE_INFINITY ? obj.ctx.canvas.width : x[1];
+	      y[0] = y[0] == Number.POSITIVE_INFINITY ? 0 : y[0];
+	      y[1] = y[1] == Number.NEGATIVE_INFINITY ? obj.ctx.canvas.height : y[1];
 	      return {
 	        x: x[0],
 	        y: y[0],
-	        w: x[1] - x[0],
-	        h: y[1] - y[0]
+	        width: x[1] - x[0],
+	        height: y[1] - y[0]
 	      };
 	    } // maskRectangle
 
@@ -39311,15 +39349,82 @@
 	}(); // MaskEditor
 
 
-	var TrackpadImage = function TrackpadImage() {
-	  _classCallCheck(this, TrackpadImage);
+	var TrackpadImage = /*#__PURE__*/function () {
+	  // A list of interactive adjustments made.
+	  // Ongoing adjustment.
+	  function TrackpadImage(original) {
+	    _classCallCheck(this, TrackpadImage);
 
-	  var obj = this;
-	  obj.node = document.createElement("canvas");
-	  obj.node.width = 256;
-	  obj.node.height = 256;
-	} // constructor
-	; // TrackpadImage
+	    this.adjusts = [[0, 0]];
+	    this.delta = [0, 0];
+	    var obj = this; // Keep a reference to the original canvas.
+
+	    obj.original = original; // This is the node that is added to the GUI.
+
+	    obj.node = document.createElement("canvas");
+	    obj.ctx = obj.node.getContext('2d');
+	    obj.node.width = 256;
+	    obj.node.height = 256; // There should be a red dot on the canvas that can be dragged around to allow the user to adjust the center of the image.
+
+	    var initialPoint = undefined;
+	    obj.node.addEventListener("pointerdown", function (e) {
+	      // Register the initial event.
+	      initialPoint = e;
+	      obj.delta = [0, 0];
+	    }); // pointerdown
+
+	    obj.node.addEventListener("pointermove", function (e) {
+	      // Update the image.
+	      if (initialPoint) {
+	        obj.delta[0] = e.clientX - initialPoint.clientX;
+	        obj.delta[1] = e.clientY - initialPoint.clientY;
+	        obj.render();
+	        obj.onadjust();
+	      } // if
+
+	    }); // pointermove
+
+	    obj.node.addEventListener("pointerup", function (e) {
+	      // Stop the editing.
+	      initialPoint = undefined;
+	      obj.adjusts.push(obj.delta);
+	      obj.delta = [0, 0];
+	    }); // pointerup
+	  } // constructor
+
+
+	  _createClass(TrackpadImage, [{
+	    key: "offset",
+	    value: function offset() {
+	      // Return the total offset from all previous interactions, as well as the ongoing one.
+	      var obj = this;
+	      var previous = obj.adjusts.reduce(function (acc, item) {
+	        return [acc[0] + item[0], acc[1] + item[1]];
+	      }); // reduce
+
+	      return [obj.delta[0] + previous[0], obj.delta[1] + previous[1]];
+	    } // offset
+
+	  }, {
+	    key: "render",
+	    value: function render() {
+	      var obj = this;
+	      var offset = obj.offset();
+	      var canvas = obj.ctx.canvas; // ratio is original px per canvas px.
+
+	      var ratio = Math.min(canvas.width / obj.original.width, canvas.height / obj.original.height);
+	      obj.ctx.clearRect(0, 0, canvas.width, canvas.height);
+	      obj.ctx.drawImage(obj.original, 0, 0, obj.original.width, obj.original.height, obj.delta[0] + offset[0], obj.delta[1] + offset[1], obj.original.width * ratio, obj.original.height * ratio);
+	    } // render
+
+	  }, {
+	    key: "onadjust",
+	    value: function onadjust() {} // onadjust
+
+	  }]);
+
+	  return TrackpadImage;
+	}(); // TrackpadImage
 
 
 	function distPx(p0, p1) {
@@ -39538,565 +39643,6 @@
 
 	  return Decal;
 	}(); // Decal
-
-	//                 7-------6          x---6---x
-	//                /|      /|     11  7|      5|  10
-	// z(k)          4-+-----5 |        x-+-4---x |
-	// ^ y(j)        | 3-----+-2        | x---2-+-x 
-	// |/            |/      |/      8  |3      |1   9
-	// o-->x(i)      0-------1          x---0---x
-	// coordinates of vertexes in relation to 0
-
-	var vertCoordTable = [[0, 0, 0], // 0
-	[1, 0, 0], // 1
-	[1, 1, 0], // 2
-	[0, 1, 0], // 3
-	[0, 0, 1], // 4
-	[1, 0, 1], // 5
-	[1, 1, 1], // 6
-	[0, 1, 1] // 7
-	]; // table of active edges for a specific vertex code
-	// in order
-
-	var edgeTable = [[], [0, 3, 8], [0, 1, 9], [1, 3, 8, 9], [1, 2, 10], [0, 1, 2, 3, 8, 10], [0, 2, 9, 10], [2, 3, 8, 9, 10], [2, 3, 11], [0, 2, 8, 11], [0, 1, 2, 3, 9, 11], [1, 2, 8, 9, 11], [1, 3, 10, 11], [0, 1, 8, 10, 11], [0, 3, 9, 10, 11], [8, 9, 10, 11], [4, 7, 8], [0, 3, 4, 7], [0, 1, 4, 7, 8, 9], [1, 3, 4, 7, 9], [1, 2, 4, 7, 8, 10], [0, 1, 2, 3, 4, 7, 10], [0, 2, 4, 7, 8, 9, 10], [2, 3, 4, 7, 9, 10], [2, 3, 4, 7, 8, 11], [0, 2, 4, 7, 11], [0, 1, 2, 3, 4, 7, 8, 9, 11], [1, 2, 4, 7, 9, 11], [1, 3, 4, 7, 8, 10, 11], [0, 1, 4, 7, 10, 11], [0, 3, 4, 7, 8, 9, 10, 11], [4, 7, 9, 10, 11], [4, 5, 9], [0, 3, 4, 5, 8, 9], [0, 1, 4, 5], [1, 3, 4, 5, 8], [1, 2, 4, 5, 9, 10], [0, 1, 2, 3, 4, 5, 8, 9, 10], [0, 2, 4, 5, 10], [2, 3, 4, 5, 8, 10], [2, 3, 4, 5, 9, 11], [0, 2, 4, 5, 8, 9, 11], [0, 1, 2, 3, 4, 5, 11], [1, 2, 4, 5, 8, 11], [1, 3, 4, 5, 9, 10, 11], [0, 1, 4, 5, 8, 9, 10, 11], [0, 3, 4, 5, 10, 11], [4, 5, 8, 10, 11], [5, 7, 8, 9], [0, 3, 5, 7, 9], [0, 1, 5, 7, 8], [1, 3, 5, 7], [1, 2, 5, 7, 8, 9, 10], [0, 1, 2, 3, 5, 7, 9, 10], [0, 2, 5, 7, 8, 10], [2, 3, 5, 7, 10], [2, 3, 5, 7, 8, 9, 11], [0, 2, 5, 7, 9, 11], [0, 1, 2, 3, 5, 7, 8, 11], [1, 2, 5, 7, 11], [1, 3, 5, 7, 8, 9, 10, 11], [0, 1, 5, 7, 9, 10, 11], [0, 3, 5, 7, 8, 10, 11], [5, 7, 10, 11], [5, 6, 10], [0, 3, 5, 6, 8, 10], [0, 1, 5, 6, 9, 10], [1, 3, 5, 6, 8, 9, 10], [1, 2, 5, 6], [0, 1, 2, 3, 5, 6, 8], [0, 2, 5, 6, 9], [2, 3, 5, 6, 8, 9], [2, 3, 5, 6, 10, 11], [0, 2, 5, 6, 8, 10, 11], [0, 1, 2, 3, 5, 6, 9, 10, 11], [1, 2, 5, 6, 8, 9, 10, 11], [1, 3, 5, 6, 11], [0, 1, 5, 6, 8, 11], [0, 3, 5, 6, 9, 11], [5, 6, 8, 9, 11], [4, 5, 6, 7, 8, 10], [0, 3, 4, 5, 6, 7, 10], [0, 1, 4, 5, 6, 7, 8, 9, 10], [1, 3, 4, 5, 6, 7, 9, 10], [1, 2, 4, 5, 6, 7, 8], [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 5, 6, 7, 8, 9], [2, 3, 4, 5, 6, 7, 9], [2, 3, 4, 5, 6, 7, 8, 10, 11], [0, 2, 4, 5, 6, 7, 10, 11], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 4, 5, 6, 7, 9, 10, 11], [1, 3, 4, 5, 6, 7, 8, 11], [0, 1, 4, 5, 6, 7, 11], [0, 3, 4, 5, 6, 7, 8, 9, 11], [4, 5, 6, 7, 9, 11], [4, 6, 9, 10], [0, 3, 4, 6, 8, 9, 10], [0, 1, 4, 6, 10], [1, 3, 4, 6, 8, 10], [1, 2, 4, 6, 9], [0, 1, 2, 3, 4, 6, 8, 9], [0, 2, 4, 6], [2, 3, 4, 6, 8], [2, 3, 4, 6, 9, 10, 11], [0, 2, 4, 6, 8, 9, 10, 11], [0, 1, 2, 3, 4, 6, 10, 11], [1, 2, 4, 6, 8, 10, 11], [1, 3, 4, 6, 9, 11], [0, 1, 4, 6, 8, 9, 11], [0, 3, 4, 6, 11], [4, 6, 8, 11], [6, 7, 8, 9, 10], [0, 3, 6, 7, 9, 10], [0, 1, 6, 7, 8, 10], [1, 3, 6, 7, 10], [1, 2, 6, 7, 8, 9], [0, 1, 2, 3, 6, 7, 9], [0, 2, 6, 7, 8], [2, 3, 6, 7], [2, 3, 6, 7, 8, 9, 10, 11], [0, 2, 6, 7, 9, 10, 11], [0, 1, 2, 3, 6, 7, 8, 10, 11], [1, 2, 6, 7, 10, 11], [1, 3, 6, 7, 8, 9, 11], [0, 1, 6, 7, 9, 11], [0, 3, 6, 7, 8, 11], [6, 7, 11], [6, 7, 11], [0, 3, 6, 7, 8, 11], [0, 1, 6, 7, 9, 11], [1, 3, 6, 7, 8, 9, 11], [1, 2, 6, 7, 10, 11], [0, 1, 2, 3, 6, 7, 8, 10, 11], [0, 2, 6, 7, 9, 10, 11], [2, 3, 6, 7, 8, 9, 10, 11], [2, 3, 6, 7], [0, 2, 6, 7, 8], [0, 1, 2, 3, 6, 7, 9], [1, 2, 6, 7, 8, 9], [1, 3, 6, 7, 10], [0, 1, 6, 7, 8, 10], [0, 3, 6, 7, 9, 10], [6, 7, 8, 9, 10], [4, 6, 8, 11], [0, 3, 4, 6, 11], [0, 1, 4, 6, 8, 9, 11], [1, 3, 4, 6, 9, 11], [1, 2, 4, 6, 8, 10, 11], [0, 1, 2, 3, 4, 6, 10, 11], [0, 2, 4, 6, 8, 9, 10, 11], [2, 3, 4, 6, 9, 10, 11], [2, 3, 4, 6, 8], [0, 2, 4, 6], [0, 1, 2, 3, 4, 6, 8, 9], [1, 2, 4, 6, 9], [1, 3, 4, 6, 8, 10], [0, 1, 4, 6, 10], [0, 3, 4, 6, 8, 9, 10], [4, 6, 9, 10], [4, 5, 6, 7, 9, 11], [0, 3, 4, 5, 6, 7, 8, 9, 11], [0, 1, 4, 5, 6, 7, 11], [1, 3, 4, 5, 6, 7, 8, 11], [1, 2, 4, 5, 6, 7, 9, 10, 11], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [0, 2, 4, 5, 6, 7, 10, 11], [2, 3, 4, 5, 6, 7, 8, 10, 11], [2, 3, 4, 5, 6, 7, 9], [0, 2, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7], [1, 2, 4, 5, 6, 7, 8], [1, 3, 4, 5, 6, 7, 9, 10], [0, 1, 4, 5, 6, 7, 8, 9, 10], [0, 3, 4, 5, 6, 7, 10], [4, 5, 6, 7, 8, 10], [5, 6, 8, 9, 11], [0, 3, 5, 6, 9, 11], [0, 1, 5, 6, 8, 11], [1, 3, 5, 6, 11], [1, 2, 5, 6, 8, 9, 10, 11], [0, 1, 2, 3, 5, 6, 9, 10, 11], [0, 2, 5, 6, 8, 10, 11], [2, 3, 5, 6, 10, 11], [2, 3, 5, 6, 8, 9], [0, 2, 5, 6, 9], [0, 1, 2, 3, 5, 6, 8], [1, 2, 5, 6], [1, 3, 5, 6, 8, 9, 10], [0, 1, 5, 6, 9, 10], [0, 3, 5, 6, 8, 10], [5, 6, 10], [5, 7, 10, 11], [0, 3, 5, 7, 8, 10, 11], [0, 1, 5, 7, 9, 10, 11], [1, 3, 5, 7, 8, 9, 10, 11], [1, 2, 5, 7, 11], [0, 1, 2, 3, 5, 7, 8, 11], [0, 2, 5, 7, 9, 11], [2, 3, 5, 7, 8, 9, 11], [2, 3, 5, 7, 10], [0, 2, 5, 7, 8, 10], [0, 1, 2, 3, 5, 7, 9, 10], [1, 2, 5, 7, 8, 9, 10], [1, 3, 5, 7], [0, 1, 5, 7, 8], [0, 3, 5, 7, 9], [5, 7, 8, 9], [4, 5, 8, 10, 11], [0, 3, 4, 5, 10, 11], [0, 1, 4, 5, 8, 9, 10, 11], [1, 3, 4, 5, 9, 10, 11], [1, 2, 4, 5, 8, 11], [0, 1, 2, 3, 4, 5, 11], [0, 2, 4, 5, 8, 9, 11], [2, 3, 4, 5, 9, 11], [2, 3, 4, 5, 8, 10], [0, 2, 4, 5, 10], [0, 1, 2, 3, 4, 5, 8, 9, 10], [1, 2, 4, 5, 9, 10], [1, 3, 4, 5, 8], [0, 1, 4, 5], [0, 3, 4, 5, 8, 9], [4, 5, 9], [4, 7, 9, 10, 11], [0, 3, 4, 7, 8, 9, 10, 11], [0, 1, 4, 7, 10, 11], [1, 3, 4, 7, 8, 10, 11], [1, 2, 4, 7, 9, 11], [0, 1, 2, 3, 4, 7, 8, 9, 11], [0, 2, 4, 7, 11], [2, 3, 4, 7, 8, 11], [2, 3, 4, 7, 9, 10], [0, 2, 4, 7, 8, 9, 10], [0, 1, 2, 3, 4, 7, 10], [1, 2, 4, 7, 8, 10], [1, 3, 4, 7, 9], [0, 1, 4, 7, 8, 9], [0, 3, 4, 7], [4, 7, 8], [8, 9, 10, 11], [0, 3, 9, 10, 11], [0, 1, 8, 10, 11], [1, 3, 10, 11], [1, 2, 8, 9, 11], [0, 1, 2, 3, 9, 11], [0, 2, 8, 11], [2, 3, 11], [2, 3, 8, 9, 10], [0, 2, 9, 10], [0, 1, 2, 3, 8, 10], [1, 2, 10], [1, 3, 8, 9], [0, 1, 9], [0, 3, 8], []]; // converts from an edge number to the numbers of the vertices it connects
-
-	var edgeToVertsTable = [[0, 1], // 0
-	[1, 2], // 1
-	[2, 3], // 2
-	[0, 3], // 3
-	[4, 5], // 4
-	[5, 6], // 5
-	[6, 7], // 6
-	[4, 7], // 7
-	[0, 4], // 8
-	[1, 5], // 9
-	[2, 6], // 10
-	[3, 7] // 11
-	]; // triangulation table created from: https://github.com/KineticTactic/marching-cubes-js
-
-	var triTable = [[], [0, 2, 1], [0, 1, 2], [0, 2, 1, 3, 2, 0], [0, 1, 2], [0, 4, 3, 1, 2, 5], [2, 1, 3, 0, 1, 2], [0, 2, 1, 0, 4, 2, 4, 3, 2], [1, 2, 0], [0, 3, 1, 2, 3, 0], [1, 4, 0, 2, 3, 5], [0, 4, 1, 0, 3, 4, 3, 2, 4], [1, 2, 0, 3, 2, 1], [0, 3, 1, 0, 2, 3, 2, 4, 3], [1, 2, 0, 1, 4, 2, 4, 3, 2], [1, 0, 2, 2, 0, 3], [0, 1, 2], [2, 1, 0, 3, 1, 2], [0, 1, 5, 4, 2, 3], [2, 0, 4, 2, 3, 0, 3, 1, 0], [0, 1, 5, 4, 2, 3], [3, 4, 5, 3, 0, 4, 1, 2, 6], [5, 1, 6, 5, 0, 1, 4, 2, 3], [0, 5, 4, 0, 4, 3, 0, 3, 1, 3, 4, 2], [4, 2, 3, 1, 5, 0], [4, 2, 3, 4, 1, 2, 1, 0, 2], [7, 0, 1, 6, 4, 5, 2, 3, 8], [2, 3, 5, 4, 2, 5, 4, 5, 1, 4, 1, 0], [1, 5, 0, 1, 6, 5, 3, 4, 2], [1, 5, 4, 1, 2, 5, 1, 0, 2, 3, 5, 2], [2, 3, 4, 5, 0, 7, 5, 7, 6, 7, 0, 1], [0, 1, 4, 0, 4, 2, 2, 4, 3], [2, 1, 0], [5, 3, 2, 0, 4, 1], [0, 3, 2, 1, 3, 0], [4, 3, 2, 4, 1, 3, 1, 0, 3], [0, 1, 5, 4, 3, 2], [3, 0, 6, 1, 2, 8, 4, 7, 5], [3, 1, 4, 3, 2, 1, 2, 0, 1], [0, 5, 3, 1, 0, 3, 1, 3, 2, 1, 2, 4], [4, 3, 2, 0, 1, 5], [0, 6, 1, 0, 4, 6, 2, 5, 3], [0, 5, 4, 0, 1, 5, 2, 3, 6], [1, 0, 3, 1, 3, 4, 1, 4, 5, 2, 4, 3], [5, 1, 6, 5, 0, 1, 4, 3, 2], [2, 5, 3, 0, 4, 1, 4, 6, 1, 4, 7, 6], [3, 2, 0, 3, 0, 5, 3, 5, 4, 5, 0, 1], [1, 0, 2, 1, 2, 3, 3, 2, 4], [3, 1, 2, 0, 1, 3], [4, 1, 0, 4, 2, 1, 2, 3, 1], [0, 3, 4, 0, 1, 3, 1, 2, 3], [0, 2, 1, 1, 2, 3], [5, 3, 4, 5, 2, 3, 6, 0, 1], [7, 1, 2, 6, 4, 0, 4, 3, 0, 4, 5, 3], [4, 0, 1, 4, 1, 2, 4, 2, 3, 5, 2, 1], [0, 4, 2, 0, 2, 1, 1, 2, 3], [3, 5, 2, 3, 4, 5, 1, 6, 0], [4, 2, 3, 4, 3, 1, 4, 1, 0, 1, 3, 5], [2, 3, 7, 0, 1, 6, 1, 5, 6, 1, 4, 5], [4, 1, 0, 4, 0, 3, 3, 0, 2], [5, 2, 4, 4, 2, 3, 6, 0, 1, 6, 1, 7], [2, 3, 0, 2, 0, 4, 3, 6, 0, 1, 0, 5, 6, 5, 0], [6, 5, 0, 6, 0, 1, 5, 2, 0, 4, 0, 3, 2, 3, 0], [3, 2, 0, 1, 3, 0], [2, 1, 0], [0, 4, 1, 2, 5, 3], [4, 0, 1, 2, 5, 3], [0, 4, 1, 0, 5, 4, 2, 6, 3], [0, 3, 2, 1, 3, 0], [1, 5, 4, 1, 2, 5, 3, 0, 6], [4, 3, 2, 4, 0, 3, 0, 1, 3], [2, 5, 4, 2, 4, 0, 2, 0, 3, 1, 0, 4], [0, 1, 5, 4, 3, 2], [6, 0, 4, 6, 1, 0, 5, 3, 2], [0, 1, 6, 2, 3, 8, 4, 7, 5], [2, 6, 3, 0, 5, 1, 5, 7, 1, 5, 4, 7], [3, 1, 4, 3, 2, 1, 2, 0, 1], [0, 4, 5, 0, 5, 2, 0, 2, 1, 2, 5, 3], [1, 5, 3, 0, 1, 3, 0, 3, 2, 0, 2, 4], [1, 0, 3, 1, 3, 4, 4, 3, 2], [1, 5, 2, 0, 3, 4], [2, 1, 0, 2, 5, 1, 4, 3, 6], [1, 7, 0, 3, 8, 4, 6, 2, 5], [7, 4, 3, 0, 6, 5, 0, 5, 1, 5, 6, 2], [4, 0, 1, 4, 3, 0, 2, 5, 6], [1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7], [6, 2, 5, 7, 0, 3, 0, 4, 3, 0, 1, 4], [5, 1, 6, 5, 6, 2, 1, 0, 6, 3, 6, 4, 0, 4, 6], [1, 8, 0, 5, 6, 2, 7, 4, 3], [3, 6, 4, 2, 5, 1, 2, 1, 0, 1, 5, 7], [0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6], [6, 1, 0, 6, 8, 1, 6, 2, 8, 5, 8, 2, 3, 7, 4], [6, 2, 5, 1, 7, 3, 1, 3, 0, 3, 7, 4], [3, 1, 6, 3, 6, 4, 1, 0, 6, 5, 6, 2, 0, 2, 6], [0, 3, 7, 0, 4, 3, 0, 1, 4, 8, 4, 1, 6, 2, 5], [2, 1, 4, 2, 4, 5, 0, 3, 4, 3, 5, 4], [3, 0, 2, 1, 0, 3], [2, 6, 3, 2, 5, 6, 0, 4, 1], [4, 0, 1, 4, 3, 0, 3, 2, 0], [4, 1, 0, 4, 0, 3, 4, 3, 2, 3, 0, 5], [0, 2, 4, 0, 1, 2, 1, 3, 2], [3, 0, 6, 1, 2, 7, 2, 4, 7, 2, 5, 4], [0, 1, 2, 2, 1, 3], [4, 1, 0, 4, 0, 2, 2, 0, 3], [5, 2, 4, 5, 3, 2, 6, 0, 1], [0, 4, 1, 1, 4, 7, 2, 5, 6, 2, 6, 3], [3, 7, 2, 0, 1, 5, 0, 5, 4, 5, 1, 6], [3, 2, 0, 3, 0, 5, 2, 4, 0, 1, 0, 6, 4, 6, 0], [4, 3, 2, 4, 1, 3, 4, 0, 1, 5, 3, 1], [4, 6, 1, 4, 1, 0, 6, 3, 1, 5, 1, 2, 3, 2, 1], [1, 4, 3, 1, 3, 0, 0, 3, 2], [1, 0, 2, 3, 1, 2], [1, 4, 0, 1, 2, 4, 2, 3, 4], [0, 3, 1, 0, 5, 3, 0, 4, 5, 2, 3, 5], [5, 2, 3, 1, 5, 3, 1, 3, 4, 1, 4, 0], [4, 2, 3, 4, 3, 0, 0, 3, 1], [0, 1, 2, 0, 2, 4, 0, 4, 5, 4, 2, 3], [2, 4, 6, 2, 6, 1, 4, 5, 6, 0, 6, 3, 5, 3, 6], [3, 4, 0, 3, 0, 2, 2, 0, 1], [3, 1, 0, 2, 3, 0], [0, 1, 7, 6, 2, 4, 6, 4, 5, 4, 2, 3], [1, 0, 3, 1, 3, 6, 0, 4, 3, 2, 3, 5, 4, 5, 3], [1, 6, 0, 1, 5, 6, 1, 7, 5, 4, 5, 7, 2, 3, 8], [5, 1, 0, 5, 0, 3, 4, 2, 0, 2, 3, 0], [4, 5, 2, 4, 2, 3, 5, 0, 2, 6, 2, 1, 0, 1, 2], [0, 4, 1, 5, 2, 3], [3, 4, 0, 3, 0, 2, 1, 5, 0, 5, 2, 0], [1, 2, 0], [1, 0, 2], [1, 0, 4, 5, 3, 2], [0, 1, 4, 5, 3, 2], [4, 0, 5, 4, 1, 0, 6, 3, 2], [4, 0, 1, 2, 5, 3], [1, 2, 7, 3, 0, 6, 4, 8, 5], [1, 4, 0, 1, 5, 4, 2, 6, 3], [2, 7, 3, 0, 6, 1, 6, 4, 1, 6, 5, 4], [3, 0, 1, 2, 0, 3], [3, 0, 4, 3, 2, 0, 2, 1, 0], [2, 5, 4, 2, 3, 5, 0, 1, 6], [0, 2, 1, 0, 4, 2, 0, 5, 4, 4, 3, 2], [4, 3, 2, 4, 0, 3, 0, 1, 3], [5, 3, 2, 1, 3, 5, 1, 4, 3, 1, 0, 4], [0, 1, 3, 0, 3, 5, 0, 5, 4, 2, 5, 3], [1, 0, 4, 1, 4, 2, 2, 4, 3], [1, 2, 0, 3, 2, 1], [1, 3, 4, 1, 0, 3, 0, 2, 3], [4, 3, 6, 4, 2, 3, 5, 0, 1], [4, 2, 3, 4, 3, 1, 4, 1, 0, 5, 1, 3], [3, 4, 2, 3, 6, 4, 1, 5, 0], [1, 2, 6, 3, 0, 7, 0, 5, 7, 0, 4, 5], [2, 7, 4, 2, 3, 7, 0, 1, 5, 1, 6, 5], [5, 4, 1, 5, 1, 0, 4, 2, 1, 6, 1, 3, 2, 3, 1], [4, 0, 1, 4, 2, 0, 2, 3, 0], [0, 2, 1, 2, 3, 1], [1, 7, 0, 2, 3, 4, 2, 4, 5, 4, 3, 6], [0, 4, 2, 0, 2, 1, 1, 2, 3], [4, 0, 1, 4, 3, 0, 4, 2, 3, 3, 5, 0], [4, 1, 0, 4, 0, 3, 3, 0, 2], [2, 3, 1, 2, 1, 4, 3, 6, 1, 0, 1, 5, 6, 5, 1], [3, 2, 0, 1, 3, 0], [0, 4, 1, 3, 2, 5], [0, 6, 1, 2, 7, 3, 8, 5, 4], [3, 0, 1, 3, 2, 0, 5, 4, 6], [7, 5, 4, 6, 1, 2, 1, 3, 2, 1, 0, 3], [6, 3, 2, 7, 0, 1, 5, 4, 8], [6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5], [5, 4, 7, 3, 2, 6, 2, 1, 6, 2, 0, 1], [1, 2, 6, 1, 3, 2, 1, 0, 3, 7, 3, 0, 8, 5, 4], [5, 0, 1, 5, 4, 0, 3, 2, 6], [7, 3, 2, 0, 6, 4, 0, 4, 1, 4, 6, 5], [3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0], [4, 1, 6, 4, 6, 5, 1, 0, 6, 2, 6, 3, 0, 3, 6], [6, 3, 2, 7, 0, 4, 0, 5, 4, 0, 1, 5], [1, 4, 8, 1, 5, 4, 1, 0, 5, 6, 5, 0, 7, 3, 2], [2, 0, 6, 2, 6, 3, 0, 1, 6, 4, 6, 5, 1, 5, 6], [3, 2, 5, 3, 5, 4, 1, 0, 5, 0, 4, 5], [1, 3, 0, 1, 4, 3, 4, 2, 3], [1, 3, 5, 0, 3, 1, 0, 2, 3, 0, 4, 2], [0, 5, 4, 0, 2, 5, 0, 1, 2, 2, 3, 5], [3, 4, 1, 3, 1, 2, 2, 1, 0], [0, 1, 6, 5, 2, 7, 5, 7, 4, 7, 2, 3], [0, 8, 3, 0, 5, 8, 0, 6, 5, 4, 5, 6, 1, 2, 7], [6, 4, 2, 6, 2, 3, 4, 0, 2, 5, 2, 1, 0, 1, 2], [3, 5, 1, 3, 1, 2, 0, 4, 1, 4, 2, 1], [2, 4, 5, 2, 0, 4, 2, 3, 0, 1, 4, 0], [4, 2, 3, 4, 3, 0, 0, 3, 1], [1, 4, 6, 1, 6, 0, 4, 5, 6, 3, 6, 2, 5, 2, 6], [0, 2, 3, 1, 0, 3], [0, 1, 3, 0, 3, 6, 1, 4, 3, 2, 3, 5, 4, 5, 3], [5, 1, 0, 5, 0, 3, 4, 2, 0, 2, 3, 0], [0, 1, 4, 2, 3, 5], [2, 0, 1], [3, 0, 2, 1, 0, 3], [6, 2, 5, 6, 3, 2, 4, 1, 0], [2, 6, 3, 2, 5, 6, 1, 4, 0], [6, 3, 2, 6, 7, 3, 5, 4, 0, 4, 1, 0], [4, 0, 1, 4, 3, 0, 3, 2, 0], [0, 6, 3, 1, 2, 5, 1, 5, 4, 5, 2, 7], [4, 3, 2, 4, 1, 3, 4, 0, 1, 1, 5, 3], [3, 2, 0, 3, 0, 6, 2, 5, 0, 1, 0, 4, 5, 4, 0], [0, 2, 4, 0, 1, 2, 1, 3, 2], [4, 1, 0, 4, 2, 1, 4, 3, 2, 5, 1, 2], [6, 0, 1, 4, 7, 3, 4, 3, 5, 3, 7, 2], [5, 4, 1, 5, 1, 0, 4, 3, 1, 6, 1, 2, 3, 2, 1], [0, 1, 2, 1, 3, 2], [0, 4, 3, 0, 3, 1, 1, 3, 2], [4, 0, 1, 4, 1, 2, 2, 1, 3], [3, 2, 1, 0, 3, 1], [1, 2, 0, 1, 3, 2, 3, 4, 2], [3, 0, 2, 3, 5, 0, 3, 4, 5, 5, 1, 0], [0, 1, 5, 4, 2, 6, 4, 6, 7, 6, 2, 3], [5, 6, 2, 5, 2, 3, 6, 1, 2, 4, 2, 0, 1, 0, 2], [1, 3, 0, 1, 4, 3, 1, 5, 4, 2, 3, 4], [0, 4, 6, 0, 6, 3, 4, 5, 6, 2, 6, 1, 5, 1, 6], [0, 1, 3, 0, 3, 5, 1, 6, 3, 2, 3, 4, 6, 4, 3], [4, 2, 3, 0, 5, 1], [0, 3, 5, 1, 3, 0, 1, 2, 3, 1, 4, 2], [3, 4, 1, 3, 1, 2, 2, 1, 0], [3, 8, 2, 3, 5, 8, 3, 6, 5, 4, 5, 6, 0, 1, 7], [3, 5, 1, 3, 1, 2, 0, 4, 1, 4, 2, 1], [4, 2, 3, 4, 3, 1, 1, 3, 0], [0, 2, 3, 1, 0, 3], [4, 2, 3, 4, 3, 1, 5, 0, 3, 0, 1, 3], [2, 0, 1], [0, 4, 1, 0, 2, 4, 2, 3, 4], [0, 4, 1, 2, 5, 3, 5, 7, 3, 5, 6, 7], [1, 4, 5, 1, 5, 2, 1, 2, 0, 3, 2, 5], [1, 0, 2, 1, 2, 4, 0, 5, 2, 3, 2, 6, 5, 6, 2], [2, 5, 3, 4, 5, 2, 4, 1, 5, 4, 0, 1], [7, 5, 4, 7, 8, 5, 7, 1, 8, 2, 8, 1, 0, 6, 3], [4, 3, 2, 4, 2, 1, 1, 2, 0], [5, 3, 2, 5, 2, 0, 4, 1, 2, 1, 0, 2], [0, 4, 5, 0, 3, 4, 0, 1, 3, 3, 2, 4], [5, 6, 3, 5, 3, 2, 6, 1, 3, 4, 3, 0, 1, 0, 3], [3, 5, 6, 3, 6, 2, 5, 4, 6, 1, 6, 0, 4, 0, 6], [0, 5, 1, 4, 3, 2], [2, 4, 0, 2, 0, 3, 3, 0, 1], [2, 5, 1, 2, 1, 3, 0, 4, 1, 4, 3, 1], [2, 0, 1, 3, 2, 1], [0, 2, 1], [1, 2, 0, 2, 3, 0], [1, 0, 2, 1, 2, 4, 4, 2, 3], [0, 1, 3, 0, 3, 2, 2, 3, 4], [1, 0, 2, 3, 1, 2], [0, 1, 4, 0, 4, 3, 3, 4, 2], [3, 0, 4, 3, 4, 5, 1, 2, 4, 2, 5, 4], [0, 1, 3, 2, 0, 3], [1, 0, 2], [0, 1, 2, 0, 2, 4, 4, 2, 3], [2, 3, 1, 0, 2, 1], [2, 3, 4, 2, 4, 5, 0, 1, 4, 1, 5, 4], [0, 2, 1], [0, 1, 2, 3, 0, 2], [0, 2, 1], [0, 1, 2], []]; // takes 3d data (val >= 0) as a 3d array and returns list of vertices (1d float32) and indices (1d uint16) for the mesh
-
-
-	var generateMeshVTK = function generateMeshVTK(data, threshold) {
-	  // Adaptation of generateMesh for data that comes as lists of vertices and connectivity.
-	  //const start = Date.now();
-	  var verts = [];
-	  var indices = [];
-	  var normals = [];
-
-	  var _loop2 = function _loop2(_i2) {
-	    var otherVertLength = verts.length / 3; // values for cell data points are stored as 1d array
-	    // index = i + 2*j + 4*k (local coords)
-
-	    var cellVals = [];
-	    var cellVertices = []; // generate code for the cell
-
-	    code = 0;
-
-	    for (var l = 0; l < 8; l++) {
-	      var c = vertCoordTable[l];
-	      var vert = data.vertices[data.connectivity[_i2][l]];
-	      var val = data.mach[data.connectivity[_i2][l]];
-	      code |= (val > threshold) << l; // Note that cell vals don't appear in the order of their vertex name!!
-
-	      cellVals[c[0] + 2 * c[1] + 4 * c[2]] = val;
-	      cellVertices[l] = vert;
-	    } // gets appropriate active edges
-
-
-	    var edges = edgeTable[code]; //calculate factors for each edge (distance from 1st connected vertex in index space)
-
-	    var factors = edgesToFactors(edges, cellVals, threshold); //turns edge list into coords
-	    // const theseVerts = edgesToCoords(edges, [i, j, k], [1,1,1], factors);
-
-	    var theseVerts = edgesToCoords2(cellVertices, edges, factors); //create entries for indicies list
-
-	    var tri = triTable[code];
-	    var theseIndices = tri.map(function (a) {
-	      return a + otherVertLength;
-	    }); //calculate normal vector for each vertex
-
-	    verts.push.apply(verts, _toConsumableArray(theseVerts));
-	    indices.push.apply(indices, _toConsumableArray(theseIndices)); //normals.push(...theseNormals);
-	  };
-
-	  for (var _i2 = 0; _i2 < data.connectivity.length; _i2++) {
-	    var code;
-
-	    _loop2(_i2);
-	  } //console.log("mesh generation took: ", Date.now() - start);
-
-
-	  return {
-	    verts: verts,
-	    indices: indices,
-	    normals: normals
-	  };
-	}; // generateMeshVTK
-
-
-	var edgesToFactors = function edgesToFactors(edges, cellVals, threshold) {
-	  var factors = [];
-
-	  for (var _i3 = 0; _i3 < edges.length; _i3++) {
-	    var _verts = edgeToVertsTable[edges[_i3]];
-	    var a = vertCoordTable[_verts[0]];
-	    var b = vertCoordTable[_verts[1]]; // get interpolation factor
-	    // get values at connected vertices
-
-	    var va = cellVals[a[0] + 2 * a[1] + 4 * a[2]];
-	    var vb = cellVals[b[0] + 2 * b[1] + 4 * b[2]];
-	    factors.push((threshold - va) / (vb - va));
-	  }
-
-	  return factors;
-	}; // interpolates between 2 coords
-
-
-	var interpolateCoord = function interpolateCoord(a, b, fac) {
-	  var _final = [];
-
-	  for (var _i4 = 0; _i4 < a.length; _i4++) {
-	    _final[_i4] = a[_i4] * (1 - fac) + b[_i4] * fac;
-	  }
-
-	  return _final;
-	}; // cellCoord is coord of 0 vertex in cell
-
-
-	var edgesToCoords2 = function edgesToCoords2(vertices, edges, factors) {
-	  var coords = []; // loop through each edge
-
-	  for (var _i6 = 0; _i6 < edges.length; _i6++) {
-	    // edgeToVertsTable returns 2 indices of the 2 vertices that make up a particular edge of a reference cube cell. These indices must be further converted into the actual coordinates.
-	    var _verts3 = edgeToVertsTable[edges[_i6]]; // Convert the reference cube vertex indices to 3d reference cube mesh indices.
-
-	    var a = vertices[_verts3[0]];
-	    var b = vertices[_verts3[1]];
-
-	    coords.push.apply(coords, _toConsumableArray(interpolateCoord(a, b, factors[_i6])));
-	  }
-
-	  return coords;
-	};
-
-	var IsoSurface = /*#__PURE__*/function () {
-	  function IsoSurface(configFilename, colorbar) {
-	    _classCallCheck(this, IsoSurface);
-
-	    this.a = 0;
-	    this.b = 1;
-	    this.step = 0.05;
-	    this.value = 0;
-	    var obj = this;
-	    obj.colorbar = colorbar;
-	    obj.config = {
-	      visible: true,
-	      source: configFilename,
-	      threshold: 0.30545,
-	      remove: function remove() {}
-	    }; // config
-
-	    obj.configPromise = fetch(configFilename).then(function (res) {
-	      return res.json();
-	    });
-	    obj.dataPromise = obj.configPromise.then(function (json) {
-	      // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
-	      var verticesPromise = fetch(json.vertices).then(function (res) {
-	        return res.arrayBuffer();
-	      }).then(function (ab) {
-	        return new Float32Array(ab);
-	      }); // float32
-
-	      var indicesPromise = fetch(json.indices).then(function (res) {
-	        return res.arrayBuffer();
-	      }).then(function (ab) {
-	        return new Uint32Array(ab);
-	      }); // uint32
-
-	      var valuePromise = fetch(json.mach).then(function (res) {
-	        return res.arrayBuffer();
-	      }).then(function (ab) {
-	        return new Float32Array(ab);
-	      }); // float32
-
-	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
-	        // Reformat the data to Thanassis' structure.
-	        obj.updateControlsToValuesRange(a[2]); // Connectivity is expected to be an array of arrays, with each sub-array representing a cube cell with 8 indices.
-
-	        var connectivity = bin2array(a[1], 8); // Vertices are expected to be an array of arrays, each sub-array representing a vertex with three components
-
-	        var vertices = bin2array(a[0], 3);
-	        return {
-	          connectivity: connectivity,
-	          vertices: vertices,
-	          mach: a[2]
-	        }; // return
-	      }); // Promise.all
-	    }); // then
-
-	    obj.meshPromise = obj.dataPromise.then(function (d) {
-	      // Calculate an isosurface using Thanassis' code.
-	      var surface = generateMeshVTK(d, obj.config.threshold); // Material.
-
-	      var material = new MeshLambertMaterial({
-	        color: obj.colorbar.getColor(obj.config.threshold),
-	        side: DoubleSide
-	      }); // Geometry
-
-	      var positions = Float32Array.from(surface.verts);
-	      var indices = Uint32Array.from(surface.indices);
-	      var geometry = new BufferGeometry();
-	      geometry.setAttribute('position', new BufferAttribute(positions, 3));
-	      geometry.attributes.position.usage = DynamicDrawUsage;
-	      geometry.setIndex(new BufferAttribute(indices, 1));
-	      geometry.computeVertexNormals();
-	      var mesh = new Mesh(geometry, material);
-	      mesh.name = obj.config.source;
-	      return mesh;
-	    }); // then
-	  } // constructor
-
-
-	  _createClass(IsoSurface, [{
-	    key: "threshold",
-	    get: function get() {
-	      // Default value is 0.
-	      var obj = this;
-	      return obj.config.threshold;
-	    } // get threshold
-
-	  }, {
-	    key: "update",
-	    value: function update() {
-	      var obj = this; // Update the mesh buffers. This generate mesh still works on i,j,k as the vertex coordinate values.
-
-	      Promise.all([obj.dataPromise, obj.meshPromise]).then(function (a) {
-	        var d = a[0];
-	        var mesh = a[1]; // Generate the surface using Thanassis code.
-
-	        var surface = generateMeshVTK(d, obj.config.threshold);
-	        /* This update here is quite wasteful, and should definitely be improved somehow.
-	        The issue is that the isosurface geometry will have a different number of triangles for different thresholds. This means that the buffer must in some cases be inreased after an interaction, but increasing buffers is not possible. Instead, a buffer large enough to store any size can be initiated, and updated, with the range of the buffer being used by the GPU limited.
-	        */
-
-	        var positions = Float32Array.from(surface.verts);
-	        var indices = Uint32Array.from(surface.indices);
-	        var geometry = new BufferGeometry();
-	        geometry.setAttribute('position', new BufferAttribute(positions, 3));
-	        geometry.attributes.position.usage = DynamicDrawUsage;
-	        geometry.setIndex(new BufferAttribute(indices, 1));
-	        geometry.computeVertexNormals();
-	        mesh.geometry.dispose();
-	        mesh.geometry = geometry;
-	        mesh.material.color.set(obj.colorbar.getColor(obj.threshold));
-	      }); // Promise.all
-	    } // update
-
-	  }, {
-	    key: "updateControlsToValuesRange",
-	    value: function updateControlsToValuesRange(values) {
-	      var obj = this;
-	      var a = parseFloat(getArrayMin(values).toPrecision(3));
-	      var b = parseFloat(getArrayMax(values).toPrecision(3));
-	      var step = (b - a) / 100;
-	      obj.step = step;
-	      obj.a = a;
-	      obj.b = a + 100 * step;
-	      obj.config.threshold = (2 * a + b) / 3;
-
-	      if (obj.gui) {
-	        var tc = obj.gui.controllers.find(function (c) {
-	          return c.property == "threshold";
-	        });
-	        tc.min(obj.a);
-	        tc.max(obj.b);
-	        tc.step(obj.step);
-	        tc.setValue(obj.config.threshold);
-	      } // if
-
-	    } // updateControlsToValuesRange
-
-	  }, {
-	    key: "addTo",
-	    value: function addTo(sceneWebGL) {
-	      var obj = this;
-	      obj.meshPromise.then(function (mesh) {
-	        sceneWebGL.add(mesh);
-	      }); // then
-	    } // addTo
-
-	  }, {
-	    key: "addGUI",
-	    value: function addGUI(elementsGUI) {
-	      var obj = this; // Add GUI controllers.
-
-	      obj.gui = elementsGUI.addFolder("Isosurface: " + trimStringToLength(obj.config.source, 27));
-	      obj.gui.add(obj.config, "visible").onChange(function (v) {
-	        obj.meshPromise.then(function (mesh) {
-	          mesh.visible = v;
-	        });
-	      }); // boolean
-
-	      obj.gui.add(obj.config, "threshold", obj.a, obj.b, obj.step).onChange(function (v) {
-	        obj.update();
-	      }); // slider
-
-	      obj.gui.add(obj.config, "remove"); // button
-	    } // addGUI
-
-	  }]);
-
-	  return IsoSurface;
-	}(); // isoSurface
-
-	function bin2array(binarray, ncomp) {
-	  var r = [];
-
-	  for (var i = 0; i < binarray.length; i += ncomp) {
-	    var c = [];
-
-	    for (var j = 0; j < ncomp; j++) {
-	      c.push(binarray[i + j]);
-	    } // for
-
-
-	    r.push(c);
-	  } // for
-
-
-	  return r;
-	} // bin2array
-
-	var vertexShader = "\n\t  precision mediump float;\n\t  precision mediump int;\n\t  \n\t  attribute float a_mach;\n\t  varying float v_mach;\n\t  \n\t  void main()    {\n\t\tv_mach = a_mach;\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t  }\n\t";
-	var fragmentShader = "\n\t  precision mediump float;\n\t  precision mediump int;\n\t  \n\t  uniform float u_thresholds[255];\n\t  uniform sampler2D u_colorbar;\n\t  \n\t  varying float v_mach;\n\t  \n\t  \n\t  vec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t  {\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t  }\n\t  \n\t  \n\t  void main()    \n\t  {\n\t\t  \n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t  \n\t\tgl_FragColor = sampleColorBar( u_colorbar, v_mach, min_mach, max_mach );;\n\t  }\n\t";
-	/*
-	Data should be split up between streamlines and values.
-	Maybe streamlines should also be split up to allow dynamic loading?
-	Make sure the streamlines don't block the geometry build up animation.
-	*/
-
-	var AnimatedStaticStreamlines = /*#__PURE__*/function () {
-	  // Create a cyclic IntegrationTime clock - not cyclic before time should be linear;
-	  // So instead there should be a remainder that gets transformed.
-	  // [ms];
-	  function AnimatedStaticStreamlines(source, uniforms) {
-	    _classCallCheck(this, AnimatedStaticStreamlines);
-
-	    this.on = true;
-	    this.animated = true;
-	    this.lines = [];
-	    this.t0 = performance.now();
-	    this.CurrentShowTime = 0;
-	    this.IntegrationSpan = [0, 1];
-	    this.CycleDuration = 10 * 1e3;
-	    var obj = this;
-	    obj.config = {
-	      source: source,
-	      visible: true,
-	      type: ""
-	    }; // STREAMLINES - keep for further copies.
-
-	    obj.streamlinegeometry = new BufferGeometry();
-	    obj.streamlinematerial = new ShaderMaterial({
-	      uniforms: uniforms,
-	      vertexShader: vertexShader,
-	      fragmentShader: fragmentShader
-	    }); // transparent: true,
-	    // depthTest: false,
-	    // blending: THREE.AdditiveBlending,
-
-	    obj.linesGroup = new Group();
-	    obj.streamlineLoadPromise = fetch(source).then(function (res) {
-	      return res.json();
-	    }).then(function (json) {
-	      obj.IntegrationSpan = json.IntegrationSpan;
-	      return json.data;
-	    });
-	    obj.dataPromise = obj.streamlineLoadPromise.then(function (sa) {
-	      sa.forEach(function (s, i) {
-	        // Interpolate using THREE.CatmullRomCurve3 to create more points?
-	        // Limited to 5000 lines for performance.
-	        // Create all hte lines, but detach some of them afterwards to allow for plotting.
-	        obj.addLine(s);
-	      }); // forEach
-
-	      return obj.lines;
-	    }); // then
-	  } // constructor
-	  // CORE FUNCTIONALITY
-
-
-	  _createClass(AnimatedStaticStreamlines, [{
-	    key: "update",
-	    value: function update() {
-	      var obj = this; // Calculate the current integration time
-
-	      if (obj.animated) {
-	        var t = (performance.now() - obj.t0) % obj.CycleDuration / obj.CycleDuration;
-	        obj.show(t);
-	      }
-	    } // update
-
-	  }, {
-	    key: "addLine",
-	    value: function addLine(streamlineJson) {
-	      var obj = this;
-	      var positions = new Float32Array(streamlineJson.Points);
-	      var a_mach = new Float32Array(streamlineJson.Values);
-	      var geometry = obj.streamlinegeometry.clone();
-	      geometry.setAttribute("position", new BufferAttribute(positions, 3));
-	      geometry.setAttribute("a_mach", new BufferAttribute(a_mach, 1)); // geometry.setDrawRange(0, 0);
-
-	      var line = new Line(geometry, obj.streamlinematerial.clone());
-	      line.tOffset = Math.random();
-	      line.times = streamlineJson.IntegrationTime.reverse(); // reverse so checking for last element under time.
-
-	      obj.lines.push(line);
-	      obj.linesGroup.add(line);
-	    } // addLine
-
-	  }, {
-	    key: "nlines",
-	    value: function nlines(index, count) {
-	      var obj = this;
-	      obj.dataPromise.then(function (lines) {
-	        lines.forEach(function (line, i) {
-	          if (index <= i && i <= index + count) {
-	            line.userData.attached = true;
-	            obj.linesGroup.add(line);
-	          } else {
-	            line.userData.attached = false;
-	            obj.linesGroup.remove(line);
-	          }
-	        }); // forEach
-	      }); // then
-	    } // nlines
-
-	  }, {
-	    key: "show",
-	    value: function show(t) {
-	      var obj = this; // Fadeout was achieved by changing hte color on-the-go....
-	      // That was a lot of work being done all the time - constant traversal of the data, constant communication with the GPU...
-
-	      obj.CurrentShowTime = t;
-	      obj.lines.forEach(function (line) {
-	        if (line.userData.attached) {
-	          // Even if I have the streamlines precomputed I still only move based on hte index position in hte array - still cannot simulate the actual velocity... Ok, but does it just advance to the point while keeping hte ones in hte back?
-	          // Don't increment every redraw, but instead find the index to the correct timestep. That should be the last timestep behind - always lagging a bit?
-	          // Even if the streamlines are recalculated to fit with the desired dt, the update still has to happen based on global time to avoid controls redrawing too fast.
-	          // This is the lagging cycling. For preceding cycling hte times reversal in line initialisation needs to be removed.
-	          // What to do when the reverse index isn't found? Then 0 should be output. Furthermore, stagger the indices by the random offset. But this offset should be in time!!
-	          // Multiply with animated to allow for synchronised view.
-	          var tLead = (t + obj.animated * line.tOffset) % 1 * (obj.IntegrationSpan[1] - obj.IntegrationSpan[0]) + obj.IntegrationSpan[0];
-	          var tTail = Math.max(tLead - 5 * 0.00012, obj.IntegrationSpan[0]); // Age will always be > 0. t e[0,1], tOffset e[0,1]
-
-	          var iLead = line.times.length - 1 - line.times.findIndex(function (v) {
-	            return v <= tLead;
-	          });
-	          var iTail = line.times.length - 1 - line.times.findIndex(function (v) {
-	            return v <= tTail;
-	          });
-
-	          if (obj.collect && line.userData.attached) {
-	            console.log(iLead, iTail);
-	          }
-	          /*
-	          Model it as the end of the line moving and dragging the lines behind itself?
-	          
-	          Either way you pay at one end. Or maybe 
-	          
-	          if 0 is the first index and 100 is the last index: 
-	          start = [0,0,0,0,0,0,1,2,3,4,5,...,95,96,97,98,99,100]
-	          count = [0,1,2,3,4,5,5,5,5,5,5,..., 5, 4, 3, 2, 1, 0]
-	          
-	          */
-
-
-	          var start = iLead;
-	          var count = iLead - iTail;
-	          line.geometry.setDrawRange(start, count);
-	        } // if
-
-	      }); // forEach
-	    } // show
-
-	  }, {
-	    key: "showstatic",
-	    value: function showstatic() {
-	      var obj = this;
-	      obj.animated = false;
-	      obj.lines.forEach(function (line) {
-	        line.geometry.setDrawRange(0, line.times.length - 1);
-	      });
-	    } // showstatic
-
-	  }, {
-	    key: "showanimated",
-	    value: function showanimated() {
-	      var obj = this;
-	      obj.animated = true;
-	    } // showanimated
-
-	  }, {
-	    key: "showsynchronised",
-	    value: function showsynchronised() {
-	      var obj = this;
-	      obj.animated = false;
-	      obj.show(obj.CurrentShowTime);
-	    } // showsynchronised
-
-	  }, {
-	    key: "addTo",
-	    value: function addTo(sceneWebGL) {
-	      var obj = this;
-	      sceneWebGL.add(obj.linesGroup);
-	    } // addTo
-
-	  }, {
-	    key: "addGUI",
-	    value: function addGUI(elementsGUI) {
-	      var obj = this; // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
-
-	      /*
-	      Make a GUI menu for the streamlines.
-	      		What should be configurable?
-	      - Integration span
-	      - CycleDuration
-	      - Type of visualisation: static, free animation, synchronised animation
-	      - Flow variable
-	      */
-
-	      obj.gui = elementsGUI.addFolder("Streamlines: " + trimStringToLength(obj.config.source, 22));
-	      obj.gui.add(obj.config, "visible").onChange(function (v) {
-	        obj.linesGroup.visible = v;
-	      }); // boolean
-
-	      var typeConfig = {
-	        "static": function _static() {
-	          obj.showstatic();
-	        },
-	        flowing: function flowing() {
-	          obj.showanimated();
-	        } // ,
-	        // synchronised: function(){ obj.showsynchronised() }
-
-	      };
-	      var type = obj.gui.add(obj.config, "type", [""].concat(Object.keys(typeConfig))); // dropdown
-
-	      type.onChange(function (value) {
-	        if (typeConfig[value]) {
-	          var f = typeConfig[value];
-	          f();
-	        } // if
-
-	      }); // onChange
-	    } // addGUI
-
-	  }]);
-
-	  return AnimatedStaticStreamlines;
-	}(); // AnimatedStaticStreamlines
 
 	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -41640,12 +41186,13 @@
 	  addTransformControls();
 	  var task = "./assets/deltawing/" + "mach_0p5_re_1e5_aoa_15_sweep_60_2500steps"; // For development
 
-	  addWingGeometry(task + '/wing/config.json');
-	  addStaticImage('./assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI / 2, 0, 0);
-	  addYoutubeVideo('JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI / 2, Math.PI / 2);
-	  addDecal('assets/20220125_143807_gray.jpg');
-	  addIsoSurface(task + '/block/config.json');
-	  addAnimatedStreamlines(task + '/streamlines/vortex.json');
+	  addWingGeometry(task + '/wing/config.json'); // addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+	  // addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+
+	  addDecal('assets/20220125_143807_gray.jpg'); // addDecal('assets/box.png');
+	  // addIsoSurface(task + '/block/config.json');
+	  // addAnimatedStreamlines(task + '/streamlines/vortex.json');
+
 	  window.addEventListener('resize', onWindowResize);
 	} // init
 
@@ -41793,25 +41340,6 @@
 	    decalobj.raypointer.enabled = false;
 	  }); // change
 	} // addDecal
-
-
-	function addIsoSurface(configFilename) {
-	  var iso = new IsoSurface(configFilename, colorbar);
-	  iso.addTo(sceneWebGL);
-	  iso.addGUI(gui.elements);
-	  console.log("Isosurface", iso);
-	} // addIsoSurface
-
-
-	function addAnimatedStreamlines(configFilename) {
-	  var streamlines = new AnimatedStaticStreamlines(configFilename, colorbar.uniforms);
-	  streamlines.addTo(sceneWebGL);
-	  streamlines.addGUI(gui.elements); // Streamlines need to be made aware of an external update.
-
-	  elementsThatNeedToBeUpdated.push(streamlines);
-	  streamlines.nlines(0, 2000);
-	  console.log(streamlines);
-	} // addAnimatedStreamlines
 	// HUD
 
 

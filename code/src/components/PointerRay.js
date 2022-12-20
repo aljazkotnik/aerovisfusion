@@ -42,7 +42,7 @@ export default class PointerRay{
 		geometry.setFromPoints( [ new THREE.Vector3(0.367, 100, 0.126), 
 								  new THREE.Vector3(0.384, 100, 0.173) ] );
 		obj.line = new THREE.Line( geometry, new THREE.LineBasicMaterial({
-			color: 0x000000
+			color: 0xFFFFFF
 		}) );
 		
 		
