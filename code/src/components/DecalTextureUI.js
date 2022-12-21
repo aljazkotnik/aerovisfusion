@@ -221,7 +221,7 @@ export default class DecalTextureUI{
 		
 		// Manual adjustment.Needs to be scaled to take into account the new canvas size.
 		let adjustment = obj.trackpad.offset();
-		let scale = Math.max(mask.width, mask.height)/256;
+		let scale = canvas.height/256;
 		adjustment = adjustment.map(v=>v*scale)
 		
 		// Calculate aspect ratio, which is original px per canvas px.

@@ -38849,7 +38849,7 @@
 	      var mask = obj.maskUI.maskDrawn() ? obj.maskUI.maskRectangle() : obj.calculateImageRect(ctx); // Manual adjustment.Needs to be scaled to take into account the new canvas size.
 
 	      var adjustment = obj.trackpad.offset();
-	      var scale = Math.max(mask.width, mask.height) / 256;
+	      var scale = canvas.height / 256;
 	      adjustment = adjustment.map(function (v) {
 	        return v * scale;
 	      }); // Calculate aspect ratio, which is original px per canvas px.
