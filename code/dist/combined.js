@@ -38690,50 +38690,50 @@
 
 	    var obj = this; // Make a node to which everything is appended.
 
-	    obj.node = html2element(template$6); // Create the canvas to draw and edit the texture on.
+	    obj.node = html2element(template$6);
+	    /*
+	    Should I have 3 canvases? A high-resolution canvas for the actual decal, a lower resolution canvas for the editor, and a small resolution canvas for the trackpad?
+	    */
+	    // Create the canvas to draw and edit the texture on.
 
-	    var canvas = obj.node.querySelector("canvas"); // document.createElement('canvas');
-	    // obj.node.querySelector("div.editor").appendChild(canvas)
-	    // create an additional alphamap texture.
-	    // document.createElement("canvas");
-
-	    obj.texture = new CanvasTexture(canvas);
+	    var canvas = obj.node.querySelector("canvas");
 	    obj.ctx = canvas.getContext('2d');
-	    var ctx = obj.ctx; // The canvas width and height should be determined based on hte image aspect ratio.
+	    obj.ctx.canvas.width = window.innerWidth;
+	    obj.ctx.canvas.height = window.innerHeight; // create an additional alphamap texture.
 
-	    ctx.canvas.width = 2048; // window.innerWidth;
+	    var texturecanvas = document.createElement("canvas");
+	    texturecanvas.width = 2048; // window.innerWidth;
 
-	    ctx.canvas.height = 2048; // window.innerHeight;
-	    // Get the raw image.
+	    texturecanvas.height = 2048; // window.innerHeight;
 
-	    obj.rawImage = new ImageTexture(ctx, source); // Configure the editor
+	    obj.texture = new CanvasTexture(texturecanvas);
+	    obj.texturectx = texturecanvas.getContext("2d"); // Draw the raw image onto the editor canvas.
 
-	    obj.maskUI = new MaskEditor(ctx); // Prescribe scales so that the mask can remain consistent upon screen resize.
+	    obj.rawImage = new ImageTexture(source); // Configure the editor
 
-	    obj.maskUI.px2unit = function (p) {
-	      return obj.rawImage.px2unit(p);
-	    };
-
-	    obj.maskUI.unit2px = function (p) {
-	      return obj.rawImage.unit2px(p);
-	    }; // Allow for complete redraw.
-
+	    obj.maskUI = new MaskEditor(obj.ctx); // Allow for complete redraw.
 
 	    obj.maskUI.onpointermove = function () {
 	      obj.render();
 	    }; // Trackpad to allow the user to adjust the texture. When should the changes be discarded?
 
 
-	    obj.trackpad = new TrackpadImage(ctx.canvas);
+	    obj.trackpad = new TrackpadImage();
 
-	    obj.trackpad.onadjust = function () {
-	      obj.adjust();
+	    obj.trackpad.onpointermove = function () {
+	      // Redraw the texture with the appropriate manual offset. Note that the offset from the trackpad needs to be scaled accordingly to the canvas size. Maybe the trackpad should give a non-dimensional offset out! And the drawing should scale it appropriately.
+	      var trackpadctx = obj.trackpad.ctx;
+	      var rect = obj.calculateMaskRect(trackpadctx);
+	      console.log(rect);
+	      obj.drawDecal(trackpadctx, rect);
+	      obj.updateTexture();
 	    }; // Add in the GUI.
 
 
 	    var guiconfig = {
 	      preview: function preview() {
-	        obj.preview();
+	        var rect = obj.calculateImageRect(obj.ctx);
+	        obj.drawDecal(obj.ctx, rect);
 	      },
 	      adjust: function adjust() {
 	        obj.render();
@@ -38744,9 +38744,12 @@
 	        // Would be good if the user could select the center of the decal...
 	        // Make the main texture
 	        obj.hide();
-	        obj.adjust(); // Update the trackpad image here. The trackpad image will be static anyway.
+	        obj.updateTexture(); // Update the trackpad image here. The trackpad image will be static anyway.
 
-	        obj.trackpad.render();
+	        var trackpadctx = obj.trackpad.ctx;
+	        var rect = obj.calculateMaskRect(trackpadctx);
+	        obj.drawDecal(trackpadctx, rect);
+	        console.log(rect);
 	      }
 	    }; // guiconfig
 	    // Add a gui before the canvas
@@ -38762,46 +38765,56 @@
 
 
 	  _createClass(DecalTextureUI, [{
-	    key: "adjust",
-	    value: function adjust() {
-	      var obj = this;
-	      obj.preview();
-	      obj.texture.needsUpdate = true;
-	    } // adjust
-
-	  }, {
-	    key: "preview",
-	    value: function preview() {
-	      // What happens if there is no geometry? Then the whole image should be used as a decal. This should be handled in the maskUI.
-	      var obj = this;
-	      var ctx = obj.ctx; // Clear everything
+	    key: "drawDecal",
+	    value: function drawDecal(ctx, rect) {
+	      // Draw the clipped image to the canvas used as the texture. The image should be drawn in the center of the canvas.
+	      var obj = this; // Clear everything
 
 	      ctx.reset();
-	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	      var cs = obj.calculateCenterShift();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Calculate the position and extent of the drawn image.
 
 	      if (obj.maskUI.maskDrawn()) {
 	        /// draw the shape we want to use for clipping
-	        obj.maskUI.drawClip(cs.x, cs.y); /// change composite mode to use that shape. Source-over is default
+	        obj.maskUI.drawClip(ctx, rect); /// change composite mode to use that shape. Source-over is default
 
 	        ctx.globalCompositeOperation = 'source-in';
+	      } else {
+	        // If no mask was drawn the whole image should be drawn. This is calculated here.
+	        rect = obj.calculateImageRect(ctx);
 	      } // if
 	      /// draw the image to be clipped. But draw it offset, like the mask was offset to be in the middle of the screen.
 
 
-	      obj.rawImage.draw(cs.x, cs.y);
-	    } // preview
+	      obj.rawImage.draw(ctx, rect);
+	    } // drawDecal
+
+	  }, {
+	    key: "updateTexture",
+	    value: function updateTexture() {
+	      // Draw the edited decal image onto the texture canvas.
+	      var obj = this;
+	      var rect = obj.calculateMaskRect(obj.texturectx);
+	      obj.drawDecal(obj.texturectx, rect);
+	      obj.texture.needsUpdate = true;
+	    } // adjust
 
 	  }, {
 	    key: "render",
 	    value: function render() {
+	      // Redraw the editor during editing. The image in hte background may need to be changed also.
 	      var obj = this;
 	      var ctx = obj.ctx; // Clear canvas.
 
 	      ctx.reset();
-	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	      obj.rawImage.draw();
-	      obj.maskUI.draw();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Calculate where the image should be drawn.
+
+	      var rect = obj.calculateImageRect(ctx);
+	      var dp = obj.rawImage.draw(ctx, rect);
+	      dp.then(function () {
+	        // The geometry can only be drawn to the interactive canvas.
+	        obj.maskUI.scale.rect = rect;
+	        obj.maskUI.drawGeometry();
+	      });
 	    } // render
 
 	  }, {
@@ -38810,6 +38823,7 @@
 	      var obj = this;
 	      obj.node.style.width = "".concat(window.innerWidth, "px");
 	      obj.node.style.height = "".concat(window.innerHeight, "px");
+	      obj.render();
 	      obj.node.style.display = "";
 	    } // show
 
@@ -38825,18 +38839,48 @@
 	    value: function resize(w, h) {// Resize the manager given the width and height of the window.
 	    }
 	  }, {
-	    key: "calculateCenterShift",
-	    value: function calculateCenterShift() {
-	      // This calculates the offset such that the clipped image will end up centered on hte texture.
-	      var obj = this;
-	      var canvas = obj.ctx.canvas;
-	      var mask = obj.maskUI.maskRectangle();
-	      var adjustments = obj.trackpad.offset();
+	    key: "calculateMaskRect",
+	    value: function calculateMaskRect(ctx) {
+	      // Calculate the rectangle into which the clipped image should be drawn. This depends on the mask size, and any manual adjustments.
+	      var obj = this; // Given canvas.
+
+	      var canvas = ctx.canvas; // Mask - this could be infinite size if the mask has not yet been drawn. At the same time the editor can't know the default size.
+
+	      var mask = obj.maskUI.maskDrawn() ? obj.maskUI.maskRectangle() : obj.calculateImageRect(ctx); // Manual adjustment.Needs to be scaled to take into account the new canvas size.
+
+	      var adjustment = obj.trackpad.offset();
+	      var scale = Math.max(mask.width, mask.height) / 256;
+	      adjustment = adjustment.map(function (v) {
+	        return v * scale;
+	      }); // Calculate aspect ratio, which is original px per canvas px.
+
+	      var ar = Math.min(canvas.width / mask.width, canvas.height / mask.height); // Return the rectangle that can be used for positioning hte image on hte canvas straight away.
+
 	      return {
-	        x: -(canvas.width - mask.width) / 2 + adjustments[0],
-	        y: -(canvas.height - mask.height) / 2 + adjustments[1]
+	        x: (canvas.width - ar * mask.width) / 2 + adjustment[0],
+	        y: (canvas.height - ar * mask.height) / 2 + adjustment[1],
+	        width: ar * mask.width,
+	        height: ar * mask.height
 	      };
-	    } // calculateCenterShift
+	    } // calculateMaskRect
+
+	  }, {
+	    key: "calculateImageRect",
+	    value: function calculateImageRect(ctx) {
+	      // Calculate the rectangle within which the editor will draw the image, and the corresponding geometry. For the editor all the drawing should be done so that the original image is centered on the canvas.
+	      var obj = this;
+	      var canvas = ctx.canvas;
+	      var decal = obj.rawImage; // Calculate aspect ratio, which is original px per canvas px.
+
+	      var ar = Math.min(canvas.width / decal.width, canvas.height / decal.height); // Return the rectangle that can be used for positioning hte image on hte canvas straight away.
+
+	      return {
+	        x: (canvas.width - ar * decal.width) / 2,
+	        y: (canvas.height - ar * decal.height) / 2,
+	        width: ar * decal.width,
+	        height: ar * decal.height
+	      };
+	    } // calculateDestinationRect
 
 	  }]);
 
@@ -38844,123 +38888,83 @@
 	}(); // DecalTextureUI
 
 	var Scale = /*#__PURE__*/function () {
-	  function Scale(range, domain) {
+	  // This is the pixel rectangle to which the 0-1 unit values of coordinates is mapped.
+	  function Scale() {
 	    _classCallCheck(this, Scale);
 
-	    this.range = [0, 1];
-	    this.domain = [0, 1];
-	    var obj = this; // Range [px]
-	    // Domain [data unit]
+	    this.rect = {
+	      x: 0,
+	      y: 0,
+	      width: 1,
+	      height: 1
+	    };
+	  } // constructor
 
-	    obj.range = range ? range : obj.range;
-	    obj.domain = domain ? domain : obj.domain;
-	  }
 
 	  _createClass(Scale, [{
-	    key: "unit2px",
-	    value: function unit2px(v) {
+	    key: "ppx2unit",
+	    value: function ppx2unit(p) {
+	      // Convert a point from pixel to unit.
 	      var obj = this;
-	      var domain = obj.domain;
-	      var range = obj.range;
-	      return (v - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]) + range[0];
-	    } // unit2px
+	      return [(p[0] - obj.rect.x) / obj.rect.width, (p[1] - obj.rect.y) / obj.rect.height];
+	    } // ppx2unit
 
 	  }, {
-	    key: "px2unit",
-	    value: function px2unit(v) {
+	    key: "punit2px",
+	    value: function punit2px(p) {
+	      // Convert a point from pixel to unit.
 	      var obj = this;
-	      var domain = obj.domain;
-	      var range = obj.range;
-	      return (v - range[0]) / (range[1] - range[0]) * (domain[1] - domain[0]) + domain[0];
-	    } // px2unit
+	      return [p[0] * obj.rect.width + obj.rect.x, p[1] * obj.rect.height + obj.rect.y];
+	    } // ppx2unit
 
 	  }]);
 
 	  return Scale;
 	}(); // Scale
+	// The new approach is that the image and the mask are drawn to a given canvas. The only requirement is that the canvas is rectangular, because that is a texture requirement.
 
 
 	var ImageTexture = /*#__PURE__*/function () {
-	  function ImageTexture(ctx, sourcelink) {
+	  function ImageTexture(sourcelink) {
 	    _classCallCheck(this, ImageTexture);
 
 	    this.im = undefined;
-	    this.ar = 1;
+	    this.width = 0;
+	    this.height = 0;
 	    var obj = this;
-	    obj.ctx = ctx;
-	    var im = new Image();
-	    im.src = sourcelink;
+	    obj.im = new Promise(function (resolve, reject) {
+	      var im = new Image();
+	      im.src = sourcelink;
 
-	    im.onload = function () {
-	      obj.im = im;
-	      obj.resize();
-	      obj.draw();
-	    }; // Define the 2 scales to use for non-dimensionalising drawn points.
-
-
-	    obj._xscale = new Scale();
-	    obj._yscale = new Scale();
+	      im.onload = function () {
+	        obj.width = im.width;
+	        obj.height = im.height;
+	        resolve(im);
+	      };
+	    }); // new Promise
 	  } // constructor
 
 
 	  _createClass(ImageTexture, [{
-	    key: "px2unit",
-	    value: function px2unit(p) {
-	      var obj = this;
-	      obj._xscale.range = [0, 0 + obj.ar * obj.im.width];
-	      obj._yscale.range = [0, 0 + obj.ar * obj.im.height];
-	      return [obj._xscale.px2unit(p[0]), obj._yscale.px2unit(p[1])];
-	    } // px2unit
-
-	  }, {
-	    key: "unit2px",
-	    value: function unit2px(p) {
-	      var obj = this;
-	      obj._xscale.range = [0, 0 + obj.ar * obj.im.width];
-	      obj._yscale.range = [0, 0 + obj.ar * obj.im.height];
-	      return [obj._xscale.unit2px(p[0]), obj._yscale.unit2px(p[1])];
-	    } // unit2px
-
-	  }, {
 	    key: "draw",
-	    value: function draw(xoffset, yoffset) {
+	    value: function draw(ctx, rect) {
 	      var obj = this;
-	      var ctx = obj.ctx;
-	      var x0 = xoffset ? xoffset : 0;
-	      var y0 = yoffset ? yoffset : 0;
+	      var defaultRect = {
+	        x: 0,
+	        y: 0,
+	        width: ctx.canvas.width,
+	        height: ctx.canvas.height
+	      }; // defaultRect
 
-	      if (obj.im) {
-	        // Get the current canvas width and height.
-	        var cw = ctx.canvas.width;
-	        var ch = ctx.canvas.height; // Image size.
+	      rect = rect == undefined ? defaultRect : rect;
+	      return obj.im.then(function (im) {
+	        // Image size.
+	        var sw = im.width;
+	        var sh = im.height; // If the canvas is resized here, then everything before this point is thrown away!!
 
-	        var sw = obj.im.width;
-	        var sh = obj.im.height; // If the canvas is resized here, then everything before this point is thrown away!!
-
-	        ctx.drawImage(obj.im, 0, 0, sw, sh, x0, y0, cw, ch);
-	      } // if
-
+	        ctx.drawImage(im, 0, 0, sw, sh, rect.x, rect.y, rect.width, rect.height);
+	      }); // new Pomise
 	    } // draw
-
-	  }, {
-	    key: "resize",
-	    value: function resize() {
-	      // The maximum size of the canvas has changed. Adjust the canvas to the image size.
-	      // Set the canvas aspect ratio here.
-	      var obj = this;
-	      var ctx = obj.ctx;
-	      var cw = ctx.canvas.width;
-	      var ch = ctx.canvas.height; // Draw the image.
-
-	      var sw = obj.im.width;
-	      var sh = obj.im.height; // Now calculate the aspect ration so the image fits in.
-
-	      obj.ar = Math.min(cw / sw, ch / sh);
-	      var dw = obj.ar * sw;
-	      var dh = obj.ar * sh;
-	      ctx.canvas.width = dw;
-	      ctx.canvas.height = dh;
-	    } // resize
 
 	  }]);
 
@@ -39006,8 +39010,8 @@
 
 	      if (pointerDown && distPx(obj.event2canvas(pointerDown), obj.event2canvas(event)) > Math.pow(5, 2)) {
 	        moved = true;
-	        var p0 = obj.px2unit(obj.event2canvas(pointerDown));
-	        var p1 = obj.px2unit(obj.event2canvas(event));
+	        var p0 = obj.scale.ppx2unit(obj.event2canvas(pointerDown));
+	        var p1 = obj.scale.ppx2unit(obj.event2canvas(event));
 	        obj.movecorrection = [p1[0] - p0[0], p1[1] - p0[1]];
 	        obj.onpointermove();
 	      } // if
@@ -39033,6 +39037,10 @@
 	      pointerDown = undefined;
 	      moved = false;
 	    }); // pointerout
+	    // A scale to allow user added geoemtry to be converted into image unit coordinates and back.
+
+	    obj.scale = new Scale();
+	    obj.scaledest = new Scale();
 	  } // constructor
 	  // DATA INTERFACE
 
@@ -39047,7 +39055,7 @@
 	      var px = obj.event2canvas(event); // If the point is close enough to existing points, then fill the area.
 
 	      obj.closed = current.map(function (p) {
-	        return obj.unit2px(p);
+	        return obj.scale.punit2px(p);
 	      }).some(function (p) {
 	        return Math.pow(p[0] - px[0], 2) + Math.pow(p[1] - px[1], 2) < Math.pow(10, 2);
 	      }); // Furthermore, if the area is closed, then a new area drawing should begin with the next click.
@@ -39057,13 +39065,13 @@
 	        obj.geometries.push([]);
 	      } else {
 	        // Store values in non-dim units.
-	        var pu = obj.px2unit(px);
+	        var pu = obj.scale.ppx2unit(px);
 	        current.push(pu);
 	      } // if
-	      // Draw just hte addition
+	      // Draw just the geometry, and the underlying image remains the same.
 
 
-	      obj.draw();
+	      obj.drawGeometry();
 	    } // addPoint
 
 	    /* What kind of interactions do I want to support?
@@ -39088,7 +39096,7 @@
 
 	      var _loop = function _loop(i) {
 	        var points = obj.geometries[i].map(function (p) {
-	          return obj.unit2px(p);
+	          return obj.scale.punit2px(p);
 	        }); // Check if the current point is within the geometry. If it is don't check for other geometries.			
 
 	        if (isPointInside(points, clickpoint)) {
@@ -39174,24 +39182,12 @@
 	      var rect = obj.ctx.canvas.getBoundingClientRect();
 	      return [event.clientX - rect.x, event.clientY - rect.y];
 	    } // event2canvas
-
-	  }, {
-	    key: "px2unit",
-	    value: function px2unit(p) {
-	      // Dummy function allowing the points added through clicking to be non-dimensionalised correctly.
-	      return p;
-	    } // px2unit
-
-	  }, {
-	    key: "unit2px",
-	    value: function unit2px(p) {
-	      return p;
-	    } // unit2px
 	    // DRAWING
 
 	  }, {
-	    key: "draw",
-	    value: function draw() {
+	    key: "drawGeometry",
+	    value: function drawGeometry() {
+	      // Used to draw the editing elements. Geometry is drawn only on the editor canvas the interactions were attached to, and not to the texture canvas. Therefore a ctx input is not needed.
 	      var obj = this;
 
 	      var _loop3 = function _loop3(i) {
@@ -39199,8 +39195,9 @@
 	        var points = current.map(function (p, j) {
 	          var corr = obj.getMoveCorrection(i, j);
 	          var pc = [p[0] + corr[0], p[1] + corr[1]];
-	          return obj.unit2px(pc);
-	        });
+	          return obj.scale.punit2px(pc);
+	        }); // The drwing calls perform just the drawing - no additional transformation of coordinates is done.
+
 	        obj.drawLines(points, current.closed);
 	        obj.drawPoints(points);
 	      };
@@ -39213,12 +39210,10 @@
 
 	  }, {
 	    key: "drawClip",
-	    value: function drawClip(xoffset, yoffset) {
+	    value: function drawClip(ctx, rect) {
+	      // The clip may need to be drawn either on hte editor canvas, or onto the texture canvas. Therefore a ctx input is required.
 	      var obj = this;
-	      var ctx = obj.ctx; // Include the offset.
-
-	      var x0 = xoffset ? xoffset : 0;
-	      var y0 = yoffset ? yoffset : 0; // Draw the current clip
+	      obj.scaledest.rect = rect; // Draw the current clip
 
 	      ctx.fillStyle = '#FFFFFF';
 	      ctx.beginPath();
@@ -39227,12 +39222,12 @@
 	      });
 	      closedGeometries.forEach(function (closedgeometry) {
 	        var points = closedgeometry.map(function (p) {
-	          return obj.unit2px(p);
+	          return obj.scaledest.punit2px(p);
 	        });
-	        ctx.moveTo(x0 + points[0][0], y0 + points[0][1]);
+	        ctx.moveTo(points[0][0], points[0][1]);
 
 	        for (var i = 0; i < points.length; i++) {
-	          ctx.lineTo(x0 + points[i][0], y0 + points[i][1]);
+	          ctx.lineTo(points[i][0], points[i][1]);
 	        } // for
 
 
@@ -39320,7 +39315,7 @@
 	        return geometry.closed;
 	      }).forEach(function (geometry) {
 	        var points = geometry.map(function (p) {
-	          return obj.unit2px(p);
+	          return obj.scale.punit2px(p);
 	        });
 	        points.forEach(function (point) {
 	          x[0] = x[0] < point[0] ? x[0] : point[0];
@@ -39329,12 +39324,7 @@
 	          y[1] = y[1] > point[1] ? y[1] : point[1];
 	        }); // forEach
 	      }); // forEach
-	      // If there were no filled geometries then adjust the x and y values.
 
-	      x[0] = x[0] == Number.POSITIVE_INFINITY ? 0 : x[0];
-	      x[1] = x[1] == Number.NEGATIVE_INFINITY ? obj.ctx.canvas.width : x[1];
-	      y[0] = y[0] == Number.POSITIVE_INFINITY ? 0 : y[0];
-	      y[1] = y[1] == Number.NEGATIVE_INFINITY ? obj.ctx.canvas.height : y[1];
 	      return {
 	        x: x[0],
 	        y: y[0],
@@ -39352,14 +39342,12 @@
 	var TrackpadImage = /*#__PURE__*/function () {
 	  // A list of interactive adjustments made.
 	  // Ongoing adjustment.
-	  function TrackpadImage(original) {
+	  function TrackpadImage() {
 	    _classCallCheck(this, TrackpadImage);
 
 	    this.adjusts = [[0, 0]];
 	    this.delta = [0, 0];
-	    var obj = this; // Keep a reference to the original canvas.
-
-	    obj.original = original; // This is the node that is added to the GUI.
+	    var obj = this; // This is the node that is added to the GUI.
 
 	    obj.node = document.createElement("canvas");
 	    obj.ctx = obj.node.getContext('2d');
@@ -39378,8 +39366,7 @@
 	      if (initialPoint) {
 	        obj.delta[0] = e.clientX - initialPoint.clientX;
 	        obj.delta[1] = e.clientY - initialPoint.clientY;
-	        obj.render();
-	        obj.onadjust();
+	        obj.onpointermove();
 	      } // if
 
 	    }); // pointermove
@@ -39406,21 +39393,8 @@
 	    } // offset
 
 	  }, {
-	    key: "render",
-	    value: function render() {
-	      var obj = this;
-	      var offset = obj.offset();
-	      var canvas = obj.ctx.canvas; // ratio is original px per canvas px.
-
-	      var ratio = Math.min(canvas.width / obj.original.width, canvas.height / obj.original.height);
-	      obj.ctx.clearRect(0, 0, canvas.width, canvas.height);
-	      obj.ctx.drawImage(obj.original, 0, 0, obj.original.width, obj.original.height, obj.delta[0] + offset[0], obj.delta[1] + offset[1], obj.original.width * ratio, obj.original.height * ratio);
-	    } // render
-
-	  }, {
-	    key: "onadjust",
-	    value: function onadjust() {} // onadjust
-
+	    key: "onpointermove",
+	    value: function onpointermove() {}
 	  }]);
 
 	  return TrackpadImage;
