@@ -12,8 +12,8 @@ import StaticImage from "./components/StaticImage.js";
 import ContouredMesh from "./components/ContouredMesh.js";
 import Decal from "./components/Decal.js";
 
-import IsoSurface from "./components/IsoSurface.js";
-// import IsoSurface from "./components/DummyIsoSurface.js";
+// import IsoSurface from "./components/IsoSurface.js";
+import IsosurfaceServerProxy from "./components/IsosurfaceServerProxy.js";
 
 import AnimatedStaticStreamlines from "./components/AnimatedStaticStreamlines.js";
 
@@ -98,11 +98,10 @@ function init() {
 	addWingGeometry( task + '/wing/config.json');
 	// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
 	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	// addDecal('assets/20220125_143807_gray.jpg');
 	
-	addDecal('assets/20220125_143807_gray.jpg');
-	// addDecal('assets/box.png');
+	addIsoSurface(task + '/block/config.json');
 	
-	// addIsoSurface(task + '/block/config.json');
 	// addAnimatedStreamlines(task + '/streamlines/vortex.json');
 
 	window.addEventListener( 'resize', onWindowResize );
@@ -292,7 +291,7 @@ function addDecal( decalImageFilename ){
 
 function addIsoSurface( configFilename ){
 	
-	const iso = new IsoSurface( configFilename, colorbar );
+	const iso = new IsosurfaceServerProxy( configFilename, colorbar );
 	iso.addTo( sceneWebGL );
 	iso.addGUI( gui.elements );
 	

@@ -7,7 +7,6 @@ export default class IsoSurface{
 	a = 0
 	b = 1
 	step = 0.05
-	value = 0
 	
 	constructor( configFilename, colorbar ){
 		let obj = this;
