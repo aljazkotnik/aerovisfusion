@@ -96,13 +96,13 @@ function init() {
 	
 	// For development
 	addWingGeometry( task + '/wing/config.json');
-	// addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	// addDecal('assets/20220125_143807_gray.jpg');
+	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
+	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	addDecal('assets/20220125_143807_gray.jpg');
 	
 	addIsoSurface(task + '/block/config.json');
 	
-	// addAnimatedStreamlines(task + '/streamlines/vortex.json');
+	addAnimatedStreamlines(task + '/streamlines/vortex.json');
 
 	window.addEventListener( 'resize', onWindowResize );
 	
