@@ -86,9 +86,9 @@ animate();
 function init() {
 
 	setupScene();
-	setupHUD();
 	addArcballControls();
 	addTransformControls();
+	setupHUD();
 	
 	
 	
@@ -97,12 +97,12 @@ function init() {
 	// For development
 	addWingGeometry( task + '/wing/config.json');
 	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	addDecal('assets/20220125_143807_gray.jpg');
+	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	// addDecal('assets/20220125_143807_gray.jpg');
 	
-	addIsoSurface(task + '/block/config.json');
+	// addIsoSurface(task + '/block/config.json');
 	
-	addAnimatedStreamlines(task + '/streamlines/vortex.json');
+	// addAnimatedStreamlines(task + '/streamlines/vortex.json');
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -193,7 +193,7 @@ function setupScene(){
 	
 	
 	// APPEND RENDERES
-	document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
+	// document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
 	document.getElementById('webgl').appendChild( rendererWebGL.domElement );
 	
 
@@ -331,7 +331,7 @@ function setupHUD(){
 	}
 	
 	// Camera is required to update the annotation glow correctly.
-	gui = new SessionGUI( elementOptions, rendererCSS, sceneWebGL, camera );
+	gui = new SessionGUI( elementOptions, rendererCSS, sceneWebGL, camera, arcballcontrols );
 	document.body.appendChild( gui.dom );
 	
 	
@@ -349,14 +349,18 @@ function setupHUD(){
 	
 	
 	// Allow selected 3D annotations to be repositioned using transform controls.
-	const tc = gui.annotations.controllers.find(c=>c.property=="position");
+	const tc = gui.volumetags.menufolder.controllers.find(c=>c.property=="position");
 	allTransformControllers.push(tc);
 	gui.volumetags.changeTransformObject = function(v){
 		let current = gui.volumetags.annotations.selected[0];
 		v = current ? v : false;
 		switchTransformObject( v, tc, current, function(){gui.volumetags.annotations.ontransform()} );
 	} // changeTransformObject
-
+	
+	
+	
+	console.log(arcballcontrols)
+	console.log( gui )
 } // setupHUD
 
 
@@ -364,15 +368,16 @@ function setupHUD(){
 // CONTROLS - ADDED TO CSS RENDERER!!!!
 function addArcballControls(){
 	
-	arcballcontrols = new ArcballControls( camera, rendererCSS.domElement, sceneWebGL );
+	// arcballcontrols = new ArcballControls( camera, rendererCSS.domElement, sceneWebGL );
+	arcballcontrols = new ArcballControls( camera, document.getElementById( 'css' ), sceneWebGL );
 	arcballcontrols.focus( focusInitialPoint, 1, 1 );
 	
 	// Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 	camera.position.set( cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z );
 	arcballcontrols.update();
 
-	console.log(setGizmoOpacity)
-	// console.log(arcballcontrols, getVista, moveToVista)
+	// console.log(setGizmoOpacity)
+	
 	
 } // addArcballControls
 
@@ -385,17 +390,6 @@ function setGizmoOpacity(active){
 } // setGizmoOpacity
 
 
-// These two work, just some easing still needs to be applied, and the vista should be stored in the database!
-function moveToVista(af, cp){
-	// Set the arcballcontrols focus to `af', and move the camera to the relevant position 'cp'.
-	arcballcontrols.focus( af.point, af.size, af.amount );
-	camera.position.set( cp.x, cp.y, cp.z );
-	arcballcontrols.update();
-} // moveToVista
-
-function getVista(){
-	return [arcballcontrols.retrieveCurrentFocus(), camera.position.clone()]
-} // getVista
 
 
 
@@ -517,6 +511,6 @@ function animate() {
 function render(){
 	
 	rendererWebGL.render(sceneWebGL, camera);
-	rendererCSS.render(sceneCSS, camera );
+	// rendererCSS.render(sceneCSS, camera );
 	
 } // render

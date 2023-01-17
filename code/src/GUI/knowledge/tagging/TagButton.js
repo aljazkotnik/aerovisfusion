@@ -3,7 +3,7 @@ import { html2element } from "../../../helpers.js";
 
 // The buttons are toggled on/off to filter the comments!!
 export default class TagButton{
-  constructor(tag){
+  constructor(tag, clickfunction){
     let obj = this;
 	obj.tag = tag;
 	obj.node = html2element(`<button class="btn-small">#${tag.name}</button>`);
@@ -16,6 +16,9 @@ export default class TagButton{
 	obj.node.onmousedown = function(e){
 	  e.stopPropagation();
 	  obj.toggle(!obj.on);
+	  if(clickfunction){
+		  clickfunction();
+	  } // if
 	} // onclick
 	
 	

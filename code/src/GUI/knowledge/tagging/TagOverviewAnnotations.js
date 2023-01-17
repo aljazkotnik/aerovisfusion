@@ -1,29 +1,21 @@
 import { html2element } from "../../../helpers.js";
 import TagButton from "./TagButton.js";
+import Tag3DGeometryButton from "./Tag3DGeometryButton.js";
 
-
-// This should have a title also.
-let template = `<div>
-  <h3></h3>
-  <div style="width: 300px; margin-top: 5px;">
-</div>`;
+let template = `<div style="width: 300px; margin-top: 5px;"></div>`;
 
 export default class TagOverview{
   
   tags = [];
   buttons = [];
   needsupdating = [];
-  tagClickFunction = function(){}
   
-  constructor( title, tagClickFunction ){
+  constructor(scene, camera){
     let obj = this;
 	obj.node = html2element(template);
-	
-	// Set the new title
-	obj.node.querySelector("h3").innerHTML = title;
-	
-	
-	obj.tagClickFunction = tagClickFunction ? tagClickFunction : function(){};
+	obj.scene = scene;
+	obj.camera = camera;
+	// The tag visualisation should happen here also.
   } // constructor
   
   add(newtags){
@@ -40,7 +32,16 @@ export default class TagOverview{
 			n = tag.geometry[0] ? tag.geometry[0].length : 0;
 		} // if
 		
-		let b = new TagButton(tag, function(){ obj.tagClickFunction(tag) });
+		let b;
+		switch(n){
+			case 4:
+			    b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
+				obj.needsupdating.push(b.annotation);
+				break;
+			default:
+				b = new TagButton(tag);
+		} // switch
+	
 		return b
 	}) // map
 	
@@ -74,5 +75,6 @@ export default class TagOverview{
 		  a.update();
 	  })
   } // update
+  
   
 } // TagOverview
