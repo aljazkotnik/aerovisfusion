@@ -58,7 +58,6 @@ export default class VolumeAnnotation{
 	constructor(camera){
 		let obj = this;
 		
-		
 		// The camera is required to adjust the glow correctly.
 		obj.camera = camera;
 		
@@ -66,19 +65,23 @@ export default class VolumeAnnotation{
 		// Create a group here.
 		obj.group = new THREE.Group();
 		
-		console.log(obj)
 	} // constructor
 	
 	
 	
-	add(x,y,z,s){
-		// Add a sphere
+	add(sc){
+		// Add a sphere based on a sphere configuration object sc.
 		let obj = this;
 		
 		let annotationGlow = new THREE.Mesh( annotationSphereGeom.clone(), annotationSphereMaterial.clone() );
 		
-		annotationGlow.position.set(x, y, z);
-		annotationGlow.scale.setScalar( s );
+		
+		// annotationGlow.position.set(x, y, z);
+		// annotationGlow.scale.setScalar( s );
+		annotationGlow.position.copy( sc.position );
+		annotationGlow.rotation.setFromVector3( sc.rotation );
+		annotationGlow.scale.copy( sc.scale );
+		
 		annotationGlow.name = "AnnotationSphere";
 		
 		obj.group.add( annotationGlow );
@@ -94,6 +97,13 @@ export default class VolumeAnnotation{
 			obj.group.remove(s)
 		}) // forEach
 	} // remove
+	
+	clear(){
+		let obj = this;
+		obj.group.children.forEach(c=>{
+			obj.group.remove(c);
+		}) // forEach
+	} // clear
 	
 	
 	
@@ -137,11 +147,26 @@ export default class VolumeAnnotation{
 	
 	
 	get geometry(){
-		// Return json tag object.
+		// Return json tag object. 
 		let obj = this;
-		return obj.group.children.map(c=>{
-			return [c.position.x, c.position.y, c.position.z, c.scale.x]
+		
+		// Extend geometry to include position, scale, and rotation.
+		let g = obj.group.children.map(c=>{
+			return {
+				position: {x: c.position.x, y: c.position.y, z: c.position.z},
+				rotation: {x: c.rotation.x, y: c.rotation.y, z: c.rotation.z},
+				scale: {x: c.scale.x, y: c.scale.y, z: c.scale.z}
+			}
 		})
+		g.type = "3d";
+		return g
+		
+		
+		
+		
+		//return obj.group.children.map(c=>{
+		//	return [c.position.x, c.position.y, c.position.z, c.scale.x]
+		//})
 	} // get tag
 	
 	

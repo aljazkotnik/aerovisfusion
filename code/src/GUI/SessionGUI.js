@@ -3,9 +3,10 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import Stats from "stats.js";
 
 // import PlayBarSlider from "./PlayBarSlider.js"
-import Annotation3DForm from "./Annotation3DForm.js";
-import TagOverview from "./knowledge/tagging/TagOverview.js";
+import Annotation3DManager from "./Annotation3DManager.js";
 import CommentingManager from "./knowledge/commenting/CommentingManager.js";
+import VistaManager from "./VistaManager.js";
+
 
 const template = `
 <div class="hud">
@@ -17,56 +18,16 @@ const template = `
 
 
 export default class SessionGUI{
-	constructor(elementOptions, renderer, scene, camera){
+	constructor(elementOptions, renderer, scene, camera, arcballcontrols){
 		let obj = this;
+		const author = "Aljaz"
 		obj.sessionId = "Delta wing";
 		obj.dom = html2element(template);
 		
 		
-		
-		// Add the Stats object.
-		obj.stats = new Stats();
-		obj.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-		obj.dom.querySelector("div.stats").appendChild( obj.stats.dom );
-		obj.stats.dom.style.left = "";
-		obj.stats.dom.style.top = "";
-		obj.stats.dom.style.right = "0px";
-		obj.stats.dom.style.bottom = "0px";
-		
-		
-		// The overall gui should only contain folders.
-		obj.session = new GUI({
-			container: obj.dom.querySelector("div.righttop"),
-			title: "Session controls",
-			width: 256+7
-		});
-		
-		// Folder for individual elements
-		obj.elements = obj.session.addFolder("Elements");
-		obj.addElementOptions(elementOptions);
-		
-		
-		
-		
-		
-		
-		
-		// TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
-		obj.tagoverview = new TagOverview(scene, camera);
-		// obj.dom.appendChild( obj.tagoverview.node );
-		
-		// Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
-		obj.commenting = new CommentingManager();
-		// obj.dom.appendChild( obj.commenting.node );
-		
-		
-		
-		
-		
-		
 		// Setup the connection with the server.
 		const serverAddress = "wss://mighty-gentle-silence.glitch.me"; 
-		// setupWebSocket();
+		setupWebSocket();
 
 		function setupWebSocket(){
 			/*
@@ -131,21 +92,81 @@ export default class SessionGUI{
 		
 		
 		
-		const author = "Aljaz"
-		obj.annotations = obj.session.addFolder("3D Annotation");
 		
 		
 		
-		// Create a lil-gui version o fthe 3D annotation form.
-		obj.volumetags = new Annotation3DForm(obj.annotations, renderer, scene, camera);
+		
+		
+		
+		
+		// Add the Stats object.
+		obj.stats = new Stats();
+		obj.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+		obj.dom.querySelector("div.stats").appendChild( obj.stats.dom );
+		obj.stats.dom.style.left = "";
+		obj.stats.dom.style.top = "";
+		obj.stats.dom.style.right = "0px";
+		obj.stats.dom.style.bottom = "0px";
+		
+		
+		
+		
+		// GUI
+		let lefttopdiv = obj.dom.querySelector("div.lefttop");
+		let righttopdiv = obj.dom.querySelector("div.righttop");
+		
+		
+		// The overall gui should only contain folders.
+		obj.session = new GUI({
+			container: righttopdiv,
+			title: "Session controls",
+			width: 256+7
+		});
+		
+		// FOLDERS
+		let fk = obj.session.addFolder("Knowledge");
+		let fe = obj.session.addFolder("Elements");
+		// let fa = obj.session.addFolder("Add element");
+		
+		
+		
+		// ELEMENTS
+		// The elements folder is dynamically populated, and a reference is needed.
+		obj.elements = fe;
+		
+		
+		// ADD ELEMENT
+		// Populated from a predefined options list.
+		// obj.addElementOptions(fa, elementOptions);
+		
+		
+		
+		
+		// VISTAS
+		obj.vistas = new VistaManager( fk, arcballcontrols, camera );
+		lefttopdiv.appendChild( obj.vistas.tagoverview.node );
+		obj.vistas.submit = function(tag){
+			tag.taskId = obj.sessionId;
+			tag.author = author;
+			tag.type = "tag";
+	
+			obj.ws.send( JSON.stringify( tag ) );
+		};
+		
+		
+		
+		
+		// ANNOTATIONS - maybe they don't fire because of the CSS div?
+		obj.volumetags = new Annotation3DManager(fk, renderer, scene, camera);
+		lefttopdiv.appendChild( obj.volumetags.tagoverview.node );
 		obj.volumetags.send = function(tag){
 			// Tag comes with at least the tag name from tagform.
 			
 			// The author and taskId are obligatory
 			//Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
-			
 			tag.taskId = obj.sessionId;
-
+			tag.author = author;
+			
 
 			// Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
 			tag.type = "tag";
@@ -156,20 +177,9 @@ export default class SessionGUI{
 		} // submit
 		
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		// COMMENTING
+		obj.commenting = new CommentingManager();
+		lefttopdiv.appendChild( obj.commenting.node );
 		
 		// Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
 		obj.commenting.form.submit = function(comment){
@@ -198,23 +208,43 @@ export default class SessionGUI{
 		
 		
 		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+		
+		
+		
+		
 	} // constructor
 	
 	update(){
 		let obj = this;
 		obj.stats.update();
-		obj.volumetags.annotations.update();
-		obj.tagoverview.update();
+		obj.volumetags.update();
 	} // update
 	
 	
-	addElementOptions(elementOptions){
+	addElementOptions(addElementGUI, elementOptions){
 		let obj = this;
 		
 		if(elementOptions){
 			// Folder for addition of elements, which should have a dropdown to select element type, 
-			// textbox to specify the file name, and a submit button.
-			const addElementGUI = obj.session.addFolder("Add element");
+			// textbox to specify the file name, and a submit button
 
 
 			// The button should open a modal, or append a selection to the GUI to configure the element to be added.
@@ -245,7 +275,8 @@ export default class SessionGUI{
 	
 	purge(){
 		let obj = this;
-		obj.tagoverview.purge();
+		obj.vistas.tagoverview.purge();
+		obj.volumetags.tagoverview.purge();
 		obj.commenting.purge();
 	} // purge
   
@@ -254,7 +285,7 @@ export default class SessionGUI{
 	// Processing of knowledge entries cannot rely on types, because these are no longer captured. Instead just define what the individual components require.
 	process(d){
 		let obj = this;
-		
+		console.log(d)
 		
 		// First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
 		d = d.filter(a=>[obj.sessionId].includes(a.taskId));
@@ -264,8 +295,7 @@ export default class SessionGUI{
 		
 		// Tags will have a name.
 		let tags = d.filter(a=>a.name);
-		obj.tagoverview.add(tags);
-		
+		// obj.tagoverview.add(tags);
 		
 		
 		
@@ -278,6 +308,22 @@ export default class SessionGUI{
 			c.downvotes = c.downvotes ? JSON.parse(c.downvotes) : null;
 		}) // forEach
 		obj.commenting.add(comments);
+		
+		
+		
+		
+		
+		// 3D ANNOTATIONS
+		let volumes = d.filter(a=>a.geometry);
+		volumes.forEach(v=>{v.geometry = JSON.parse(v.geometry)});
+		obj.volumetags.add(volumes)
+		
+		
+		
+		
+		// VISTAS
+		let vistas = d.filter(a=>a.vista);
+		obj.vistas.add(vistas)	
 		
 		
 	} // process
@@ -315,6 +361,29 @@ export default class SessionGUI{
 		
 	} // processvote
 	
+	
+	
+	addTestVistas(){
+		let obj = this;
+		
+		let s1 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[-0.24458883133152576,0.9696204502873743,0.003533549545494679,0,-0.12529558316531214,-0.035219341638882865,0.9914941325160673,0,0.9614974365161582,0.2420656529932234,0.1301034173794891,0,1.3064974365161675,100.40806565299322,0.2571034173794846,1]},"cameraNear":0.01,"cameraUp":{"x":-0.12529558316531209,"y":-0.035219341638882906,"z":0.9914941325160669},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+		let s2 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[0.03522382110174042,-0.999005813628702,-0.02732520380619238,0,0.5872769130145653,-0.001431891646014316,0.8093848139954178,0,-0.808619261375263,-0.0445570872294348,0.5866426136162911,0,-0.4636192613752792,100.12144291277053,0.7136426136163074,1]},"cameraNear":0.01,"cameraUp":{"x":0.5872769130145653,"y":-0.001431891646013983,"z":0.8093848139954178},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+		let s3 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[-0.994002829093867,0.04073845222355828,-0.10148277816368909,0,-0.10241687998282231,-0.6720877387470915,0.7333545214426685,0,-0.03832960276308385,0.7393500185543046,0.6722294188859738,0,0.3066703972368927,100.90535001855432,0.7992294188859859,1]},"cameraNear":0.01,"cameraUp":{"x":-0.10241687998282233,"y":-0.6720877387470915,"z":0.7333545214426687},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+		
+	
+		let vistas = [
+		{name: "Vista 1",
+		 vista: s1
+		},
+		{name: "Vista 2",
+		 vista: s2
+		},
+		{name: "Vista 3",
+		 vista: s3
+		}
+		]
+		obj.vistas.add(vistas)		
+	} // addTestVistas
 	
 	
 } // SessionGUI	

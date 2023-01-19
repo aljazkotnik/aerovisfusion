@@ -1,21 +1,36 @@
 import { html2element } from "../../../helpers.js";
 import TagButton from "./TagButton.js";
-import Tag3DGeometryButton from "./Tag3DGeometryButton.js";
 
-let template = `<div style="width: 300px; margin-top: 5px;"></div>`;
+
+// This should have a title also.
+let template = `<div>
+  <b style="margin-bottom: 0px;"></b>
+  <div style="width: 300px;">
+</div>`;
 
 export default class TagOverview{
   
   tags = [];
   buttons = [];
   needsupdating = [];
+  tagClickFunction = function(){};
+  tagEnterFunction = function(){};
+  tagLeaveFunction = function(){};
+  coloroption = true;
   
-  constructor(scene, camera){
+  constructor( title, tagClickFunction, tagEnterFunction, tagLeaveFunction, coloroption ){
     let obj = this;
 	obj.node = html2element(template);
-	obj.scene = scene;
-	obj.camera = camera;
-	// The tag visualisation should happen here also.
+	
+	// Set the new title
+	obj.node.querySelector("b").innerHTML = title;
+	
+	// The buttons do not turn on/off, because otherwise there would need to be tracking also for when the user navigates away.
+	obj.tagClickFunction = tagClickFunction ? tagClickFunction : function(){};
+	obj.tagEnterFunction = tagEnterFunction ? tagEnterFunction : function(){};
+	obj.tagLeaveFunction = tagLeaveFunction ? tagLeaveFunction : function(){};
+	
+	obj.coloroption = [true, false].includes( coloroption ) ? coloroption : true;
   } // constructor
   
   add(newtags){
@@ -32,16 +47,7 @@ export default class TagOverview{
 			n = tag.geometry[0] ? tag.geometry[0].length : 0;
 		} // if
 		
-		let b;
-		switch(n){
-			case 4:
-			    b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
-				obj.needsupdating.push(b.annotation);
-				break;
-			default:
-				b = new TagButton(tag);
-		} // switch
-	
+		let b = new TagButton(tag, function(){ obj.tagClickFunction(tag) }, function(){ obj.tagEnterFunction(tag) }, function(){ obj.tagLeaveFunction(tag) }, obj.coloroption);
 		return b
 	}) // map
 	
@@ -75,6 +81,5 @@ export default class TagOverview{
 		  a.update();
 	  })
   } // update
-  
   
 } // TagOverview

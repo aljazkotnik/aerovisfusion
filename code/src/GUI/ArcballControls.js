@@ -242,7 +242,7 @@ class ArcballControls extends EventDispatcher {
 
 		window.addEventListener( 'resize', this.onWindowResize );
 
-	}
+	} // constructor
 
 	//listeners
 
@@ -289,6 +289,8 @@ class ArcballControls extends EventDispatcher {
 
 	};
 
+	onPointerCancel = () => {}
+	/*
 	onPointerCancel = () => {
 
 		this._touchStart.splice( 0, this._touchStart.length );
@@ -296,6 +298,7 @@ class ArcballControls extends EventDispatcher {
 		this._input = INPUT.NONE;
 
 	};
+	*/
 
 	onPointerDown = ( event ) => {
 
@@ -784,7 +787,7 @@ class ArcballControls extends EventDispatcher {
 	onSinglePanStart = ( event, operation ) => {
 
 		if ( this.enabled ) {
-
+            
 			this.dispatchEvent( _startEvent );
 
 			this.setCenter( event.clientX, event.clientY );
@@ -2020,6 +2023,11 @@ class ArcballControls extends EventDispatcher {
 	retrieveCurrentFocus = () => {
 		return _currentFocusSettings
 	};
+	
+	retrieveCurrentCameraMatrix = () => {
+		let obj = this;
+	};
+	
 
 	/**
 	 * Draw a grid and add it to the scene
@@ -2541,6 +2549,44 @@ class ArcballControls extends EventDispatcher {
 		return _transformation;
 
 	};
+
+
+	getState = () => {
+
+		let state;
+		if ( this.camera.isOrthographicCamera ) {
+
+			state = JSON.stringify( { arcballState: {
+
+				cameraFar: this.camera.far,
+				cameraMatrix: this.camera.matrix,
+				cameraNear: this.camera.near,
+				cameraUp: this.camera.up,
+				cameraZoom: this.camera.zoom,
+				gizmoMatrix: this._gizmos.matrix
+
+			} } );
+
+		} else if ( this.camera.isPerspectiveCamera ) {
+
+			state = JSON.stringify( { arcballState: {
+				cameraFar: this.camera.far,
+				cameraFov: this.camera.fov,
+				cameraMatrix: this.camera.matrix,
+				cameraNear: this.camera.near,
+				cameraUp: this.camera.up,
+				cameraZoom: this.camera.zoom,
+				gizmoMatrix: this._gizmos.matrix
+
+			} } );
+
+		}
+
+		return state
+
+	};
+
+
 
 	copyState = () => {
 

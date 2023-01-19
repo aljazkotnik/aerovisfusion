@@ -33459,13 +33459,7 @@
 	      }
 	    };
 
-	    _this.onPointerCancel = function () {
-	      _this._touchStart.splice(0, _this._touchStart.length);
-
-	      _this._touchCurrent.splice(0, _this._touchCurrent.length);
-
-	      _this._input = INPUT.NONE;
-	    };
+	    _this.onPointerCancel = function () {};
 
 	    _this.onPointerDown = function (event) {
 	      if (event.button == 0 && event.isPrimary) {
@@ -34734,6 +34728,10 @@
 	      return _currentFocusSettings;
 	    };
 
+	    _this.retrieveCurrentCameraMatrix = function () {
+	      _assertThisInitialized(_this);
+	    };
+
 	    _this.drawGrid = function () {
 	      if (_this.scene != null) {
 	        var color = 0x888888;
@@ -35134,6 +35132,37 @@
 	      _this.setTransformationMatrices(_this._m4_1);
 
 	      return _transformation;
+	    };
+
+	    _this.getState = function () {
+	      var state;
+
+	      if (_this.camera.isOrthographicCamera) {
+	        state = JSON.stringify({
+	          arcballState: {
+	            cameraFar: _this.camera.far,
+	            cameraMatrix: _this.camera.matrix,
+	            cameraNear: _this.camera.near,
+	            cameraUp: _this.camera.up,
+	            cameraZoom: _this.camera.zoom,
+	            gizmoMatrix: _this._gizmos.matrix
+	          }
+	        });
+	      } else if (_this.camera.isPerspectiveCamera) {
+	        state = JSON.stringify({
+	          arcballState: {
+	            cameraFar: _this.camera.far,
+	            cameraFov: _this.camera.fov,
+	            cameraMatrix: _this.camera.matrix,
+	            cameraNear: _this.camera.near,
+	            cameraUp: _this.camera.up,
+	            cameraZoom: _this.camera.zoom,
+	            gizmoMatrix: _this._gizmos.matrix
+	          }
+	        });
+	      }
+
+	      return state;
 	    };
 
 	    _this.copyState = function () {
@@ -35797,7 +35826,8 @@
 
 	    window.addEventListener('resize', _this.onWindowResize);
 	    return _this;
-	  } //listeners
+	  } // constructor
+	  //listeners
 
 
 	  _createClass(ArcballControls, [{
@@ -38703,7 +38733,7 @@
 	 */
 	class t{constructor(i,e,s,n,r="div"){this.parent=i,this.object=e,this.property=s,this._disabled=!1,this.initialValue=this.getValue(),this.domElement=document.createElement("div"),this.domElement.classList.add("controller"),this.domElement.classList.add(n),this.$name=document.createElement("div"),this.$name.classList.add("name"),t.nextNameID=t.nextNameID||0,this.$name.id="lil-gui-name-"+ ++t.nextNameID,this.$widget=document.createElement(r),this.$widget.classList.add("widget"),this.$disable=this.$widget,this.domElement.appendChild(this.$name),this.domElement.appendChild(this.$widget),this.parent.children.push(this),this.parent.controllers.push(this),this.parent.$children.appendChild(this.domElement),this._listenCallback=this._listenCallback.bind(this),this.name(s);}name(t){return this._name=t,this.$name.innerHTML=t,this}onChange(t){return this._onChange=t,this}_callOnChange(){this.parent._callOnChange(this),void 0!==this._onChange&&this._onChange.call(this,this.getValue()),this._changed=!0;}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(){this._changed&&(this.parent._callOnFinishChange(this),void 0!==this._onFinishChange&&this._onFinishChange.call(this,this.getValue())),this._changed=!1;}reset(){return this.setValue(this.initialValue),this._callOnFinishChange(),this}enable(t=!0){return this.disable(!t)}disable(t=!0){return t===this._disabled||(this._disabled=t,this.domElement.classList.toggle("disabled",t),this.$disable.toggleAttribute("disabled",t)),this}options(t){const i=this.parent.add(this.object,this.property,t);return i.name(this._name),this.destroy(),i}min(t){return this}max(t){return this}step(t){return this}listen(t=!0){return this._listening=t,void 0!==this._listenCallbackID&&(cancelAnimationFrame(this._listenCallbackID),this._listenCallbackID=void 0),this._listening&&this._listenCallback(),this}_listenCallback(){this._listenCallbackID=requestAnimationFrame(this._listenCallback),this.updateDisplay();}getValue(){return this.object[this.property]}setValue(t){return this.object[this.property]=t,this._callOnChange(),this.updateDisplay(),this}updateDisplay(){return this}load(t){return this.setValue(t),this._callOnFinishChange(),this}save(){return this.getValue()}destroy(){this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.controllers.splice(this.parent.controllers.indexOf(this),1),this.parent.$children.removeChild(this.domElement);}}class i extends t{constructor(t,i,e){super(t,i,e,"boolean","label"),this.$input=document.createElement("input"),this.$input.setAttribute("type","checkbox"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$input.addEventListener("change",()=>{this.setValue(this.$input.checked),this._callOnFinishChange();}),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.checked=this.getValue(),this}}function e(t){let i,e;return (i=t.match(/(#|0x)?([a-f0-9]{6})/i))?e=i[2]:(i=t.match(/rgb\(\s*(\d*)\s*,\s*(\d*)\s*,\s*(\d*)\s*\)/))?e=parseInt(i[1]).toString(16).padStart(2,0)+parseInt(i[2]).toString(16).padStart(2,0)+parseInt(i[3]).toString(16).padStart(2,0):(i=t.match(/^#?([a-f0-9])([a-f0-9])([a-f0-9])$/i))&&(e=i[1]+i[1]+i[2]+i[2]+i[3]+i[3]),!!e&&"#"+e}const s={isPrimitive:!0,match:t=>"string"==typeof t,fromHexString:e,toHexString:e},n={isPrimitive:!0,match:t=>"number"==typeof t,fromHexString:t=>parseInt(t.substring(1),16),toHexString:t=>"#"+t.toString(16).padStart(6,0)},r={isPrimitive:!1,match:Array.isArray,fromHexString(t,i,e=1){const s=n.fromHexString(t);i[0]=(s>>16&255)/255*e,i[1]=(s>>8&255)/255*e,i[2]=(255&s)/255*e;},toHexString:([t,i,e],s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},l={isPrimitive:!1,match:t=>Object(t)===t,fromHexString(t,i,e=1){const s=n.fromHexString(t);i.r=(s>>16&255)/255*e,i.g=(s>>8&255)/255*e,i.b=(255&s)/255*e;},toHexString:({r:t,g:i,b:e},s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},o=[s,n,r,l];class a extends t{constructor(t,i,s,n){var r;super(t,i,s,"color"),this.$input=document.createElement("input"),this.$input.setAttribute("type","color"),this.$input.setAttribute("tabindex",-1),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$text=document.createElement("input"),this.$text.setAttribute("type","text"),this.$text.setAttribute("spellcheck","false"),this.$text.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this.$display.appendChild(this.$input),this.$widget.appendChild(this.$display),this.$widget.appendChild(this.$text),this._format=(r=this.initialValue,o.find(t=>t.match(r))),this._rgbScale=n,this._initialValueHexString=this.save(),this._textFocused=!1,this.$input.addEventListener("input",()=>{this._setValueFromHexString(this.$input.value);}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$text.addEventListener("input",()=>{const t=e(this.$text.value);t&&this._setValueFromHexString(t);}),this.$text.addEventListener("focus",()=>{this._textFocused=!0,this.$text.select();}),this.$text.addEventListener("blur",()=>{this._textFocused=!1,this.updateDisplay(),this._callOnFinishChange();}),this.$disable=this.$text,this.updateDisplay();}reset(){return this._setValueFromHexString(this._initialValueHexString),this}_setValueFromHexString(t){if(this._format.isPrimitive){const i=this._format.fromHexString(t);this.setValue(i);}else this._format.fromHexString(t,this.getValue(),this._rgbScale),this._callOnChange(),this.updateDisplay();}save(){return this._format.toHexString(this.getValue(),this._rgbScale)}load(t){return this._setValueFromHexString(t),this._callOnFinishChange(),this}updateDisplay(){return this.$input.value=this._format.toHexString(this.getValue(),this._rgbScale),this._textFocused||(this.$text.value=this.$input.value.substring(1)),this.$display.style.backgroundColor=this.$input.value,this}}class h extends t{constructor(t,i,e){super(t,i,e,"function"),this.$button=document.createElement("button"),this.$button.appendChild(this.$name),this.$widget.appendChild(this.$button),this.$button.addEventListener("click",t=>{t.preventDefault(),this.getValue().call(this.object);}),this.$button.addEventListener("touchstart",()=>{}),this.$disable=this.$button;}}class d extends t{constructor(t,i,e,s,n,r){super(t,i,e,"number"),this._initInput(),this.min(s),this.max(n);const l=void 0!==r;this.step(l?r:this._getImplicitStep(),l),this.updateDisplay();}min(t){return this._min=t,this._onUpdateMinMax(),this}max(t){return this._max=t,this._onUpdateMinMax(),this}step(t,i=!0){return this._step=t,this._stepExplicit=i,this}updateDisplay(){const t=this.getValue();if(this._hasSlider){let i=(t-this._min)/(this._max-this._min);i=Math.max(0,Math.min(i,1)),this.$fill.style.width=100*i+"%";}return this._inputFocused||(this.$input.value=t),this}_initInput(){this.$input=document.createElement("input"),this.$input.setAttribute("type","number"),this.$input.setAttribute("step","any"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$disable=this.$input;const t=t=>{const i=parseFloat(this.$input.value);isNaN(i)||(this._snapClampSetValue(i+t),this.$input.value=this.getValue());};let i,e,s,n,r,l=!1;const o=t=>{if(l){const s=t.clientX-i,n=t.clientY-e;Math.abs(n)>5?(t.preventDefault(),this.$input.blur(),l=!1,this._setDraggingStyle(!0,"vertical")):Math.abs(s)>5&&a();}if(!l){const i=t.clientY-s;r-=i*this._step*this._arrowKeyMultiplier(t),n+r>this._max?r=this._max-n:n+r<this._min&&(r=this._min-n),this._snapClampSetValue(n+r);}s=t.clientY;},a=()=>{this._setDraggingStyle(!1,"vertical"),this._callOnFinishChange(),window.removeEventListener("mousemove",o),window.removeEventListener("mouseup",a);};this.$input.addEventListener("input",()=>{const t=parseFloat(this.$input.value);isNaN(t)||this.setValue(this._clamp(t));}),this.$input.addEventListener("keydown",i=>{"Enter"===i.code&&this.$input.blur(),"ArrowUp"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i))),"ArrowDown"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i)*-1));}),this.$input.addEventListener("wheel",i=>{this._inputFocused&&(i.preventDefault(),t(this._step*this._normalizeMouseWheel(i)));}),this.$input.addEventListener("mousedown",t=>{i=t.clientX,e=s=t.clientY,l=!0,n=this.getValue(),r=0,window.addEventListener("mousemove",o),window.addEventListener("mouseup",a);}),this.$input.addEventListener("focus",()=>{this._inputFocused=!0;}),this.$input.addEventListener("blur",()=>{this._inputFocused=!1,this.updateDisplay(),this._callOnFinishChange();});}_initSlider(){this._hasSlider=!0,this.$slider=document.createElement("div"),this.$slider.classList.add("slider"),this.$fill=document.createElement("div"),this.$fill.classList.add("fill"),this.$slider.appendChild(this.$fill),this.$widget.insertBefore(this.$slider,this.$input),this.domElement.classList.add("hasSlider");const t=t=>{const i=this.$slider.getBoundingClientRect();let e=(s=t,n=i.left,r=i.right,l=this._min,o=this._max,(s-n)/(r-n)*(o-l)+l);var s,n,r,l,o;this._snapClampSetValue(e);},i=i=>{t(i.clientX);},e=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("mousemove",i),window.removeEventListener("mouseup",e);};let s,n,r=!1;const l=i=>{i.preventDefault(),this._setDraggingStyle(!0),t(i.touches[0].clientX),r=!1;},o=i=>{if(r){const t=i.touches[0].clientX-s,e=i.touches[0].clientY-n;Math.abs(t)>Math.abs(e)?l(i):(window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a));}else i.preventDefault(),t(i.touches[0].clientX);},a=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a);},h=this._callOnFinishChange.bind(this);let d;this.$slider.addEventListener("mousedown",s=>{this._setDraggingStyle(!0),t(s.clientX),window.addEventListener("mousemove",i),window.addEventListener("mouseup",e);}),this.$slider.addEventListener("touchstart",t=>{t.touches.length>1||(this._hasScrollBar?(s=t.touches[0].clientX,n=t.touches[0].clientY,r=!0):l(t),window.addEventListener("touchmove",o),window.addEventListener("touchend",a));}),this.$slider.addEventListener("wheel",t=>{if(Math.abs(t.deltaX)<Math.abs(t.deltaY)&&this._hasScrollBar)return;t.preventDefault();const i=this._normalizeMouseWheel(t)*this._step;this._snapClampSetValue(this.getValue()+i),this.$input.value=this.getValue(),clearTimeout(d),d=setTimeout(h,400);});}_setDraggingStyle(t,i="horizontal"){this.$slider&&this.$slider.classList.toggle("active",t),document.body.classList.toggle("lil-gui-dragging",t),document.body.classList.toggle("lil-gui-"+i,t);}_getImplicitStep(){return this._hasMin&&this._hasMax?(this._max-this._min)/1e3:.1}_onUpdateMinMax(){!this._hasSlider&&this._hasMin&&this._hasMax&&(this._stepExplicit||this.step(this._getImplicitStep(),!1),this._initSlider(),this.updateDisplay());}_normalizeMouseWheel(t){let{deltaX:i,deltaY:e}=t;Math.floor(t.deltaY)!==t.deltaY&&t.wheelDelta&&(i=0,e=-t.wheelDelta/120,e*=this._stepExplicit?1:10);return i+-e}_arrowKeyMultiplier(t){let i=this._stepExplicit?1:10;return t.shiftKey?i*=10:t.altKey&&(i/=10),i}_snap(t){const i=Math.round(t/this._step)*this._step;return parseFloat(i.toPrecision(15))}_clamp(t){return t<this._min&&(t=this._min),t>this._max&&(t=this._max),t}_snapClampSetValue(t){this.setValue(this._clamp(this._snap(t)));}get _hasScrollBar(){const t=this.parent.root.$children;return t.scrollHeight>t.clientHeight}get _hasMin(){return void 0!==this._min}get _hasMax(){return void 0!==this._max}}class c extends t{constructor(t,i,e,s){super(t,i,e,"option"),this.$select=document.createElement("select"),this.$select.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this._values=Array.isArray(s)?s:Object.values(s),this._names=Array.isArray(s)?s:Object.keys(s),this._names.forEach(t=>{const i=document.createElement("option");i.innerHTML=t,this.$select.appendChild(i);}),this.$select.addEventListener("change",()=>{this.setValue(this._values[this.$select.selectedIndex]),this._callOnFinishChange();}),this.$select.addEventListener("focus",()=>{this.$display.classList.add("focus");}),this.$select.addEventListener("blur",()=>{this.$display.classList.remove("focus");}),this.$widget.appendChild(this.$select),this.$widget.appendChild(this.$display),this.$disable=this.$select,this.updateDisplay();}updateDisplay(){const t=this.getValue(),i=this._values.indexOf(t);return this.$select.selectedIndex=i,this.$display.innerHTML=-1===i?t:this._names[i],this}}class u extends t{constructor(t,i,e){super(t,i,e,"string"),this.$input=document.createElement("input"),this.$input.setAttribute("type","text"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$input.addEventListener("input",()=>{this.setValue(this.$input.value);}),this.$input.addEventListener("keydown",t=>{"Enter"===t.code&&this.$input.blur();}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$widget.appendChild(this.$input),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.value=this.getValue(),this}}let p=!1;class g{constructor({parent:t,autoPlace:i=void 0===t,container:e,width:s,title:n="Controls",injectStyles:r=!0,touchStyles:l=!0}={}){if(this.parent=t,this.root=t?t.root:this,this.children=[],this.controllers=[],this.folders=[],this._closed=!1,this._hidden=!1,this.domElement=document.createElement("div"),this.domElement.classList.add("lil-gui"),this.$title=document.createElement("div"),this.$title.classList.add("title"),this.$title.setAttribute("role","button"),this.$title.setAttribute("aria-expanded",!0),this.$title.setAttribute("tabindex",0),this.$title.addEventListener("click",()=>this.openAnimated(this._closed)),this.$title.addEventListener("keydown",t=>{"Enter"!==t.code&&"Space"!==t.code||(t.preventDefault(),this.$title.click());}),this.$title.addEventListener("touchstart",()=>{}),this.$children=document.createElement("div"),this.$children.classList.add("children"),this.domElement.appendChild(this.$title),this.domElement.appendChild(this.$children),this.title(n),l&&this.domElement.classList.add("allow-touch-styles"),this.parent)return this.parent.children.push(this),this.parent.folders.push(this),void this.parent.$children.appendChild(this.domElement);this.domElement.classList.add("root"),!p&&r&&(!function(t){const i=document.createElement("style");i.innerHTML=t;const e=document.querySelector("head link[rel=stylesheet], head style");e?document.head.insertBefore(i,e):document.head.appendChild(i);}('.lil-gui{--background-color:#1f1f1f;--text-color:#ebebeb;--title-background-color:#111;--title-text-color:#ebebeb;--widget-color:#424242;--hover-color:#4f4f4f;--focus-color:#595959;--number-color:#2cc9ff;--string-color:#a2db3c;--font-size:11px;--input-font-size:11px;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--font-family-mono:Menlo,Monaco,Consolas,"Droid Sans Mono",monospace;--padding:4px;--spacing:4px;--widget-height:20px;--name-width:45%;--slider-knob-width:2px;--slider-input-width:27%;--color-input-width:27%;--slider-input-min-width:45px;--color-input-min-width:45px;--folder-indent:7px;--widget-padding:0 0 0 3px;--widget-border-radius:2px;--checkbox-size:calc(var(--widget-height)*0.75);--scrollbar-width:5px;background-color:var(--background-color);color:var(--text-color);font-family:var(--font-family);font-size:var(--font-size);font-style:normal;font-weight:400;line-height:1;text-align:left;touch-action:manipulation;user-select:none;-webkit-user-select:none}.lil-gui,.lil-gui *{box-sizing:border-box;margin:0;padding:0}.lil-gui.root{display:flex;flex-direction:column;width:var(--width,245px)}.lil-gui.root>.title{background:var(--title-background-color);color:var(--title-text-color)}.lil-gui.root>.children{overflow-x:hidden;overflow-y:auto}.lil-gui.root>.children::-webkit-scrollbar{background:var(--background-color);height:var(--scrollbar-width);width:var(--scrollbar-width)}.lil-gui.root>.children::-webkit-scrollbar-thumb{background:var(--focus-color);border-radius:var(--scrollbar-width)}.lil-gui.force-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}.lil-gui.autoPlace{max-height:100%;position:fixed;right:15px;top:0;z-index:1001}.lil-gui .controller{align-items:center;display:flex;margin:var(--spacing) 0;padding:0 var(--padding)}.lil-gui .controller.disabled{opacity:.5}.lil-gui .controller.disabled,.lil-gui .controller.disabled *{pointer-events:none!important}.lil-gui .controller>.name{flex-shrink:0;line-height:var(--widget-height);min-width:var(--name-width);padding-right:var(--spacing);white-space:pre}.lil-gui .controller .widget{align-items:center;display:flex;min-height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.string input{color:var(--string-color)}.lil-gui .controller.boolean .widget{cursor:pointer}.lil-gui .controller.color .display{border-radius:var(--widget-border-radius);height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.color input[type=color]{cursor:pointer;height:100%;opacity:0;width:100%}.lil-gui .controller.color input[type=text]{flex-shrink:0;font-family:var(--font-family-mono);margin-left:var(--spacing);min-width:var(--color-input-min-width);width:var(--color-input-width)}.lil-gui .controller.option select{max-width:100%;opacity:0;position:absolute;width:100%}.lil-gui .controller.option .display{background:var(--widget-color);border-radius:var(--widget-border-radius);height:var(--widget-height);line-height:var(--widget-height);max-width:100%;overflow:hidden;padding-left:.55em;padding-right:1.75em;pointer-events:none;position:relative;word-break:break-all}.lil-gui .controller.option .display.active{background:var(--focus-color)}.lil-gui .controller.option .display:after{bottom:0;content:"↕";font-family:lil-gui;padding-right:.375em;position:absolute;right:0;top:0}.lil-gui .controller.option .widget,.lil-gui .controller.option select{cursor:pointer}.lil-gui .controller.number input{color:var(--number-color)}.lil-gui .controller.number.hasSlider input{flex-shrink:0;margin-left:var(--spacing);min-width:var(--slider-input-min-width);width:var(--slider-input-width)}.lil-gui .controller.number .slider{background-color:var(--widget-color);border-radius:var(--widget-border-radius);cursor:ew-resize;height:var(--widget-height);overflow:hidden;padding-right:var(--slider-knob-width);touch-action:pan-y;width:100%}.lil-gui .controller.number .slider.active{background-color:var(--focus-color)}.lil-gui .controller.number .slider.active .fill{opacity:.95}.lil-gui .controller.number .fill{border-right:var(--slider-knob-width) solid var(--number-color);box-sizing:content-box;height:100%}.lil-gui-dragging .lil-gui{--hover-color:var(--widget-color)}.lil-gui-dragging *{cursor:ew-resize!important}.lil-gui-dragging.lil-gui-vertical *{cursor:ns-resize!important}.lil-gui .title{--title-height:calc(var(--widget-height) + var(--spacing)*1.25);-webkit-tap-highlight-color:transparent;text-decoration-skip:objects;cursor:pointer;font-weight:600;height:var(--title-height);line-height:calc(var(--title-height) - 4px);outline:none;padding:0 var(--padding)}.lil-gui .title:before{content:"▾";display:inline-block;font-family:lil-gui;padding-right:2px}.lil-gui .title:active{background:var(--title-background-color);opacity:.75}.lil-gui.root>.title:focus{text-decoration:none!important}.lil-gui.closed>.title:before{content:"▸"}.lil-gui.closed>.children{opacity:0;transform:translateY(-7px)}.lil-gui.closed:not(.transition)>.children{display:none}.lil-gui.transition>.children{overflow:hidden;pointer-events:none;transition-duration:.3s;transition-property:height,opacity,transform;transition-timing-function:cubic-bezier(.2,.6,.35,1)}.lil-gui .children:empty:before{content:"Empty";display:block;font-style:italic;height:var(--widget-height);line-height:var(--widget-height);margin:var(--spacing) 0;opacity:.5;padding:0 var(--padding)}.lil-gui.root>.children>.lil-gui>.title{border-width:0;border-bottom:1px solid var(--widget-color);border-left:0 solid var(--widget-color);border-right:0 solid var(--widget-color);border-top:1px solid var(--widget-color);transition:border-color .3s}.lil-gui.root>.children>.lil-gui.closed>.title{border-bottom-color:transparent}.lil-gui+.controller{border-top:1px solid var(--widget-color);margin-top:0;padding-top:var(--spacing)}.lil-gui .lil-gui .lil-gui>.title{border:none}.lil-gui .lil-gui .lil-gui>.children{border:none;border-left:2px solid var(--widget-color);margin-left:var(--folder-indent)}.lil-gui .lil-gui .controller{border:none}.lil-gui input{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:0;border-radius:var(--widget-border-radius);color:var(--text-color);font-family:var(--font-family);font-size:var(--input-font-size);height:var(--widget-height);outline:none;width:100%}.lil-gui input:disabled{opacity:1}.lil-gui input[type=number],.lil-gui input[type=text]{padding:var(--widget-padding)}.lil-gui input[type=number]:focus,.lil-gui input[type=text]:focus{background:var(--focus-color)}.lil-gui input::-webkit-inner-spin-button,.lil-gui input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.lil-gui input[type=number]{-moz-appearance:textfield}.lil-gui input[type=checkbox]{appearance:none;-webkit-appearance:none;border-radius:var(--widget-border-radius);cursor:pointer;height:var(--checkbox-size);text-align:center;width:var(--checkbox-size)}.lil-gui input[type=checkbox]:checked:before{content:"✓";font-family:lil-gui;font-size:var(--checkbox-size);line-height:var(--checkbox-size)}.lil-gui button{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:1px solid var(--widget-color);border-radius:var(--widget-border-radius);color:var(--text-color);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size);height:var(--widget-height);line-height:calc(var(--widget-height) - 4px);outline:none;text-align:center;text-transform:none;width:100%}.lil-gui button:active{background:var(--focus-color)}@font-face{font-family:lil-gui;src:url("data:application/font-woff;charset=utf-8;base64,d09GRgABAAAAAAUsAAsAAAAACJwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAAH4AAADAImwmYE9TLzIAAAGIAAAAPwAAAGBKqH5SY21hcAAAAcgAAAD0AAACrukyyJBnbHlmAAACvAAAAF8AAACEIZpWH2hlYWQAAAMcAAAAJwAAADZfcj2zaGhlYQAAA0QAAAAYAAAAJAC5AHhobXR4AAADXAAAABAAAABMAZAAAGxvY2EAAANsAAAAFAAAACgCEgIybWF4cAAAA4AAAAAeAAAAIAEfABJuYW1lAAADoAAAASIAAAIK9SUU/XBvc3QAAATEAAAAZgAAAJCTcMc2eJxVjbEOgjAURU+hFRBK1dGRL+ALnAiToyMLEzFpnPz/eAshwSa97517c/MwwJmeB9kwPl+0cf5+uGPZXsqPu4nvZabcSZldZ6kfyWnomFY/eScKqZNWupKJO6kXN3K9uCVoL7iInPr1X5baXs3tjuMqCtzEuagm/AAlzQgPAAB4nGNgYRBlnMDAysDAYM/gBiT5oLQBAwuDJAMDEwMrMwNWEJDmmsJwgCFeXZghBcjlZMgFCzOiKOIFAB71Bb8AeJy1kjFuwkAQRZ+DwRAwBtNQRUGKQ8OdKCAWUhAgKLhIuAsVSpWz5Bbkj3dEgYiUIszqWdpZe+Z7/wB1oCYmIoboiwiLT2WjKl/jscrHfGg/pKdMkyklC5Zs2LEfHYpjcRoPzme9MWWmk3dWbK9ObkWkikOetJ554fWyoEsmdSlt+uR0pCJR34b6t/TVg1SY3sYvdf8vuiKrpyaDXDISiegp17p7579Gp3p++y7HPAiY9pmTibljrr85qSidtlg4+l25GLCaS8e6rRxNBmsnERunKbaOObRz7N72ju5vdAjYpBXHgJylOAVsMseDAPEP8LYoUHicY2BiAAEfhiAGJgZWBgZ7RnFRdnVJELCQlBSRlATJMoLV2DK4glSYs6ubq5vbKrJLSbGrgEmovDuDJVhe3VzcXFwNLCOILB/C4IuQ1xTn5FPilBTj5FPmBAB4WwoqAHicY2BkYGAA4sk1sR/j+W2+MnAzpDBgAyEMQUCSg4EJxAEAwUgFHgB4nGNgZGBgSGFggJMhDIwMqEAYAByHATJ4nGNgAIIUNEwmAABl3AGReJxjYAACIQYlBiMGJ3wQAEcQBEV4nGNgZGBgEGZgY2BiAAEQyQWEDAz/wXwGAAsPATIAAHicXdBNSsNAHAXwl35iA0UQXYnMShfS9GPZA7T7LgIu03SSpkwzYTIt1BN4Ak/gKTyAeCxfw39jZkjymzcvAwmAW/wgwHUEGDb36+jQQ3GXGot79L24jxCP4gHzF/EIr4jEIe7wxhOC3g2TMYy4Q7+Lu/SHuEd/ivt4wJd4wPxbPEKMX3GI5+DJFGaSn4qNzk8mcbKSR6xdXdhSzaOZJGtdapd4vVPbi6rP+cL7TGXOHtXKll4bY1Xl7EGnPtp7Xy2n00zyKLVHfkHBa4IcJ2oD3cgggWvt/V/FbDrUlEUJhTn/0azVWbNTNr0Ens8de1tceK9xZmfB1CPjOmPH4kitmvOubcNpmVTN3oFJyjzCvnmrwhJTzqzVj9jiSX911FjeAAB4nG3HMRKCMBBA0f0giiKi4DU8k0V2GWbIZDOh4PoWWvq6J5V8If9NVNQcaDhyouXMhY4rPTcG7jwYmXhKq8Wz+p762aNaeYXom2n3m2dLTVgsrCgFJ7OTmIkYbwIbC6vIB7WmFfAAAA==") format("woff")}@media (pointer:coarse){.lil-gui.allow-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}}@media (hover:hover){.lil-gui .controller.color .display:hover:before{border:1px solid #fff9;border-radius:var(--widget-border-radius);bottom:0;content:" ";display:block;left:0;position:absolute;right:0;top:0}.lil-gui .controller.option .display.focus{background:var(--focus-color)}.lil-gui .controller.option .widget:hover .display{background:var(--hover-color)}.lil-gui .controller.number .slider:hover{background-color:var(--hover-color)}body:not(.lil-gui-dragging) .lil-gui .title:hover{background:var(--title-background-color);opacity:.85}.lil-gui .title:focus{text-decoration:underline var(--focus-color)}.lil-gui input:hover{background:var(--hover-color)}.lil-gui input:active{background:var(--focus-color)}.lil-gui input[type=checkbox]:focus{box-shadow:inset 0 0 0 1px var(--focus-color)}.lil-gui button:hover{background:var(--hover-color);border-color:var(--hover-color)}.lil-gui button:focus{border-color:var(--focus-color)}}'),p=!0),e?e.appendChild(this.domElement):i&&(this.domElement.classList.add("autoPlace"),document.body.appendChild(this.domElement)),s&&this.domElement.style.setProperty("--width",s+"px"),this.domElement.addEventListener("keydown",t=>t.stopPropagation()),this.domElement.addEventListener("keyup",t=>t.stopPropagation());}add(t,e,s,n,r){if(Object(s)===s)return new c(this,t,e,s);const l=t[e];switch(typeof l){case"number":return new d(this,t,e,s,n,r);case"boolean":return new i(this,t,e);case"string":return new u(this,t,e);case"function":return new h(this,t,e)}console.error("gui.add failed\n\tproperty:",e,"\n\tobject:",t,"\n\tvalue:",l);}addColor(t,i,e=1){return new a(this,t,i,e)}addFolder(t){return new g({parent:this,title:t})}load(t,i=!0){return t.controllers&&this.controllers.forEach(i=>{i instanceof h||i._name in t.controllers&&i.load(t.controllers[i._name]);}),i&&t.folders&&this.folders.forEach(i=>{i._title in t.folders&&i.load(t.folders[i._title]);}),this}save(t=!0){const i={controllers:{},folders:{}};return this.controllers.forEach(t=>{if(!(t instanceof h)){if(t._name in i.controllers)throw new Error(`Cannot save GUI with duplicate property "${t._name}"`);i.controllers[t._name]=t.save();}}),t&&this.folders.forEach(t=>{if(t._title in i.folders)throw new Error(`Cannot save GUI with duplicate folder "${t._title}"`);i.folders[t._title]=t.save();}),i}open(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),this.domElement.classList.toggle("closed",this._closed),this}close(){return this.open(!1)}show(t=!0){return this._hidden=!t,this.domElement.style.display=this._hidden?"none":"",this}hide(){return this.show(!1)}openAnimated(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),requestAnimationFrame(()=>{const i=this.$children.clientHeight;this.$children.style.height=i+"px",this.domElement.classList.add("transition");const e=t=>{t.target===this.$children&&(this.$children.style.height="",this.domElement.classList.remove("transition"),this.$children.removeEventListener("transitionend",e));};this.$children.addEventListener("transitionend",e);const s=t?this.$children.scrollHeight:0;this.domElement.classList.toggle("closed",!t),requestAnimationFrame(()=>{this.$children.style.height=s+"px";});}),this}title(t){return this._title=t,this.$title.innerHTML=t,this}reset(t=!0){return (t?this.controllersRecursive():this.controllers).forEach(t=>t.reset()),this}onChange(t){return this._onChange=t,this}_callOnChange(t){this.parent&&this.parent._callOnChange(t),void 0!==this._onChange&&this._onChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(t){this.parent&&this.parent._callOnFinishChange(t),void 0!==this._onFinishChange&&this._onFinishChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}destroy(){this.parent&&(this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.folders.splice(this.parent.folders.indexOf(this),1)),this.domElement.parentElement&&this.domElement.parentElement.removeChild(this.domElement),Array.from(this.children).forEach(t=>t.destroy());}controllersRecursive(){let t=Array.from(this.controllers);return this.folders.forEach(i=>{t=t.concat(i.controllersRecursive());}),t}foldersRecursive(){let t=Array.from(this.folders);return this.folders.forEach(i=>{t=t.concat(i.foldersRecursive());}),t}}
 
-	var template$6 = "<div style=\"display: none;\">\n<canvas class=\"editor\"></canvas>\n<div class=\"gui\" style=\"position: absolute; top: 10px; right: 10px; text-align: right;\"></div>\n</div>";
+	var template$7 = "<div style=\"display: none;\">\n<canvas class=\"editor\"></canvas>\n<div class=\"gui\" style=\"position: absolute; top: 10px; right: 10px; text-align: right;\"></div>\n</div>";
 
 	var DecalTextureUI = /*#__PURE__*/function () {
 	  function DecalTextureUI(source) {
@@ -38711,7 +38741,7 @@
 
 	    var obj = this; // Make a node to which everything is appended.
 
-	    obj.node = html2element(template$6);
+	    obj.node = html2element(template$7);
 	    /*
 	    Should I have 3 canvases? A high-resolution canvas for the actual decal, a lower resolution canvas for the editor, and a small resolution canvas for the trackpad?
 	    */
@@ -40372,18 +40402,20 @@
 	    obj.camera = camera; // Create a group here.
 
 	    obj.group = new Group();
-	    console.log(obj);
 	  } // constructor
 
 
 	  _createClass(VolumeAnnotation, [{
 	    key: "add",
-	    value: function add(x, y, z, s) {
-	      // Add a sphere
+	    value: function add(sc) {
+	      // Add a sphere based on a sphere configuration object sc.
 	      var obj = this;
-	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone());
-	      annotationGlow.position.set(x, y, z);
-	      annotationGlow.scale.setScalar(s);
+	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone()); // annotationGlow.position.set(x, y, z);
+	      // annotationGlow.scale.setScalar( s );
+
+	      annotationGlow.position.copy(sc.position);
+	      annotationGlow.rotation.setFromVector3(sc.rotation);
+	      annotationGlow.scale.copy(sc.scale);
 	      annotationGlow.name = "AnnotationSphere";
 	      obj.group.add(annotationGlow);
 	      return annotationGlow;
@@ -40401,6 +40433,15 @@
 	        obj.group.remove(s);
 	      }); // forEach
 	    } // remove
+
+	  }, {
+	    key: "clear",
+	    value: function clear() {
+	      var obj = this;
+	      obj.group.children.forEach(function (c) {
+	        obj.group.remove(c);
+	      }); // forEach
+	    } // clear
 
 	  }, {
 	    key: "hide",
@@ -40444,11 +40485,32 @@
 	  }, {
 	    key: "geometry",
 	    get: function get() {
-	      // Return json tag object.
-	      var obj = this;
-	      return obj.group.children.map(function (c) {
-	        return [c.position.x, c.position.y, c.position.z, c.scale.x];
+	      // Return json tag object. 
+	      var obj = this; // Extend geometry to include position, scale, and rotation.
+
+	      var g = obj.group.children.map(function (c) {
+	        return {
+	          position: {
+	            x: c.position.x,
+	            y: c.position.y,
+	            z: c.position.z
+	          },
+	          rotation: {
+	            x: c.rotation.x,
+	            y: c.rotation.y,
+	            z: c.rotation.z
+	          },
+	          scale: {
+	            x: c.scale.x,
+	            y: c.scale.y,
+	            z: c.scale.z
+	          }
+	        };
 	      });
+	      g.type = "3d";
+	      return g; //return obj.group.children.map(c=>{
+	      //	return [c.position.x, c.position.y, c.position.z, c.scale.x]
+	      //})
 	    } // get tag
 
 	  }, {
@@ -40479,34 +40541,217 @@
 	  return VolumeAnnotation;
 	}(); // VolumeAnnotation
 
-	var Annotation3DForm = /*#__PURE__*/function () {
-	  function Annotation3DForm(lilguimenu, renderer, scene, camera) {
-	    _classCallCheck(this, Annotation3DForm);
+	var TagButton = /*#__PURE__*/function () {
+	  function TagButton(tag, clickfunction, enterfunction, leavefunction, coloroption) {
+	    _classCallCheck(this, TagButton);
 
 	    var obj = this;
-	    obj.tag = {
-	      name: ""
-	    }; // Geometry could be adapted to send otehr data as well, such as the different axis scales.
+	    obj.tag = tag;
+	    obj.node = html2element("<button class=\"btn-small\">#".concat(tag.name, "</button>"));
+	    obj.on = true;
+	    obj.coloroption = [true, false].includes(coloroption) ? coloroption : true; // On mouseover the tags should be highlighted. To highlight geometrical tags the corresponding SVG must be made visible.
+
+	    obj.node.onmouseenter = function (e) {
+	      if (enterfunction) {
+	        enterfunction();
+	      } // if
+
+	    }; // onmouseenter
+
+
+	    obj.node.onmouseleave = function (e) {
+	      if (leavefunction) {
+	        leavefunction();
+	      } // if
+
+	    }; // onmouseenter
+	    // Onclick the buttons should filter the comments, and toggle the annotations.
+
+
+	    obj.node.onmousedown = function (e) {
+	      e.stopPropagation();
+	      obj.toggle(!obj.on);
+
+	      if (clickfunction) {
+	        clickfunction();
+	      } // if
+
+	    }; // onclick
+	    // Turn button off as default.
+
+
+	    obj.toggle(false);
+	  } // constructor
+
+
+	  _createClass(TagButton, [{
+	    key: "toggle",
+	    value: function toggle(on) {
+	      // if on == true then turn the button on, otherwise turn it off.
+	      var obj = this;
+	      obj.node.style.background = obj.coloroption && on ? "black" : "gainsboro";
+	      obj.node.style.color = obj.coloroption && on ? "white" : "black";
+	      obj.on = on;
+	    } // toggle
+
+	  }]);
+
+	  return TagButton;
+	}(); // TagButton
+
+	var Tag3DGeometryButton = /*#__PURE__*/function (_TagButton) {
+	  _inherits(Tag3DGeometryButton, _TagButton);
+
+	  var _super = _createSuper(Tag3DGeometryButton);
+
+	  function Tag3DGeometryButton(tag, scene, camera) {
+	    var _this;
+
+	    _classCallCheck(this, Tag3DGeometryButton);
+
+	    _this = _super.call(this, tag);
+
+	    var obj = _assertThisInitialized(_this); // VolumeAnnotation requires camera to update the glow.
+
+
+	    obj.annotation = new VolumeAnnotation(camera);
+	    scene.add(obj.annotation.group);
+	    obj.tag.geometry.forEach(function (sc) {
+	      obj.annotation.add(sc);
+	    }); // forEach
+
+	    obj.annotation.hide();
+
+	    obj.node.onmouseenter = function (e) {
+	      obj.annotation.show();
+	    }; // onmousein
+
+
+	    obj.node.onmouseleave = function (e) {
+	      // If the button is turned on, then it shouldn't be turned off here.
+	      if (!obj.on) {
+	        obj.annotation.hide();
+	      }
+	    }; // onmousein
+
+
+	    return _this;
+	  } // constructor
+
+
+	  return Tag3DGeometryButton;
+	}(TagButton); // Tag3DGeometryButton
+
+	var template$6 = "<div>\n  <b style=\"margin-bottom: 0px;\"></b>\n  <div style=\"width: 300px;\">\n</div>";
+
+	var TagOverviewAnnotations = /*#__PURE__*/function () {
+	  function TagOverviewAnnotations(title, scene, camera) {
+	    _classCallCheck(this, TagOverviewAnnotations);
+
+	    this.tags = [];
+	    this.buttons = [];
+	    this.needsupdating = [];
+	    var obj = this;
+	    obj.node = html2element(template$6); // Set the new title
+
+	    obj.node.querySelector("b").innerHTML = title;
+	    obj.scene = scene;
+	    obj.camera = camera; // The tag visualisation should happen here also.
+	  } // constructor
+
+
+	  _createClass(TagOverviewAnnotations, [{
+	    key: "add",
+	    value: function add(newtags) {
+	      var obj = this;
+	      newtags.forEach(function (t) {
+	        return obj.tags.push(t);
+	      });
+	      var newbuttons = newtags.map(function (tag) {
+	        var b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
+	        obj.needsupdating.push(b.annotation);
+	        return b;
+	      }); // map
+
+	      newbuttons.forEach(function (b) {
+	        obj.buttons.push(b);
+	        obj.node.appendChild(b.node);
+	      }); // forEach
+	    } // add
+
+	  }, {
+	    key: "namevalid",
+	    value: function namevalid(name) {
+	      // If any existing tag has this name the name is not valid.
+	      var obj = this;
+	      return !obj.tags.some(function (tag) {
+	        return tag.name == name;
+	      });
+	    } // namevalid
+
+	  }, {
+	    key: "purge",
+	    value: function purge() {
+	      var obj = this;
+	      obj.tags = [];
+	      obj.buttons.forEach(function (b) {
+	        return b.node.remove();
+	      });
+	      obj.buttons = [];
+	    } // purge
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      // Launch update of all the annotation spheres.
+	      var obj = this;
+	      obj.needsupdating.forEach(function (a) {
+	        a.update();
+	      });
+	    } // update
+
+	  }]);
+
+	  return TagOverviewAnnotations;
+	}(); // TagOverviewAnnotations
+
+	var Annotation3DManager = /*#__PURE__*/function () {
+	  function Annotation3DManager(lilguimenu, renderer, scene, camera) {
+	    _classCallCheck(this, Annotation3DManager);
+
+	    var obj = this;
+	    obj.pointer = new Vector2();
+	    obj.scene = scene;
+	    obj.camera = camera;
+	    obj.raycaster = new Raycaster();
+	    var menufolder = lilguimenu.addFolder("3D Annotations");
+	    obj.menufolder = menufolder; // LILGUI
+	    // Geometry could be adapted to send otehr data as well, such as the different axis scales.
 
 	    obj.config = {
+	      name: "",
 	      place: false,
 	      erase: false,
 	      position: false,
 	      scale: 0.1,
 	      submit: function submit() {
-	        obj.geometry = JSON.stringify(obj.annotations.geometry);
-	        obj.send(obj.tag);
+	        var tag = {
+	          name: obj.config.name,
+	          geometry: JSON.stringify(obj.annotations.geometry)
+	        };
+	        obj.send(tag);
+	        obj.annotations.clear();
 	        obj.clear();
 	      }
 	    }; // tagFormConfig
 
 	    obj.controllers = {};
-	    obj.controllers.name = lilguimenu.add(obj.tag, "name");
-	    obj.controllers.place = lilguimenu.add(obj.config, "place").name("Place📌");
-	    obj.controllers.position = lilguimenu.add(obj.config, "position").name("Position");
-	    obj.controllers.scale = lilguimenu.add(obj.config, "scale").name("Scale");
-	    obj.controllers.erase = lilguimenu.add(obj.config, "erase").name("Erase🧽");
-	    obj.controllers.submit = lilguimenu.add(obj.config, "submit");
+	    obj.controllers.name = menufolder.add(obj.config, "name");
+	    obj.controllers.place = menufolder.add(obj.config, "place").name("Place📌");
+	    obj.controllers.position = menufolder.add(obj.config, "position").name("Adjust🔧"); // obj.controllers.scale = menufolder.add( obj.config , "scale").name("Scale")
+
+	    obj.controllers.erase = menufolder.add(obj.config, "erase").name("Erase🧽");
+	    obj.controllers.submit = menufolder.add(obj.config, "submit");
 	    obj.activate();
 	    obj.controllers.name.onChange(function (v) {
 	      obj.activate();
@@ -40520,26 +40765,24 @@
 	    });
 	    obj.controllers.erase.onChange(function (v) {
 	      obj.coordinate(2, v);
-	    }); // Actual annotations;
+	    }); // ANNOTATIONS
 
 	    obj.annotations = new VolumeAnnotation(camera);
-	    scene.add(obj.annotations.group);
-	    obj.pointer = new Vector2();
-	    obj.scene = scene;
-	    obj.camera = camera;
-	    obj.raycaster = new Raycaster();
-	    renderer.domElement.addEventListener("mousemove", function (e) {
+	    scene.add(obj.annotations.group); // FUNCTIONALITY
+
+	    var hostElement = document.getElementById("css");
+	    hostElement.addEventListener("mousemove", function (e) {
 	      obj.pointer.x = e.clientX / window.innerWidth * 2 - 1;
 	      obj.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 	    }); // onPointerMove
 	    // To work with panning etc the annotation adding is disabled when the mouse moves a sufficient distance.
 
 	    var mouseDownEvent;
-	    renderer.domElement.addEventListener("mousedown", function (e) {
+	    hostElement.addEventListener("mousedown", function (e) {
 	      mouseDownEvent = e;
 	    }); // addEventListener
 
-	    renderer.domElement.addEventListener("mouseup", function (e) {
+	    hostElement.addEventListener("mouseup", function (e) {
 	      // Has the mouse moved since mousedown?
 	      if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
 	        e.preventDefault(); // How to switch between hte currently active annotation spheres? Longpress? Or should there be an adjust button that brings out the sliders? And a place button that allows annotation adding to be disabled?
@@ -40564,10 +40807,13 @@
 	      } // if
 
 	    }); // addEventListener
+	    // The menu to display vista names.
+
+	    obj.tagoverview = new TagOverviewAnnotations("3D Annotations", scene, camera);
 	  } // constructor
 
 
-	  _createClass(Annotation3DForm, [{
+	  _createClass(Annotation3DManager, [{
 	    key: "coordinate",
 	    value: function coordinate(i, v) {
 	      var obj = this;
@@ -40590,7 +40836,24 @@
 	      var p = obj.returnFirstIntersection();
 
 	      if (p) {
-	        var addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.config.scale);
+	        var sc = {
+	          position: {
+	            x: p.point.x,
+	            y: p.point.y,
+	            z: p.point.z
+	          },
+	          rotation: {
+	            x: 0,
+	            y: 0,
+	            z: 0
+	          },
+	          scale: {
+	            x: obj.config.scale,
+	            y: obj.config.scale,
+	            z: obj.config.scale
+	          }
+	        };
+	        var addedSphere = obj.annotations.add(sc);
 	        obj.annotations.select([addedSphere]);
 	      } else {
 	        // No intersection was found, but an annotation should still be placed.
@@ -40660,201 +40923,48 @@
 	    value: function changeTransformObject(v) {}
 	  }, {
 	    key: "send",
-	    value: function send(tag) {// Dummy function.
-	    } // send
+	    value: function send(tag) {} // send
 
 	  }, {
 	    key: "clear",
 	    value: function clear() {
 	      var obj = this;
-	      obj.tag.name = "";
+	      obj.config.name = "";
+	      obj.controllers.name.updateDisplay();
 	    } // clear
 
 	  }, {
 	    key: "activate",
 	    value: function activate() {
 	      var obj = this;
-	      obj.controllers.submit.enable(obj.tag.name && obj.annotations.geometry.length > 0);
+	      obj.controllers.submit.enable(obj.config.name && obj.annotations.geometry.length > 0);
 	    } // activate
+	    // Add tags that were received from hte server.
 
-	  }]);
-
-	  return Annotation3DForm;
-	}(); // Annotation3DForm
-
-	function mouseEventMovementDistanceSquared(origin, finish) {
-	  return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
-	} // mouseEventMovementDistanceSquared
-
-	var TagButton = /*#__PURE__*/function () {
-	  function TagButton(tag) {
-	    _classCallCheck(this, TagButton);
-
-	    var obj = this;
-	    obj.tag = tag;
-	    obj.node = html2element("<button class=\"btn-small\">#".concat(tag.name, "</button>"));
-	    obj.on = true; // On mouseover the tags should be highlighted. To highlight geometrical tags the corresponding SVG must be made visible.
-	    // Onclick the buttons should filter the comments, and toggle the annotations.
-
-	    obj.node.onmousedown = function (e) {
-	      e.stopPropagation();
-	      obj.toggle(!obj.on);
-	    }; // onclick
-	    // Turn button off as default.
-
-
-	    obj.toggle(false);
-	  } // constructor
-
-
-	  _createClass(TagButton, [{
-	    key: "toggle",
-	    value: function toggle(on) {
-	      // if on == true then turn the button on, otherwise turn it off.
-	      var obj = this;
-	      obj.node.style.background = on ? "black" : "gainsboro";
-	      obj.node.style.color = on ? "white" : "black";
-	      obj.on = on;
-	    } // toggle
-
-	  }]);
-
-	  return TagButton;
-	}(); // TagButton
-
-	var Tag3DGeometryButton = /*#__PURE__*/function (_TagButton) {
-	  _inherits(Tag3DGeometryButton, _TagButton);
-
-	  var _super = _createSuper(Tag3DGeometryButton);
-
-	  function Tag3DGeometryButton(tag, scene, camera) {
-	    var _this;
-
-	    _classCallCheck(this, Tag3DGeometryButton);
-
-	    _this = _super.call(this, tag);
-
-	    var obj = _assertThisInitialized(_this); // VolumeAnnotation requires camera to update the glow.
-
-
-	    obj.annotation = new VolumeAnnotation(camera);
-	    scene.add(obj.annotation.group);
-	    obj.tag.geometry.forEach(function (g) {
-	      var _obj$annotation;
-
-	      (_obj$annotation = obj.annotation).add.apply(_obj$annotation, _toConsumableArray(g));
-	    }); // forEach
-
-	    obj.annotation.hide();
-
-	    obj.node.onmouseenter = function (e) {
-	      obj.annotation.show();
-	    }; // onmousein
-
-
-	    obj.node.onmouseleave = function (e) {
-	      obj.annotation.hide();
-	    }; // onmousein
-
-
-	    return _this;
-	  } // constructor
-
-
-	  return Tag3DGeometryButton;
-	}(TagButton); // Tag3DGeometryButton
-
-	var template$5 = "<div style=\"width: 300px; margin-top: 5px;\"></div>";
-
-	var TagOverview = /*#__PURE__*/function () {
-	  function TagOverview(scene, camera) {
-	    _classCallCheck(this, TagOverview);
-
-	    this.tags = [];
-	    this.buttons = [];
-	    this.needsupdating = [];
-	    var obj = this;
-	    obj.node = html2element(template$5);
-	    obj.scene = scene;
-	    obj.camera = camera; // The tag visualisation should happen here also.
-	  } // constructor
-
-
-	  _createClass(TagOverview, [{
+	  }, {
 	    key: "add",
-	    value: function add(newtags) {
+	    value: function add(annotations3d) {
 	      var obj = this;
-	      newtags.forEach(function (t) {
-	        return obj.tags.push(t);
-	      });
-	      var newbuttons = newtags.map(function (tag) {
-	        // If the tag has geometry with points with 4 components then its a 3D volume geometry.
-	        // Or should a type be simply prescribed?
-	        var n = 0;
-
-	        if (tag.geometry) {
-	          tag.geometry = JSON.parse(tag.geometry);
-	          n = tag.geometry[0] ? tag.geometry[0].length : 0;
-	        } // if
-
-
-	        var b;
-
-	        switch (n) {
-	          case 4:
-	            b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
-	            obj.needsupdating.push(b.annotation);
-	            break;
-
-	          default:
-	            b = new TagButton(tag);
-	        } // switch
-
-
-	        return b;
-	      }); // map
-
-	      newbuttons.forEach(function (b) {
-	        obj.buttons.push(b);
-	        obj.node.appendChild(b.node);
-	      }); // forEach
+	      obj.tagoverview.add(annotations3d);
 	    } // add
-
-	  }, {
-	    key: "namevalid",
-	    value: function namevalid(name) {
-	      // If any existing tag has this name the name is not valid.
-	      var obj = this;
-	      return !obj.tags.some(function (tag) {
-	        return tag.name == name;
-	      });
-	    } // namevalid
-
-	  }, {
-	    key: "purge",
-	    value: function purge() {
-	      var obj = this;
-	      obj.tags = [];
-	      obj.buttons.forEach(function (b) {
-	        return b.node.remove();
-	      });
-	      obj.buttons = [];
-	    } // purge
+	    // Update to properly show the glow
 
 	  }, {
 	    key: "update",
 	    value: function update() {
-	      // Launch update of all the annotation spheres.
 	      var obj = this;
-	      obj.needsupdating.forEach(function (a) {
-	        a.update();
-	      });
+	      obj.annotations.update();
+	      obj.tagoverview.update();
 	    } // update
 
 	  }]);
 
-	  return TagOverview;
-	}(); // TagOverview
+	  return Annotation3DManager;
+	}(); // Annotation3DManager
+
+	function mouseEventMovementDistanceSquared(origin, finish) {
+	  return Math.pow(origin.clientX - finish.clientX, 2) + Math.pow(origin.clientY - finish.clientY, 2);
+	} // mouseEventMovementDistanceSquared
 
 	/*
 	Maybe this one should be remade into a manager so it can keep add comments to itself. Otherwise they have to be routed outside.
@@ -40865,7 +40975,7 @@
 	  submitbutton: "\n    color: black;\n\tbackground-color: LightGray;\n\tborder-radius: 0px;\n    border: none;\n\tcursor: pointer;\n\tmargin-top: 7px;\n  "
 	}; // css
 
-	var template$4 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
+	var template$5 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
 
 	var AddCommentForm = /*#__PURE__*/function () {
 	  function AddCommentForm() {
@@ -40873,7 +40983,7 @@
 
 	    this._user = "";
 	    var obj = this;
-	    obj.node = html2element(template$4); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
+	    obj.node = html2element(template$5); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
 
 	    obj.commentinput = obj.node.querySelector("textarea.comment");
 	    obj.submitbutton = obj.node.querySelector("button.submit");
@@ -40937,7 +41047,7 @@
 	  timestampspan: "\n\tfont-size: 14px;\n\tmargin-left: 12px;\n  "
 	}; // css
 
-	var template$3 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
+	var template$4 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
 
 	var Comment = /*#__PURE__*/function () {
 	  // available tags.
@@ -40948,7 +41058,7 @@
 	    this.availabletags = [];
 	    var obj = this; // Make a new node.
 
-	    obj.node = html2element(template$3); // Fill the template with the options from the config. There must be a comment, and there must be an author.
+	    obj.node = html2element(template$4); // Fill the template with the options from the config. There must be a comment, and there must be an author.
 
 	    obj.config = config; // Fill some options that may not be defined in config.
 
@@ -41138,7 +41248,7 @@
 	// Sort the comments before passing them to the comments below. How will replies be updated? Ultimately everything should be coming from the server??
 	// This is just a template for the controls which allow the replies to be expanded or collapsed. These are invisible at first.
 
-	var template$2 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
+	var template$3 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
 
 	var GeneralComment = /*#__PURE__*/function (_Comment) {
 	  _inherits(GeneralComment, _Comment);
@@ -41157,7 +41267,7 @@
 
 	    obj.replybutton = obj.node.querySelector("button.reply"); // The general comment can have replies associated with it. Handle these here. Furthermore an additional control for expanding, reducing hte comments is required.
 
-	    obj.replynode = html2element(template$2);
+	    obj.replynode = html2element(template$3);
 	    obj.node.appendChild(obj.replynode); // Add the functionality to the caret.
 
 	    obj.repliesExpanded = false;
@@ -41244,7 +41354,7 @@
 	}(Comment); // GeneralComment
 	 // findArrayItemById
 
-	var template$1 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
+	var template$2 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
 
 	var CommentingManager = /*#__PURE__*/function () {
 	  function CommentingManager() {
@@ -41254,7 +41364,7 @@
 	    this.generalcommentobjs = [];
 	    this.availabletags = [];
 	    var obj = this;
-	    obj.node = html2element(template$1); // Make the form;
+	    obj.node = html2element(template$2); // Make the form;
 
 	    obj.form = new AddCommentForm();
 	    obj.node.querySelector("div.comment-form").appendChild(obj.form.node); // Finally add teh controls that completely hide comments.
@@ -41408,15 +41518,282 @@
 	}(); // CommentingManager
 	 // arrayIncludesAll
 
+	var template$1 = "<div>\n  <b style=\"margin-bottom: 0px;\"></b>\n  <div style=\"width: 300px;\">\n</div>";
+
+	var TagOverview = /*#__PURE__*/function () {
+	  function TagOverview(title, tagClickFunction, tagEnterFunction, tagLeaveFunction, coloroption) {
+	    _classCallCheck(this, TagOverview);
+
+	    this.tags = [];
+	    this.buttons = [];
+	    this.needsupdating = [];
+
+	    this.tagClickFunction = function () {};
+
+	    this.tagEnterFunction = function () {};
+
+	    this.tagLeaveFunction = function () {};
+
+	    this.coloroption = true;
+	    var obj = this;
+	    obj.node = html2element(template$1); // Set the new title
+
+	    obj.node.querySelector("b").innerHTML = title; // The buttons do not turn on/off, because otherwise there would need to be tracking also for when the user navigates away.
+
+	    obj.tagClickFunction = tagClickFunction ? tagClickFunction : function () {};
+	    obj.tagEnterFunction = tagEnterFunction ? tagEnterFunction : function () {};
+	    obj.tagLeaveFunction = tagLeaveFunction ? tagLeaveFunction : function () {};
+	    obj.coloroption = [true, false].includes(coloroption) ? coloroption : true;
+	  } // constructor
+
+
+	  _createClass(TagOverview, [{
+	    key: "add",
+	    value: function add(newtags) {
+	      var obj = this;
+	      newtags.forEach(function (t) {
+	        return obj.tags.push(t);
+	      });
+	      var newbuttons = newtags.map(function (tag) {
+
+	        if (tag.geometry) {
+	          tag.geometry = JSON.parse(tag.geometry);
+	          tag.geometry[0] ? tag.geometry[0].length : 0;
+	        } // if
+
+
+	        var b = new TagButton(tag, function () {
+	          obj.tagClickFunction(tag);
+	        }, function () {
+	          obj.tagEnterFunction(tag);
+	        }, function () {
+	          obj.tagLeaveFunction(tag);
+	        }, obj.coloroption);
+	        return b;
+	      }); // map
+
+	      newbuttons.forEach(function (b) {
+	        obj.buttons.push(b);
+	        obj.node.appendChild(b.node);
+	      }); // forEach
+	    } // add
+
+	  }, {
+	    key: "namevalid",
+	    value: function namevalid(name) {
+	      // If any existing tag has this name the name is not valid.
+	      var obj = this;
+	      return !obj.tags.some(function (tag) {
+	        return tag.name == name;
+	      });
+	    } // namevalid
+
+	  }, {
+	    key: "purge",
+	    value: function purge() {
+	      var obj = this;
+	      obj.tags = [];
+	      obj.buttons.forEach(function (b) {
+	        return b.node.remove();
+	      });
+	      obj.buttons = [];
+	    } // purge
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      // Launch update of all the annotation spheres.
+	      var obj = this;
+	      obj.needsupdating.forEach(function (a) {
+	        a.update();
+	      });
+	    } // update
+
+	  }]);
+
+	  return TagOverview;
+	}(); // TagOverview
+
+	var VistaManager = /*#__PURE__*/function () {
+	  function VistaManager(lilguimenu, arcballcontrols, camera) {
+	    _classCallCheck(this, VistaManager);
+
+	    var obj = this;
+	    obj.arcballcontrols = arcballcontrols;
+	    obj.camera = camera; // The menu to add vistas
+
+	    obj.controllers = {};
+	    obj.addmenuconfig = {
+	      name: "",
+	      submit: function submit() {
+	        obj.submit({
+	          name: obj.addmenuconfig.name,
+	          vista: obj.getVista()
+	        });
+	        obj.addmenuconfig.name = "";
+	        obj.controllers.name.updateDisplay();
+	      }
+	    }; // addmenuconfig
+
+	    var menufolder = lilguimenu.addFolder("Vistas");
+	    obj.controllers.name = menufolder.add(obj.addmenuconfig, "name");
+	    menufolder.add(obj.addmenuconfig, "submit"); // The menu to display vista names.
+
+	    var vistaTagClick = function vistaTagClick(tag) {
+	      obj.moveToVista(tag.vista);
+	      obj.arcballcontrols.saveState();
+	    };
+
+	    var vistaTagEnter = function vistaTagEnter(tag) {
+	      obj.arcballcontrols.saveState();
+	      obj.moveToVista(tag.vista);
+	    };
+
+	    var vistaTagLeave = function vistaTagLeave(tag) {
+	      obj.arcballcontrols.reset();
+	    };
+
+	    obj.tagoverview = new TagOverview("Vistas", vistaTagClick, vistaTagEnter, vistaTagLeave, false);
+	  } // constructor
+
+
+	  _createClass(VistaManager, [{
+	    key: "add",
+	    value: function add(vistas) {
+	      // Add vistas received from the server.
+	      // They need to be added to the overview. And the overview should already have an add function anyway.
+	      var obj = this;
+	      obj.tagoverview.add(vistas);
+	    } // add
+
+	  }, {
+	    key: "moveToVista",
+	    value: function moveToVista(vistaState) {
+	      var obj = this; // `af' is the arcballcontrols focus point, and `cp' is the position to which the camera needs to move.
+	      // obj.arcballcontrols.focus( v.focus.point, v.focus.size, v.focus.amount );
+	      // obj.camera.position.copy( v.camera.position );
+	      // obj.camera.rotation.set( v.camera.rotation.x, v.camera.rotation.y, v.camera.rotation.z );
+	      // Do I need to change the focus? The user can do it if they want to later, no?
+
+	      obj.arcballcontrols.setStateFromJSON(vistaState); // obj.arcballcontrols.update();
+	    } // moveToVista
+
+	  }, {
+	    key: "getVista",
+	    value: function getVista() {
+	      var obj = this;
+	      /*
+	      let af = obj.arcballcontrols.retrieveCurrentFocus();
+	      
+	      // Position, but also rotation need to be stored!!
+	      let cp = {
+	      	position: obj.camera.position.clone(),
+	      	rotation: obj.camera.rotation.clone()
+	      };
+	      
+	      
+	      return {
+	        focus: af, 
+	        camera: cp
+	      }
+	      */
+
+	      return obj.arcballcontrols.getState();
+	    } // getVista
+	    // Dummy function
+
+	  }, {
+	    key: "submit",
+	    value: function submit() {} // submit
+
+	  }]);
+
+	  return VistaManager;
+	}(); // VistaManager
+
 	var template = "\n<div class=\"hud\">\n  <div class=\"stats\"></div>\n  <div class=\"lefttop\"></div>\n  <div class=\"righttop\"></div>\n</div>\n";
 
 	var SessionGUI = /*#__PURE__*/function () {
-	  function SessionGUI(elementOptions, renderer, scene, camera) {
+	  function SessionGUI(elementOptions, renderer, scene, camera, arcballcontrols) {
 	    _classCallCheck(this, SessionGUI);
 
 	    var obj = this;
+	    var author = "Aljaz";
 	    obj.sessionId = "Delta wing";
-	    obj.dom = html2element(template); // Add the Stats object.
+	    obj.dom = html2element(template); // Setup the connection with the server.
+
+	    var serverAddress = "wss://mighty-gentle-silence.glitch.me";
+	    setupWebSocket();
+
+	    function setupWebSocket() {
+	      /*
+	      The websocket connection can be closed if there is a connection problem between
+	      the client and server, or if the connection is inactive for too long. In case
+	      there is an error when opening the connection the client tries to reconnect after
+	      1s. It also tries to reconnect if the connection is closed for some reason. To
+	      minimise the reconnections due to inactivity the client pings the server every t<300s
+	      to maintain the connection. The server pongs it back to keep the connection on its side.
+	      */
+	      obj.ws = new WebSocket(serverAddress, "json");
+
+	      obj.ws.onerror = function () {
+	        setTimeout(setupWebSocket, 1000);
+	      }; // onerror
+
+
+	      obj.ws.onopen = function () {
+	        // When the connection is initialised the server should send all pertinent comments.
+	        obj.ws.send(JSON.stringify({
+	          type: "query"
+	        }));
+
+	        function ping() {
+	          // This should recursively call itself.
+	          // console.log("ping")
+	          obj.ws.send(JSON.stringify({
+	            type: "ping"
+	          }));
+	          setTimeout(ping, 100 * 1000); // 299*1000   
+	        } // ping
+
+
+	        ping();
+	      }; // onopen
+	      // This will have to be reworked to differentiate between message and upvotes. Ultimately also annotations.
+
+
+	      obj.ws.onmessage = function (msg) {
+	        // Should differentiate between receiving a 'pong', receiving a single item, and receiving an array.
+	        // A single item is just added, while an array requires a purge of existing comments first.
+	        var action = JSON.parse(msg.data); // console.log(action)
+
+	        switch (action.type) {
+	          case "pong":
+	            break;
+
+	          case "query":
+	            // Purge the existing comments
+	            obj.purge();
+
+	          case "relay":
+	            // But relays can be new comments, or they can be upvotes/downvotes/...
+	            obj.process(action.data);
+	            break;
+
+	          case "vote":
+	            obj.processvote(action);
+	            break;
+	        }
+	      }; // onmessage
+
+
+	      obj.ws.onclose = function () {
+	        setTimeout(setupWebSocket, 1000);
+	      }; // onclose
+
+	    } // setupWebSocket
+	    // Add the Stats object.
+
 
 	    obj.stats = new stats_min();
 	    obj.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -41425,39 +41802,56 @@
 	    obj.stats.dom.style.left = "";
 	    obj.stats.dom.style.top = "";
 	    obj.stats.dom.style.right = "0px";
-	    obj.stats.dom.style.bottom = "0px"; // The overall gui should only contain folders.
+	    obj.stats.dom.style.bottom = "0px"; // GUI
+
+	    var lefttopdiv = obj.dom.querySelector("div.lefttop");
+	    var righttopdiv = obj.dom.querySelector("div.righttop"); // The overall gui should only contain folders.
 
 	    obj.session = new g({
-	      container: obj.dom.querySelector("div.righttop"),
+	      container: righttopdiv,
 	      title: "Session controls",
 	      width: 256 + 7
-	    }); // Folder for individual elements
+	    }); // FOLDERS
 
-	    obj.elements = obj.session.addFolder("Elements");
-	    obj.addElementOptions(elementOptions); // TagOverview requires a scene and a camera because the annotations need to add and remove elments to the scene.
+	    var fk = obj.session.addFolder("Knowledge");
+	    var fe = obj.session.addFolder("Elements"); // let fa = obj.session.addFolder("Add element");
+	    // ELEMENTS
+	    // The elements folder is dynamically populated, and a reference is needed.
 
-	    obj.tagoverview = new TagOverview(scene, camera); // obj.dom.appendChild( obj.tagoverview.node );
-	    // Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
+	    obj.elements = fe; // ADD ELEMENT
+	    // Populated from a predefined options list.
+	    // obj.addElementOptions(fa, elementOptions);
+	    // VISTAS
 
-	    obj.commenting = new CommentingManager(); // obj.dom.appendChild( obj.commenting.node );
+	    obj.vistas = new VistaManager(fk, arcballcontrols, camera);
+	    lefttopdiv.appendChild(obj.vistas.tagoverview.node);
+
+	    obj.vistas.submit = function (tag) {
+	      tag.taskId = obj.sessionId;
+	      tag.author = author;
+	      tag.type = "tag";
+	      obj.ws.send(JSON.stringify(tag));
+	    }; // ANNOTATIONS - maybe they don't fire because of the CSS div?
 
 
-	    var author = "Aljaz";
-	    obj.annotations = obj.session.addFolder("3D Annotation"); // Create a lil-gui version o fthe 3D annotation form.
-
-	    obj.volumetags = new Annotation3DForm(obj.annotations, renderer, scene, camera);
+	    obj.volumetags = new Annotation3DManager(fk, renderer, scene, camera);
+	    lefttopdiv.appendChild(obj.volumetags.tagoverview.node);
 
 	    obj.volumetags.send = function (tag) {
 	      // Tag comes with at least the tag name from tagform.
 	      // The author and taskId are obligatory
 	      //Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
-	      tag.taskId = obj.sessionId; // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
+	      tag.taskId = obj.sessionId;
+	      tag.author = author; // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
 
 	      tag.type = "tag";
 	      obj.ws.send(JSON.stringify(tag));
 	    }; // submit
-	    // Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
+	    // COMMENTING
 
+
+	    obj.commenting = new CommentingManager();
+	    lefttopdiv.appendChild(obj.commenting.node); // Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
 
 	    obj.commenting.form.submit = function (comment) {
 	      // Commenting only requires the author.
@@ -41493,20 +41887,17 @@
 	    value: function update() {
 	      var obj = this;
 	      obj.stats.update();
-	      obj.volumetags.annotations.update();
-	      obj.tagoverview.update();
+	      obj.volumetags.update();
 	    } // update
 
 	  }, {
 	    key: "addElementOptions",
-	    value: function addElementOptions(elementOptions) {
-	      var obj = this;
+	    value: function addElementOptions(addElementGUI, elementOptions) {
 
 	      if (elementOptions) {
 	        // Folder for addition of elements, which should have a dropdown to select element type, 
-	        // textbox to specify the file name, and a submit button.
-	        var addElementGUI = obj.session.addFolder("Add element"); // The button should open a modal, or append a selection to the GUI to configure the element to be added.
-
+	        // textbox to specify the file name, and a submit button
+	        // The button should open a modal, or append a selection to the GUI to configure the element to be added.
 	        var addElementConfig = {
 	          type: '',
 	          name: 'type in asset address',
@@ -41533,7 +41924,8 @@
 	    key: "purge",
 	    value: function purge() {
 	      var obj = this;
-	      obj.tagoverview.purge();
+	      obj.vistas.tagoverview.purge();
+	      obj.volumetags.tagoverview.purge();
 	      obj.commenting.purge();
 	    } // purge
 	    // Processing of knowledge entries cannot rely on types, because these are no longer captured. Instead just define what the individual components require.
@@ -41541,16 +41933,17 @@
 	  }, {
 	    key: "process",
 	    value: function process(d) {
-	      var obj = this; // First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
+	      var obj = this;
+	      console.log(d); // First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
 
 	      d = d.filter(function (a) {
 	        return [obj.sessionId].includes(a.taskId);
 	      }); // Tags will have a name.
 
-	      var tags = d.filter(function (a) {
+	      d.filter(function (a) {
 	        return a.name;
-	      });
-	      obj.tagoverview.add(tags); // Comments.
+	      }); // obj.tagoverview.add(tags);
+	      // Comments.
 
 	      var comments = d.filter(function (c) {
 	        return c.comment;
@@ -41562,7 +41955,20 @@
 	        c.downvotes = c.downvotes ? JSON.parse(c.downvotes) : null;
 	      }); // forEach
 
-	      obj.commenting.add(comments);
+	      obj.commenting.add(comments); // 3D ANNOTATIONS
+
+	      var volumes = d.filter(function (a) {
+	        return a.geometry;
+	      });
+	      volumes.forEach(function (v) {
+	        v.geometry = JSON.parse(v.geometry);
+	      });
+	      obj.volumetags.add(volumes); // VISTAS
+
+	      var vistas = d.filter(function (a) {
+	        return a.vista;
+	      });
+	      obj.vistas.add(vistas);
 	    } // process
 
 	  }, {
@@ -41591,6 +41997,26 @@
 	        }); // forEach
 	      }); // forEach
 	    } // processvote
+
+	  }, {
+	    key: "addTestVistas",
+	    value: function addTestVistas() {
+	      var obj = this;
+	      var s1 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[-0.24458883133152576,0.9696204502873743,0.003533549545494679,0,-0.12529558316531214,-0.035219341638882865,0.9914941325160673,0,0.9614974365161582,0.2420656529932234,0.1301034173794891,0,1.3064974365161675,100.40806565299322,0.2571034173794846,1]},"cameraNear":0.01,"cameraUp":{"x":-0.12529558316531209,"y":-0.035219341638882906,"z":0.9914941325160669},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+	      var s2 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[0.03522382110174042,-0.999005813628702,-0.02732520380619238,0,0.5872769130145653,-0.001431891646014316,0.8093848139954178,0,-0.808619261375263,-0.0445570872294348,0.5866426136162911,0,-0.4636192613752792,100.12144291277053,0.7136426136163074,1]},"cameraNear":0.01,"cameraUp":{"x":0.5872769130145653,"y":-0.001431891646013983,"z":0.8093848139954178},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+	      var s3 = '{"arcballState":{"cameraFar":20000,"cameraFov":45,"cameraMatrix":{"elements":[-0.994002829093867,0.04073845222355828,-0.10148277816368909,0,-0.10241687998282231,-0.6720877387470915,0.7333545214426685,0,-0.03832960276308385,0.7393500185543046,0.6722294188859738,0,0.3066703972368927,100.90535001855432,0.7992294188859859,1]},"cameraNear":0.01,"cameraUp":{"x":-0.10241687998282233,"y":-0.6720877387470915,"z":0.7333545214426687},"cameraZoom":1,"gizmoMatrix":{"elements":[1,0,0,0,0,1,0,0,0,0,1,0,0.345,100.166,0.127,1]}}}';
+	      var vistas = [{
+	        name: "Vista 1",
+	        vista: s1
+	      }, {
+	        name: "Vista 2",
+	        vista: s2
+	      }, {
+	        name: "Vista 3",
+	        vista: s3
+	      }];
+	      obj.vistas.add(vistas);
+	    } // addTestVistas
 
 	  }]);
 
@@ -41856,9 +42282,9 @@
 
 	function init() {
 	  setupScene();
-	  setupHUD();
 	  addArcballControls();
 	  addTransformControls();
+	  setupHUD();
 	  var task = "./assets/deltawing/" + "mach_0p5_re_1e5_aoa_15_sweep_60_2500steps"; // For development
 
 	  addWingGeometry(task + '/wing/config.json');
@@ -42049,14 +42475,14 @@
 	    }
 	  }; // Camera is required to update the annotation glow correctly.
 
-	  gui = new SessionGUI(elementOptions, rendererCSS, sceneWebGL, camera);
+	  gui = new SessionGUI(elementOptions, rendererCSS, sceneWebGL, camera, arcballcontrols);
 	  document.body.appendChild(gui.dom); // The glow of the annotations needs to be updated.
 
 	  elementsThatNeedToBeUpdated.push(gui); // Append the colorbar somewhere.
 	  // gui.dom.querySelector("div.righttop").appendChild( colorbar.canvas )
 	  // Allow selected 3D annotations to be repositioned using transform controls.
 
-	  var tc = gui.annotations.controllers.find(function (c) {
+	  var tc = gui.volumetags.menufolder.controllers.find(function (c) {
 	    return c.property == "position";
 	  });
 	  allTransformControllers.push(tc);
@@ -42069,34 +42495,27 @@
 	    });
 	  }; // changeTransformObject
 
+
+	  console.log(arcballcontrols);
+	  console.log(gui);
 	} // setupHUD
 	// CONTROLS - ADDED TO CSS RENDERER!!!!
 
 
 	function addArcballControls() {
-	  arcballcontrols = new ArcballControls(camera, rendererCSS.domElement, sceneWebGL);
+	  // arcballcontrols = new ArcballControls( camera, rendererCSS.domElement, sceneWebGL );
+	  arcballcontrols = new ArcballControls(camera, document.getElementById('css'), sceneWebGL);
 	  arcballcontrols.focus(focusInitialPoint, 1, 1); // Adding hte controls, and changing the focus will both change the position of hte camera. When manually repositioning the camera, the controls need to be updated.
 
 	  camera.position.set(cameraInitialPoint.x, cameraInitialPoint.y, cameraInitialPoint.z);
-	  arcballcontrols.update();
-	  console.log(setGizmoOpacity); // console.log(arcballcontrols, getVista, moveToVista)
+	  arcballcontrols.update(); // console.log(setGizmoOpacity)
 	} // addArcballControls
-	// CONVENIENCE FUNCTIONS
-
-
-	function setGizmoOpacity(active) {
-	  arcballcontrols._gizmos.children.forEach(function (gizmoLine) {
-	    gizmoLine.material.setValues({
-	      opacity: 1 * active
-	    });
-	  }); // forEach
-
-	} // setGizmoOpacity
 
 
 	function addTransformControls() {
 	  // Attach and detach can be used to control the appearance of controls.
-	  transformcontrols = new TransformControls(camera, rendererCSS.domElement);
+	  // transformcontrols = new TransformControls( camera, rendererCSS.domElement );
+	  transformcontrols = new TransformControls(camera, document.getElementById("css"));
 	  transformcontrols.addEventListener('dragging-changed', function (event) {
 	    arcballcontrols.enabled = !event.value;
 	  });
