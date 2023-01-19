@@ -4,8 +4,8 @@ import TagButton from "./TagButton.js";
 
 // This should have a title also.
 let template = `<div>
-  <h3></h3>
-  <div style="width: 300px; margin-top: 5px;">
+  <b style="margin-bottom: 0px;"></b>
+  <div style="width: 300px;">
 </div>`;
 
 export default class TagOverview{
@@ -13,17 +13,24 @@ export default class TagOverview{
   tags = [];
   buttons = [];
   needsupdating = [];
-  tagClickFunction = function(){}
+  tagClickFunction = function(){};
+  tagEnterFunction = function(){};
+  tagLeaveFunction = function(){};
+  coloroption = true;
   
-  constructor( title, tagClickFunction ){
+  constructor( title, tagClickFunction, tagEnterFunction, tagLeaveFunction, coloroption ){
     let obj = this;
 	obj.node = html2element(template);
 	
 	// Set the new title
-	obj.node.querySelector("h3").innerHTML = title;
+	obj.node.querySelector("b").innerHTML = title;
 	
-	
+	// The buttons do not turn on/off, because otherwise there would need to be tracking also for when the user navigates away.
 	obj.tagClickFunction = tagClickFunction ? tagClickFunction : function(){};
+	obj.tagEnterFunction = tagEnterFunction ? tagEnterFunction : function(){};
+	obj.tagLeaveFunction = tagLeaveFunction ? tagLeaveFunction : function(){};
+	
+	obj.coloroption = [true, false].includes( coloroption ) ? coloroption : true;
   } // constructor
   
   add(newtags){
@@ -40,7 +47,7 @@ export default class TagOverview{
 			n = tag.geometry[0] ? tag.geometry[0].length : 0;
 		} // if
 		
-		let b = new TagButton(tag, function(){ obj.tagClickFunction(tag) });
+		let b = new TagButton(tag, function(){ obj.tagClickFunction(tag) }, function(){ obj.tagEnterFunction(tag) }, function(){ obj.tagLeaveFunction(tag) }, obj.coloroption);
 		return b
 	}) // map
 	

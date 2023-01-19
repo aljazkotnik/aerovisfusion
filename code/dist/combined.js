@@ -37817,6 +37817,27 @@
 	  return template.content.firstChild;
 	} // html2element
 
+	function getArrayMax(arr) {
+	  var len = arr.length;
+	  var max = -Infinity;
+
+	  while (len--) {
+	    max = arr[len] > max ? arr[len] : max;
+	  }
+
+	  return max;
+	}
+	function getArrayMin(arr) {
+	  var len = arr.length;
+	  var min = Infinity;
+
+	  while (len--) {
+	    min = arr[len] < min ? arr[len] : min;
+	  }
+
+	  return min;
+	}
+
 
 	function trimStringToLength(s, n) {
 	  // n has to be > 3.
@@ -38035,9 +38056,9 @@
 	  return StaticImage;
 	}(); // StaticImage
 
-	var vertexShader = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
+	var vertexShader$1 = "\n\tattribute vec4 a_color;\n\tattribute float a_mach;\n\t\n\tvarying vec4 v_color;\n\tvarying float v_mach;\n\n\tvoid main() \n\t{\n\t\tv_color = a_color;\n\t\tv_mach = a_mach;\n\t\t\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t}\n"; // vertexShader
 
-	var fragmentShader = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
+	var fragmentShader$1 = "\n\tvarying float v_mach;\n\t\n\tuniform float u_thresholds[255];\n\tuniform int u_n_thresholds;\n\t\n\tuniform bool u_isolines_flag;\n\tuniform bool u_contours_flag;\n\t\n\tuniform sampler2D u_colorbar;\n\t\n\t\n\t\n\tvec2 nearestThresholds( float f, float t[255], int n ){\n\t\t// Return the nearest smaller and nearest larger threshold.\n\t\t//\n\t\tfloat a = t[0];\n\t\tfloat b = t[n-1];\n\t\tfor(int i=1; i<n; i++){\n\t\t\t// Mix combined with step allows a switch between two values.\n\t\t\t\n\t\t\t// if f > t[i] && (f - t[i] < f - a) then a = t[i] otherwise a\n\t\t\t// step( t[i], f ) -> true if t[i] < f - t[i] valid lower threshold.\n\t\t\t// step(f-t[i], f-a)) -> true if (f-t[i]) < (f-a) - t closer than a.\n\t\t\t\n\t\t\ta = mix(a, t[i], step( t[i],f    )*step( f-t[i], f-a) );\n\t\t\tb = mix(b, t[i], step( f   ,t[i] )*step( t[i]-f, b-f) );\n\t\t}; // for\n\t\t\n\t\treturn vec2(a,b);\n\t}\n\t\n\tfloat distanceToIsoline( float f, float t ){\n\t\t// Distance in terms of value of f to the threshold t isoline, divided by the direction of the highest gradient. This is then just a local approach.\n\t\treturn abs( (f - t)/fwidth(f) );\n\t}\n\t\n\t\n\tfloat unit(float f, float a, float b)\n\t{\n\t\t// Return value rescaled to the unit range given the value min and max.\n\t\treturn (f-a)/(b-a);\n\t}\n\t\n\t\n\tvec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t{\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t}\n\t\n\tvoid main() \n\t{\n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t\n\t\tvec4 aColor = vec4(1.0,1.0,1.0,1.0);\n\t\tvec4 isoColor = vec4(1.0,1.0,1.0,1.0);\n\t\tfloat mixRatio = 0.0;\n\t\t\n\t\taColor = sampleColorBar( u_colorbar, v_mach, min_mach,max_mach );\n\t\tif( u_isolines_flag || u_n_thresholds > 0 ){\t\t\n\t\t\n\t\t\t// Determine the thresholds this pixel is between.\n\t\t\tvec2 bounds = nearestThresholds( v_mach, u_thresholds, u_n_thresholds );\n\t\t\t\n\t\t\t// Only need to find the lower bound.\n\t\t\tif( u_contours_flag ){\n\t\t\t\taColor = sampleColorBar( u_colorbar, bounds[0], min_mach,max_mach );\n\t\t\t}\n\t\t\t\n\t\t\t// Add the isoline. A flag is required to allow isolines to be added over smooth rendering, when n isolines = 0;\n\t\t\tif( u_isolines_flag ){\n\t\t\t\tfloat distIso = distanceToIsoline(v_mach, bounds[1]);\n\t\t\t\tmixRatio = 1.0 - smoothstep( 2.0*0.2, 2.0*0.6, distIso);\n\t\t\t}\n\t\t\n\t\t}\n\t\t\n\t\tgl_FragColor = mix( aColor, isoColor, mixRatio);\n\t}\n"; // fragmentShader
 
 	/* Uniforms controlled by the colorbar GUI:
 	obj.uniforms = {
@@ -38104,8 +38125,8 @@
 	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
 	        var distinctContouringMaterial = new ShaderMaterial({
 	          uniforms: uniforms,
-	          vertexShader: vertexShader,
-	          fragmentShader: fragmentShader,
+	          vertexShader: vertexShader$1,
+	          fragmentShader: fragmentShader$1,
 	          side: DoubleSide
 	        }); // distinctContouringMaterial
 	        // Create teh geometry basics.
@@ -38166,6 +38187,543 @@
 	  return ContouredMesh;
 	}(); // ContouredMesh
 
+	var PointerRay = /*#__PURE__*/function () {
+	  // Geometries to check intersection with.
+	  // Geometry to add to scene
+	  // Property to keep track of all intersections, and the currently selected intersection.
+	  // PointerRay interactions should be disabled on long navigation itneractions.
+	  // Property to track time since pointerdown.
+	  function PointerRay(camera, geometries) {
+	    _classCallCheck(this, PointerRay);
+
+	    this.mouse = new Vector2();
+	    this.geometries = [];
+	    this.line = void 0;
+	    this.raycaster = void 0;
+	    this.intersects = [];
+	    this.intersection = {
+	      intersects: false,
+	      point: new Vector3(),
+	      normal: new Vector3()
+	    };
+	    this.enabled = true;
+	    this.pointerdownTime = void 0;
+	    this.longPressTimer = void 0;
+	    var obj = this; // Camera to use by the raycaster.
+
+	    obj.camera = camera;
+	    obj.geometries = geometries;
+	    obj.raycaster = new Raycaster(); // The line doesn't seem to work if it is not initialised near the surface. Why??
+
+	    var geometry = new BufferGeometry();
+	    geometry.setFromPoints([new Vector3(0.367, 100, 0.126), new Vector3(0.384, 100, 0.173)]);
+	    obj.line = new Line(geometry, new LineBasicMaterial({
+	      color: 0xFFFFFF
+	    })); // Selecting the decal using a longpress. After a longpress a decal should not be placed. Reusing the 'moved' variable from 'addAimingRay'.
+
+	    window.addEventListener('pointerdown', function (event) {
+	      obj.enabled = true;
+	      obj.pointerdownTime = performance.now();
+	      obj.longPressTimer = window.setTimeout(function () {
+	        if (obj.enabled) {
+	          obj.pointerdown(event);
+	        } // if	
+
+	      }, 1000);
+	    }); // pointerdown
+
+	    window.addEventListener('pointerup', function (event) {
+	      // When a decal is deselected `selectedDecal' becomes undefined, and therefore a new decal is added here. How should this check if a new decal is needed or not? Check with the longpress timer somehow?
+	      clearTimeout(obj.longPressTimer);
+	      var clickTime = performance.now() - obj.pointerdownTime; // It seems like 100ms is a usual click time for me, but 200ms is on the safe side.
+
+	      if (obj.enabled && clickTime < 200) {
+	        obj.pointerup(event);
+	      } // if
+
+	    }); // pointerup
+	    // For now just focus on adding the pointer helper.
+
+	    window.addEventListener('pointermove', function (event) {
+	      obj.checkIntersection(event.clientX, event.clientY, obj.geometries); // obj.pointermove(event);
+	    }); // onPointerMove
+	  } // constructor
+	  // Placeholder functions
+
+
+	  _createClass(PointerRay, [{
+	    key: "pointermove",
+	    value: function pointermove() {} // pointermove
+
+	  }, {
+	    key: "pointerup",
+	    value: function pointerup() {} // pointerup
+
+	  }, {
+	    key: "pointerdown",
+	    value: function pointerdown() {} // pointerdown
+	    // Helper functions.
+
+	  }, {
+	    key: "checkIntersection",
+	    value: function checkIntersection(x, y, candidates) {
+	      // This should be adjusted so that the array of items to check the intersect against can be specified.
+	      var obj = this;
+	      if (candidates.length < 1) return;
+	      obj.mouse.x = x / window.innerWidth * 2 - 1;
+	      obj.mouse.y = -(y / window.innerHeight) * 2 + 1;
+	      obj.raycaster.setFromCamera(obj.mouse, obj.camera);
+	      obj.raycaster.intersectObjects(candidates, false, obj.intersects);
+
+	      if (obj.intersects.length > 0) {
+	        // Intersect point is the first point of the aimer line.
+	        var closest = obj.intersects[0];
+	        var p = closest.point; // The normal gets transformed into the second point here.
+
+	        var n = closest.face.normal.clone();
+	        n.multiplyScalar(0.1);
+	        n.add(closest.point); // Set the aiming line vertices.
+
+	        var positions = obj.line.geometry.attributes.position;
+	        positions.setXYZ(0, p.x, p.y, p.z);
+	        positions.setXYZ(1, n.x, n.y, n.z);
+	        positions.needsUpdate = true; // Intersection stores the intersect information for easier use later on.
+
+	        obj.intersection.point.copy(p);
+	        obj.intersection.normal.copy(closest.face.normal);
+	        obj.intersection.intersects = true; // Clear the intersects array.
+
+	        obj.intersects.length = 0;
+	        return closest;
+	      } else {
+	        return false;
+	      } // if
+
+	    } // checkIntersection
+
+	  }, {
+	    key: "getLinePoint",
+	    value: function getLinePoint(i) {
+	      var obj = this;
+	      return new Vector3(obj.line.geometry.attributes.position.getX(i), obj.line.geometry.attributes.position.getY(i), obj.line.geometry.attributes.position.getZ(i));
+	    } // getLinePoint
+
+	  }]);
+
+	  return PointerRay;
+	}(); // PointerRay
+
+	var DecalPointerRay = /*#__PURE__*/function (_PointerRay) {
+	  _inherits(DecalPointerRay, _PointerRay);
+
+	  var _super = _createSuper(DecalPointerRay);
+
+	  function DecalPointerRay(camera, geometries) {
+	    var _this;
+
+	    _classCallCheck(this, DecalPointerRay);
+
+	    _this = _super.call(this, camera, geometries);
+	    _this.selected = undefined;
+	    _this.decals = [];
+
+	    var obj = _assertThisInitialized(_this); // To select either a geometry to place a decal on, or a decal itself, the arrays of options need to be defined.
+
+
+	    obj.pointerdown = function (event) {
+	      // How do we deselect a decal? Another longpress, or when another decal is selected.
+	      var decalMeshes = obj.decals.map(function (d) {
+	        return d.mesh;
+	      });
+	      var target = obj.checkIntersection(event.clientX, event.clientY, decalMeshes);
+	      var targetDecal = obj.decals[decalMeshes.indexOf(target.object)];
+
+	      if (target) {
+	        obj.decals.forEach(function (decal) {
+	          decal.unhighlight();
+	        }); // forEach
+	        // If target object is the current selected decal, then it should be turned off.
+
+	        var active = obj.selected ? obj.selected.mesh != target.object : true;
+	        targetDecal.highlight(active);
+	        obj.selected = active ? targetDecal : undefined;
+	      }
+	    }; // pointerdown
+
+
+	    obj.pointerup = function (event) {
+	      var target = obj.checkIntersection(event.clientX, event.clientY, obj.geometries);
+
+	      if (target) {
+	        obj.positionInteraction(target);
+	      }
+	    }; // pointerup
+
+
+	    return _this;
+	  } // constructor
+
+
+	  _createClass(DecalPointerRay, [{
+	    key: "positionInteraction",
+	    value: function positionInteraction(target) {// Dummy function
+	    } // positionInteraction
+
+	  }]);
+
+	  return DecalPointerRay;
+	}(PointerRay); // DecalPointerRay
+
+	/**
+	 * You can use this geometry to create a decal mesh, that serves different kinds of purposes.
+	 * e.g. adding unique details to models, performing dynamic visual environmental changes or covering seams.
+	 *
+	 * Constructor parameter:
+	 *
+	 * mesh — Any mesh object
+	 * position — Position of the decal projector
+	 * orientation — Orientation of the decal projector
+	 * size — Size of the decal projector
+	 *
+	 * reference: http://blog.wolfire.com/2009/06/how-to-project-decals/
+	 *
+	 */
+
+	var CustomDecalGeometry = /*#__PURE__*/function (_BufferGeometry) {
+	  _inherits(CustomDecalGeometry, _BufferGeometry);
+
+	  var _super = _createSuper(CustomDecalGeometry);
+
+	  function CustomDecalGeometry(mesh, position, orientation, size) {
+	    var _this;
+
+	    _classCallCheck(this, CustomDecalGeometry);
+
+	    _this = _super.call(this); // Now it does work correctly, just need to figure out hte angles.
+
+	    var triangleNormal = new Vector3(0, 0, 0);
+	    var viewDirection = new Vector3(0, 0, 1);
+	    viewDirection.applyEuler(orientation);
+	    viewDirection.transformDirection(mesh.matrixWorld); // buffers
+
+	    var vertices = [];
+	    var normals = [];
+	    var uvs = []; // helpers
+
+	    var plane = new Vector3(); // this matrix represents the transformation of the decal projector
+
+	    var projectorMatrix = new Matrix4();
+	    projectorMatrix.makeRotationFromEuler(orientation);
+	    projectorMatrix.setPosition(position);
+	    var projectorMatrixInverse = new Matrix4();
+	    projectorMatrixInverse.copy(projectorMatrix).invert(); // generate buffers
+
+	    generate(); // build geometry
+
+	    _this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+
+	    _this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+
+	    _this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+	    function generate() {
+	      var decalVertices = [];
+	      var vertex = new Vector3();
+	      var normal = new Vector3(); // handle different geometry types
+
+	      if (mesh.geometry.isGeometry === true) {
+	        console.error('THREE.DecalGeometry no longer supports THREE.Geometry. Use BufferGeometry instead.');
+	        return;
+	      }
+
+	      var geometry = mesh.geometry;
+	      var positionAttribute = geometry.attributes.position;
+	      var normalAttribute = geometry.attributes.normal; // first, create an array of 'DecalVertex' objects
+	      // three consecutive 'DecalVertex' objects represent a single face
+	      //
+	      // this data structure will be later used to perform the clipping
+
+	      if (geometry.index !== null) {
+	        // indexed BufferGeometry
+	        var index = geometry.index;
+
+	        for (var i = 0; i < index.count; i++) {
+	          vertex.fromBufferAttribute(positionAttribute, index.getX(i));
+	          normal.fromBufferAttribute(normalAttribute, index.getX(i));
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } else {
+	        // non-indexed BufferGeometry
+	        for (var _i = 0; _i < positionAttribute.count; _i++) {
+	          vertex.fromBufferAttribute(positionAttribute, _i);
+	          normal.fromBufferAttribute(normalAttribute, _i);
+	          pushDecalVertex(decalVertices, vertex, normal);
+	        }
+	      } ///////////////////////////////////////
+
+
+	      var decalVerticesOneSided = [];
+
+	      for (var _i2 = 0; _i2 < decalVertices.length; _i2 += 3) {
+	        // Check if the triangle is oriented correctly.
+	        // So for a triangle p1, p2, p3, if the vector A = p2 - p1 and the vector B = p3 - p1 then the normal N = A x B and can be calculated by:
+	        // Nx = Ay * Bz - Az * By
+	        // Ny = Az * Bx - Ax * Bz
+	        // Nz = Ax * By - Ay * Bx
+	        // Just calculate the average of hte triangle normals.
+	        triangleNormal.set(0, 0, 0);
+	        triangleNormal.add(decalVertices[_i2 + 0].normal);
+	        triangleNormal.add(decalVertices[_i2 + 1].normal);
+	        triangleNormal.add(decalVertices[_i2 + 2].normal);
+
+	        if (triangleNormal.dot(viewDirection) >= -0.4) {
+	          decalVerticesOneSided.push(decalVertices[_i2 + 0]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 1]);
+	          decalVerticesOneSided.push(decalVertices[_i2 + 2]);
+	        }
+	      } // for
+	      // decalVertices = decalVerticesOneSided;
+	      // console.log(`N one sided: ${decalVerticesOneSided.length/3}`)
+	      // console.log(`N two sided: ${decalVertices.length/3}`)
+
+
+	      decalVertices = decalVerticesOneSided; ////////////////////////////////////////////
+	      // second, clip the geometry so that it doesn't extend out from the projector
+
+	      decalVertices = clipGeometry(decalVertices, plane.set(1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(-1, 0, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, -1, 0));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, 1));
+	      decalVertices = clipGeometry(decalVertices, plane.set(0, 0, -1)); // third, generate final vertices, normals and uvs
+
+	      for (var _i3 = 0; _i3 < decalVertices.length; _i3++) {
+	        var decalVertex = decalVertices[_i3]; // create texture coordinates (we are still in projector space)
+
+	        uvs.push(0.5 + decalVertex.position.x / size.x, 0.5 + decalVertex.position.y / size.y); // transform the vertex back to world space
+
+	        decalVertex.position.applyMatrix4(projectorMatrix); // now create vertex and normal buffer data
+
+	        vertices.push(decalVertex.position.x, decalVertex.position.y, decalVertex.position.z);
+	        normals.push(decalVertex.normal.x, decalVertex.normal.y, decalVertex.normal.z);
+	      }
+	    }
+
+	    function pushDecalVertex(decalVertices, vertex, normal) {
+	      // transform the vertex to world space, then to projector space
+	      vertex.applyMatrix4(mesh.matrixWorld);
+	      vertex.applyMatrix4(projectorMatrixInverse);
+	      normal.transformDirection(mesh.matrixWorld);
+	      decalVertices.push(new DecalVertex(vertex.clone(), normal.clone()));
+	    }
+
+	    function clipGeometry(inVertices, plane) {
+	      var outVertices = [];
+	      var s = 0.5 * Math.abs(size.dot(plane)); // a single iteration clips one face,
+	      // which consists of three consecutive 'DecalVertex' objects
+
+	      for (var i = 0; i < inVertices.length; i += 3) {
+	        var total = 0;
+	        var nV1 = void 0;
+	        var nV2 = void 0;
+	        var nV3 = void 0;
+	        var nV4 = void 0;
+	        var d1 = inVertices[i + 0].position.dot(plane) - s;
+	        var d2 = inVertices[i + 1].position.dot(plane) - s;
+	        var d3 = inVertices[i + 2].position.dot(plane) - s;
+	        var v1Out = d1 > 0;
+	        var v2Out = d2 > 0;
+	        var v3Out = d3 > 0; // calculate, how many vertices of the face lie outside of the clipping plane
+
+	        total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+
+	        switch (total) {
+	          case 0:
+	            {
+	              // the entire face lies inside of the plane, no clipping needed
+	              outVertices.push(inVertices[i]);
+	              outVertices.push(inVertices[i + 1]);
+	              outVertices.push(inVertices[i + 2]);
+	              break;
+	            }
+
+	          case 1:
+	            {
+	              // one vertex lies outside of the plane, perform clipping
+	              if (v1Out) {
+	                nV1 = inVertices[i + 1];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i], nV1, plane, s);
+	                nV4 = clip(inVertices[i], nV2, plane, s);
+	              }
+
+	              if (v2Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 2];
+	                nV3 = clip(inVertices[i + 1], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 1], nV2, plane, s);
+	                outVertices.push(nV3);
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV1.clone());
+	                outVertices.push(nV2.clone());
+	                outVertices.push(nV3.clone());
+	                outVertices.push(nV4);
+	                break;
+	              }
+
+	              if (v3Out) {
+	                nV1 = inVertices[i];
+	                nV2 = inVertices[i + 1];
+	                nV3 = clip(inVertices[i + 2], nV1, plane, s);
+	                nV4 = clip(inVertices[i + 2], nV2, plane, s);
+	              }
+
+	              outVertices.push(nV1.clone());
+	              outVertices.push(nV2.clone());
+	              outVertices.push(nV3);
+	              outVertices.push(nV4);
+	              outVertices.push(nV3.clone());
+	              outVertices.push(nV2.clone());
+	              break;
+	            }
+
+	          case 2:
+	            {
+	              // two vertices lies outside of the plane, perform clipping
+	              if (!v1Out) {
+	                nV1 = inVertices[i].clone();
+	                nV2 = clip(nV1, inVertices[i + 1], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 2], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v2Out) {
+	                nV1 = inVertices[i + 1].clone();
+	                nV2 = clip(nV1, inVertices[i + 2], plane, s);
+	                nV3 = clip(nV1, inVertices[i], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              if (!v3Out) {
+	                nV1 = inVertices[i + 2].clone();
+	                nV2 = clip(nV1, inVertices[i], plane, s);
+	                nV3 = clip(nV1, inVertices[i + 1], plane, s);
+	                outVertices.push(nV1);
+	                outVertices.push(nV2);
+	                outVertices.push(nV3);
+	              }
+
+	              break;
+	            }
+	        }
+	      }
+
+	      return outVertices;
+	    }
+
+	    function clip(v0, v1, p, s) {
+	      var d0 = v0.position.dot(p) - s;
+	      var d1 = v1.position.dot(p) - s;
+	      var s0 = d0 / (d0 - d1);
+	      var v = new DecalVertex(new Vector3(v0.position.x + s0 * (v1.position.x - v0.position.x), v0.position.y + s0 * (v1.position.y - v0.position.y), v0.position.z + s0 * (v1.position.z - v0.position.z)), new Vector3(v0.normal.x + s0 * (v1.normal.x - v0.normal.x), v0.normal.y + s0 * (v1.normal.y - v0.normal.y), v0.normal.z + s0 * (v1.normal.z - v0.normal.z))); // need to clip more values (texture coordinates)? do it this way:
+	      // intersectpoint.value = a.value + s * ( b.value - a.value );
+
+	      return v;
+	    }
+
+	    return _this;
+	  }
+
+	  return CustomDecalGeometry;
+	}(BufferGeometry); // helper
+
+	var DecalVertex = /*#__PURE__*/function () {
+	  function DecalVertex(position, normal) {
+	    _classCallCheck(this, DecalVertex);
+
+	    this.position = position;
+	    this.normal = normal;
+	  }
+
+	  _createClass(DecalVertex, [{
+	    key: "clone",
+	    value: function clone() {
+	      return new this.constructor(this.position.clone(), this.normal.clone());
+	    }
+	  }]);
+
+	  return DecalVertex;
+	}();
+
+	var DecalMesh = /*#__PURE__*/function () {
+	  // Each decal is expected to be placed only once.
+	  function DecalMesh(texture) {
+	    _classCallCheck(this, DecalMesh);
+
+	    this.position = new Vector3();
+	    this.orientation = new Euler();
+	    this.scale = 10;
+	    this.size = new Vector3(10, 10, 10);
+	    this.support = undefined;
+	    var obj = this; // const decalDiffuse = textureLoader.load( 'assets/oil_flow_half.png' );
+	    // const decalDiffuse = textureLoader.load( 'assets/decal-diffuse.png' );
+	    // const decalNormal = textureLoader.load( 'assets/decal-normal.jpg' );
+	    // normalMap: decalNormal,
+
+	    var decalMaterial = new MeshBasicMaterial({
+	      map: texture,
+	      alphaMap: texture,
+	      transparent: true,
+	      depthTest: true,
+	      depthWrite: false,
+	      polygonOffset: true,
+	      polygonOffsetFactor: -4,
+	      wireframe: false
+	    });
+	    var placeholderGeometry = new BufferGeometry();
+	    obj.mesh = new Mesh(placeholderGeometry, decalMaterial);
+	  } // constructor
+
+
+	  _createClass(DecalMesh, [{
+	    key: "transform",
+	    value: function transform() {
+	      // Add a new instance of hte decal of this type.
+	      var obj = this; // Reset the size in case scale changed.
+
+	      obj.size.set(obj.scale, obj.scale, obj.scale); // Make the decal object if a support geometry has been prescribed.
+
+	      if (obj.support) {
+	        var cutout = new CustomDecalGeometry(obj.support, obj.position, obj.orientation, obj.size);
+	        obj.mesh.geometry.copy(cutout);
+	      } // if
+
+	    } // transform
+
+	  }, {
+	    key: "highlight",
+	    value: function highlight(active) {
+	      // Highlight this particular decal based on a flag passed in.
+	      var obj = this;
+	      obj.mesh.material.color.setHex(active ? 0xff00ff : 0xffffff);
+	    } // highlight
+
+	  }, {
+	    key: "unhighlight",
+	    value: function unhighlight() {
+	      var obj = this;
+	      obj.mesh.material.color.setHex(0xffffff);
+	    } // unhighlight
+
+	  }]);
+
+	  return DecalMesh;
+	}(); // DecalMesh
+
 	/**
 	 * lil-gui
 	 * https://lil-gui.georgealways.com
@@ -38174,6 +38732,1622 @@
 	 * @license MIT
 	 */
 	class t{constructor(i,e,s,n,r="div"){this.parent=i,this.object=e,this.property=s,this._disabled=!1,this.initialValue=this.getValue(),this.domElement=document.createElement("div"),this.domElement.classList.add("controller"),this.domElement.classList.add(n),this.$name=document.createElement("div"),this.$name.classList.add("name"),t.nextNameID=t.nextNameID||0,this.$name.id="lil-gui-name-"+ ++t.nextNameID,this.$widget=document.createElement(r),this.$widget.classList.add("widget"),this.$disable=this.$widget,this.domElement.appendChild(this.$name),this.domElement.appendChild(this.$widget),this.parent.children.push(this),this.parent.controllers.push(this),this.parent.$children.appendChild(this.domElement),this._listenCallback=this._listenCallback.bind(this),this.name(s);}name(t){return this._name=t,this.$name.innerHTML=t,this}onChange(t){return this._onChange=t,this}_callOnChange(){this.parent._callOnChange(this),void 0!==this._onChange&&this._onChange.call(this,this.getValue()),this._changed=!0;}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(){this._changed&&(this.parent._callOnFinishChange(this),void 0!==this._onFinishChange&&this._onFinishChange.call(this,this.getValue())),this._changed=!1;}reset(){return this.setValue(this.initialValue),this._callOnFinishChange(),this}enable(t=!0){return this.disable(!t)}disable(t=!0){return t===this._disabled||(this._disabled=t,this.domElement.classList.toggle("disabled",t),this.$disable.toggleAttribute("disabled",t)),this}options(t){const i=this.parent.add(this.object,this.property,t);return i.name(this._name),this.destroy(),i}min(t){return this}max(t){return this}step(t){return this}listen(t=!0){return this._listening=t,void 0!==this._listenCallbackID&&(cancelAnimationFrame(this._listenCallbackID),this._listenCallbackID=void 0),this._listening&&this._listenCallback(),this}_listenCallback(){this._listenCallbackID=requestAnimationFrame(this._listenCallback),this.updateDisplay();}getValue(){return this.object[this.property]}setValue(t){return this.object[this.property]=t,this._callOnChange(),this.updateDisplay(),this}updateDisplay(){return this}load(t){return this.setValue(t),this._callOnFinishChange(),this}save(){return this.getValue()}destroy(){this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.controllers.splice(this.parent.controllers.indexOf(this),1),this.parent.$children.removeChild(this.domElement);}}class i extends t{constructor(t,i,e){super(t,i,e,"boolean","label"),this.$input=document.createElement("input"),this.$input.setAttribute("type","checkbox"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$input.addEventListener("change",()=>{this.setValue(this.$input.checked),this._callOnFinishChange();}),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.checked=this.getValue(),this}}function e(t){let i,e;return (i=t.match(/(#|0x)?([a-f0-9]{6})/i))?e=i[2]:(i=t.match(/rgb\(\s*(\d*)\s*,\s*(\d*)\s*,\s*(\d*)\s*\)/))?e=parseInt(i[1]).toString(16).padStart(2,0)+parseInt(i[2]).toString(16).padStart(2,0)+parseInt(i[3]).toString(16).padStart(2,0):(i=t.match(/^#?([a-f0-9])([a-f0-9])([a-f0-9])$/i))&&(e=i[1]+i[1]+i[2]+i[2]+i[3]+i[3]),!!e&&"#"+e}const s={isPrimitive:!0,match:t=>"string"==typeof t,fromHexString:e,toHexString:e},n={isPrimitive:!0,match:t=>"number"==typeof t,fromHexString:t=>parseInt(t.substring(1),16),toHexString:t=>"#"+t.toString(16).padStart(6,0)},r={isPrimitive:!1,match:Array.isArray,fromHexString(t,i,e=1){const s=n.fromHexString(t);i[0]=(s>>16&255)/255*e,i[1]=(s>>8&255)/255*e,i[2]=(255&s)/255*e;},toHexString:([t,i,e],s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},l={isPrimitive:!1,match:t=>Object(t)===t,fromHexString(t,i,e=1){const s=n.fromHexString(t);i.r=(s>>16&255)/255*e,i.g=(s>>8&255)/255*e,i.b=(255&s)/255*e;},toHexString:({r:t,g:i,b:e},s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},o=[s,n,r,l];class a extends t{constructor(t,i,s,n){var r;super(t,i,s,"color"),this.$input=document.createElement("input"),this.$input.setAttribute("type","color"),this.$input.setAttribute("tabindex",-1),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$text=document.createElement("input"),this.$text.setAttribute("type","text"),this.$text.setAttribute("spellcheck","false"),this.$text.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this.$display.appendChild(this.$input),this.$widget.appendChild(this.$display),this.$widget.appendChild(this.$text),this._format=(r=this.initialValue,o.find(t=>t.match(r))),this._rgbScale=n,this._initialValueHexString=this.save(),this._textFocused=!1,this.$input.addEventListener("input",()=>{this._setValueFromHexString(this.$input.value);}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$text.addEventListener("input",()=>{const t=e(this.$text.value);t&&this._setValueFromHexString(t);}),this.$text.addEventListener("focus",()=>{this._textFocused=!0,this.$text.select();}),this.$text.addEventListener("blur",()=>{this._textFocused=!1,this.updateDisplay(),this._callOnFinishChange();}),this.$disable=this.$text,this.updateDisplay();}reset(){return this._setValueFromHexString(this._initialValueHexString),this}_setValueFromHexString(t){if(this._format.isPrimitive){const i=this._format.fromHexString(t);this.setValue(i);}else this._format.fromHexString(t,this.getValue(),this._rgbScale),this._callOnChange(),this.updateDisplay();}save(){return this._format.toHexString(this.getValue(),this._rgbScale)}load(t){return this._setValueFromHexString(t),this._callOnFinishChange(),this}updateDisplay(){return this.$input.value=this._format.toHexString(this.getValue(),this._rgbScale),this._textFocused||(this.$text.value=this.$input.value.substring(1)),this.$display.style.backgroundColor=this.$input.value,this}}class h extends t{constructor(t,i,e){super(t,i,e,"function"),this.$button=document.createElement("button"),this.$button.appendChild(this.$name),this.$widget.appendChild(this.$button),this.$button.addEventListener("click",t=>{t.preventDefault(),this.getValue().call(this.object);}),this.$button.addEventListener("touchstart",()=>{}),this.$disable=this.$button;}}class d extends t{constructor(t,i,e,s,n,r){super(t,i,e,"number"),this._initInput(),this.min(s),this.max(n);const l=void 0!==r;this.step(l?r:this._getImplicitStep(),l),this.updateDisplay();}min(t){return this._min=t,this._onUpdateMinMax(),this}max(t){return this._max=t,this._onUpdateMinMax(),this}step(t,i=!0){return this._step=t,this._stepExplicit=i,this}updateDisplay(){const t=this.getValue();if(this._hasSlider){let i=(t-this._min)/(this._max-this._min);i=Math.max(0,Math.min(i,1)),this.$fill.style.width=100*i+"%";}return this._inputFocused||(this.$input.value=t),this}_initInput(){this.$input=document.createElement("input"),this.$input.setAttribute("type","number"),this.$input.setAttribute("step","any"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$disable=this.$input;const t=t=>{const i=parseFloat(this.$input.value);isNaN(i)||(this._snapClampSetValue(i+t),this.$input.value=this.getValue());};let i,e,s,n,r,l=!1;const o=t=>{if(l){const s=t.clientX-i,n=t.clientY-e;Math.abs(n)>5?(t.preventDefault(),this.$input.blur(),l=!1,this._setDraggingStyle(!0,"vertical")):Math.abs(s)>5&&a();}if(!l){const i=t.clientY-s;r-=i*this._step*this._arrowKeyMultiplier(t),n+r>this._max?r=this._max-n:n+r<this._min&&(r=this._min-n),this._snapClampSetValue(n+r);}s=t.clientY;},a=()=>{this._setDraggingStyle(!1,"vertical"),this._callOnFinishChange(),window.removeEventListener("mousemove",o),window.removeEventListener("mouseup",a);};this.$input.addEventListener("input",()=>{const t=parseFloat(this.$input.value);isNaN(t)||this.setValue(this._clamp(t));}),this.$input.addEventListener("keydown",i=>{"Enter"===i.code&&this.$input.blur(),"ArrowUp"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i))),"ArrowDown"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i)*-1));}),this.$input.addEventListener("wheel",i=>{this._inputFocused&&(i.preventDefault(),t(this._step*this._normalizeMouseWheel(i)));}),this.$input.addEventListener("mousedown",t=>{i=t.clientX,e=s=t.clientY,l=!0,n=this.getValue(),r=0,window.addEventListener("mousemove",o),window.addEventListener("mouseup",a);}),this.$input.addEventListener("focus",()=>{this._inputFocused=!0;}),this.$input.addEventListener("blur",()=>{this._inputFocused=!1,this.updateDisplay(),this._callOnFinishChange();});}_initSlider(){this._hasSlider=!0,this.$slider=document.createElement("div"),this.$slider.classList.add("slider"),this.$fill=document.createElement("div"),this.$fill.classList.add("fill"),this.$slider.appendChild(this.$fill),this.$widget.insertBefore(this.$slider,this.$input),this.domElement.classList.add("hasSlider");const t=t=>{const i=this.$slider.getBoundingClientRect();let e=(s=t,n=i.left,r=i.right,l=this._min,o=this._max,(s-n)/(r-n)*(o-l)+l);var s,n,r,l,o;this._snapClampSetValue(e);},i=i=>{t(i.clientX);},e=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("mousemove",i),window.removeEventListener("mouseup",e);};let s,n,r=!1;const l=i=>{i.preventDefault(),this._setDraggingStyle(!0),t(i.touches[0].clientX),r=!1;},o=i=>{if(r){const t=i.touches[0].clientX-s,e=i.touches[0].clientY-n;Math.abs(t)>Math.abs(e)?l(i):(window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a));}else i.preventDefault(),t(i.touches[0].clientX);},a=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a);},h=this._callOnFinishChange.bind(this);let d;this.$slider.addEventListener("mousedown",s=>{this._setDraggingStyle(!0),t(s.clientX),window.addEventListener("mousemove",i),window.addEventListener("mouseup",e);}),this.$slider.addEventListener("touchstart",t=>{t.touches.length>1||(this._hasScrollBar?(s=t.touches[0].clientX,n=t.touches[0].clientY,r=!0):l(t),window.addEventListener("touchmove",o),window.addEventListener("touchend",a));}),this.$slider.addEventListener("wheel",t=>{if(Math.abs(t.deltaX)<Math.abs(t.deltaY)&&this._hasScrollBar)return;t.preventDefault();const i=this._normalizeMouseWheel(t)*this._step;this._snapClampSetValue(this.getValue()+i),this.$input.value=this.getValue(),clearTimeout(d),d=setTimeout(h,400);});}_setDraggingStyle(t,i="horizontal"){this.$slider&&this.$slider.classList.toggle("active",t),document.body.classList.toggle("lil-gui-dragging",t),document.body.classList.toggle("lil-gui-"+i,t);}_getImplicitStep(){return this._hasMin&&this._hasMax?(this._max-this._min)/1e3:.1}_onUpdateMinMax(){!this._hasSlider&&this._hasMin&&this._hasMax&&(this._stepExplicit||this.step(this._getImplicitStep(),!1),this._initSlider(),this.updateDisplay());}_normalizeMouseWheel(t){let{deltaX:i,deltaY:e}=t;Math.floor(t.deltaY)!==t.deltaY&&t.wheelDelta&&(i=0,e=-t.wheelDelta/120,e*=this._stepExplicit?1:10);return i+-e}_arrowKeyMultiplier(t){let i=this._stepExplicit?1:10;return t.shiftKey?i*=10:t.altKey&&(i/=10),i}_snap(t){const i=Math.round(t/this._step)*this._step;return parseFloat(i.toPrecision(15))}_clamp(t){return t<this._min&&(t=this._min),t>this._max&&(t=this._max),t}_snapClampSetValue(t){this.setValue(this._clamp(this._snap(t)));}get _hasScrollBar(){const t=this.parent.root.$children;return t.scrollHeight>t.clientHeight}get _hasMin(){return void 0!==this._min}get _hasMax(){return void 0!==this._max}}class c extends t{constructor(t,i,e,s){super(t,i,e,"option"),this.$select=document.createElement("select"),this.$select.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this._values=Array.isArray(s)?s:Object.values(s),this._names=Array.isArray(s)?s:Object.keys(s),this._names.forEach(t=>{const i=document.createElement("option");i.innerHTML=t,this.$select.appendChild(i);}),this.$select.addEventListener("change",()=>{this.setValue(this._values[this.$select.selectedIndex]),this._callOnFinishChange();}),this.$select.addEventListener("focus",()=>{this.$display.classList.add("focus");}),this.$select.addEventListener("blur",()=>{this.$display.classList.remove("focus");}),this.$widget.appendChild(this.$select),this.$widget.appendChild(this.$display),this.$disable=this.$select,this.updateDisplay();}updateDisplay(){const t=this.getValue(),i=this._values.indexOf(t);return this.$select.selectedIndex=i,this.$display.innerHTML=-1===i?t:this._names[i],this}}class u extends t{constructor(t,i,e){super(t,i,e,"string"),this.$input=document.createElement("input"),this.$input.setAttribute("type","text"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$input.addEventListener("input",()=>{this.setValue(this.$input.value);}),this.$input.addEventListener("keydown",t=>{"Enter"===t.code&&this.$input.blur();}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange();}),this.$widget.appendChild(this.$input),this.$disable=this.$input,this.updateDisplay();}updateDisplay(){return this.$input.value=this.getValue(),this}}let p=!1;class g{constructor({parent:t,autoPlace:i=void 0===t,container:e,width:s,title:n="Controls",injectStyles:r=!0,touchStyles:l=!0}={}){if(this.parent=t,this.root=t?t.root:this,this.children=[],this.controllers=[],this.folders=[],this._closed=!1,this._hidden=!1,this.domElement=document.createElement("div"),this.domElement.classList.add("lil-gui"),this.$title=document.createElement("div"),this.$title.classList.add("title"),this.$title.setAttribute("role","button"),this.$title.setAttribute("aria-expanded",!0),this.$title.setAttribute("tabindex",0),this.$title.addEventListener("click",()=>this.openAnimated(this._closed)),this.$title.addEventListener("keydown",t=>{"Enter"!==t.code&&"Space"!==t.code||(t.preventDefault(),this.$title.click());}),this.$title.addEventListener("touchstart",()=>{}),this.$children=document.createElement("div"),this.$children.classList.add("children"),this.domElement.appendChild(this.$title),this.domElement.appendChild(this.$children),this.title(n),l&&this.domElement.classList.add("allow-touch-styles"),this.parent)return this.parent.children.push(this),this.parent.folders.push(this),void this.parent.$children.appendChild(this.domElement);this.domElement.classList.add("root"),!p&&r&&(!function(t){const i=document.createElement("style");i.innerHTML=t;const e=document.querySelector("head link[rel=stylesheet], head style");e?document.head.insertBefore(i,e):document.head.appendChild(i);}('.lil-gui{--background-color:#1f1f1f;--text-color:#ebebeb;--title-background-color:#111;--title-text-color:#ebebeb;--widget-color:#424242;--hover-color:#4f4f4f;--focus-color:#595959;--number-color:#2cc9ff;--string-color:#a2db3c;--font-size:11px;--input-font-size:11px;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--font-family-mono:Menlo,Monaco,Consolas,"Droid Sans Mono",monospace;--padding:4px;--spacing:4px;--widget-height:20px;--name-width:45%;--slider-knob-width:2px;--slider-input-width:27%;--color-input-width:27%;--slider-input-min-width:45px;--color-input-min-width:45px;--folder-indent:7px;--widget-padding:0 0 0 3px;--widget-border-radius:2px;--checkbox-size:calc(var(--widget-height)*0.75);--scrollbar-width:5px;background-color:var(--background-color);color:var(--text-color);font-family:var(--font-family);font-size:var(--font-size);font-style:normal;font-weight:400;line-height:1;text-align:left;touch-action:manipulation;user-select:none;-webkit-user-select:none}.lil-gui,.lil-gui *{box-sizing:border-box;margin:0;padding:0}.lil-gui.root{display:flex;flex-direction:column;width:var(--width,245px)}.lil-gui.root>.title{background:var(--title-background-color);color:var(--title-text-color)}.lil-gui.root>.children{overflow-x:hidden;overflow-y:auto}.lil-gui.root>.children::-webkit-scrollbar{background:var(--background-color);height:var(--scrollbar-width);width:var(--scrollbar-width)}.lil-gui.root>.children::-webkit-scrollbar-thumb{background:var(--focus-color);border-radius:var(--scrollbar-width)}.lil-gui.force-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}.lil-gui.autoPlace{max-height:100%;position:fixed;right:15px;top:0;z-index:1001}.lil-gui .controller{align-items:center;display:flex;margin:var(--spacing) 0;padding:0 var(--padding)}.lil-gui .controller.disabled{opacity:.5}.lil-gui .controller.disabled,.lil-gui .controller.disabled *{pointer-events:none!important}.lil-gui .controller>.name{flex-shrink:0;line-height:var(--widget-height);min-width:var(--name-width);padding-right:var(--spacing);white-space:pre}.lil-gui .controller .widget{align-items:center;display:flex;min-height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.string input{color:var(--string-color)}.lil-gui .controller.boolean .widget{cursor:pointer}.lil-gui .controller.color .display{border-radius:var(--widget-border-radius);height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.color input[type=color]{cursor:pointer;height:100%;opacity:0;width:100%}.lil-gui .controller.color input[type=text]{flex-shrink:0;font-family:var(--font-family-mono);margin-left:var(--spacing);min-width:var(--color-input-min-width);width:var(--color-input-width)}.lil-gui .controller.option select{max-width:100%;opacity:0;position:absolute;width:100%}.lil-gui .controller.option .display{background:var(--widget-color);border-radius:var(--widget-border-radius);height:var(--widget-height);line-height:var(--widget-height);max-width:100%;overflow:hidden;padding-left:.55em;padding-right:1.75em;pointer-events:none;position:relative;word-break:break-all}.lil-gui .controller.option .display.active{background:var(--focus-color)}.lil-gui .controller.option .display:after{bottom:0;content:"↕";font-family:lil-gui;padding-right:.375em;position:absolute;right:0;top:0}.lil-gui .controller.option .widget,.lil-gui .controller.option select{cursor:pointer}.lil-gui .controller.number input{color:var(--number-color)}.lil-gui .controller.number.hasSlider input{flex-shrink:0;margin-left:var(--spacing);min-width:var(--slider-input-min-width);width:var(--slider-input-width)}.lil-gui .controller.number .slider{background-color:var(--widget-color);border-radius:var(--widget-border-radius);cursor:ew-resize;height:var(--widget-height);overflow:hidden;padding-right:var(--slider-knob-width);touch-action:pan-y;width:100%}.lil-gui .controller.number .slider.active{background-color:var(--focus-color)}.lil-gui .controller.number .slider.active .fill{opacity:.95}.lil-gui .controller.number .fill{border-right:var(--slider-knob-width) solid var(--number-color);box-sizing:content-box;height:100%}.lil-gui-dragging .lil-gui{--hover-color:var(--widget-color)}.lil-gui-dragging *{cursor:ew-resize!important}.lil-gui-dragging.lil-gui-vertical *{cursor:ns-resize!important}.lil-gui .title{--title-height:calc(var(--widget-height) + var(--spacing)*1.25);-webkit-tap-highlight-color:transparent;text-decoration-skip:objects;cursor:pointer;font-weight:600;height:var(--title-height);line-height:calc(var(--title-height) - 4px);outline:none;padding:0 var(--padding)}.lil-gui .title:before{content:"▾";display:inline-block;font-family:lil-gui;padding-right:2px}.lil-gui .title:active{background:var(--title-background-color);opacity:.75}.lil-gui.root>.title:focus{text-decoration:none!important}.lil-gui.closed>.title:before{content:"▸"}.lil-gui.closed>.children{opacity:0;transform:translateY(-7px)}.lil-gui.closed:not(.transition)>.children{display:none}.lil-gui.transition>.children{overflow:hidden;pointer-events:none;transition-duration:.3s;transition-property:height,opacity,transform;transition-timing-function:cubic-bezier(.2,.6,.35,1)}.lil-gui .children:empty:before{content:"Empty";display:block;font-style:italic;height:var(--widget-height);line-height:var(--widget-height);margin:var(--spacing) 0;opacity:.5;padding:0 var(--padding)}.lil-gui.root>.children>.lil-gui>.title{border-width:0;border-bottom:1px solid var(--widget-color);border-left:0 solid var(--widget-color);border-right:0 solid var(--widget-color);border-top:1px solid var(--widget-color);transition:border-color .3s}.lil-gui.root>.children>.lil-gui.closed>.title{border-bottom-color:transparent}.lil-gui+.controller{border-top:1px solid var(--widget-color);margin-top:0;padding-top:var(--spacing)}.lil-gui .lil-gui .lil-gui>.title{border:none}.lil-gui .lil-gui .lil-gui>.children{border:none;border-left:2px solid var(--widget-color);margin-left:var(--folder-indent)}.lil-gui .lil-gui .controller{border:none}.lil-gui input{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:0;border-radius:var(--widget-border-radius);color:var(--text-color);font-family:var(--font-family);font-size:var(--input-font-size);height:var(--widget-height);outline:none;width:100%}.lil-gui input:disabled{opacity:1}.lil-gui input[type=number],.lil-gui input[type=text]{padding:var(--widget-padding)}.lil-gui input[type=number]:focus,.lil-gui input[type=text]:focus{background:var(--focus-color)}.lil-gui input::-webkit-inner-spin-button,.lil-gui input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.lil-gui input[type=number]{-moz-appearance:textfield}.lil-gui input[type=checkbox]{appearance:none;-webkit-appearance:none;border-radius:var(--widget-border-radius);cursor:pointer;height:var(--checkbox-size);text-align:center;width:var(--checkbox-size)}.lil-gui input[type=checkbox]:checked:before{content:"✓";font-family:lil-gui;font-size:var(--checkbox-size);line-height:var(--checkbox-size)}.lil-gui button{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:1px solid var(--widget-color);border-radius:var(--widget-border-radius);color:var(--text-color);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size);height:var(--widget-height);line-height:calc(var(--widget-height) - 4px);outline:none;text-align:center;text-transform:none;width:100%}.lil-gui button:active{background:var(--focus-color)}@font-face{font-family:lil-gui;src:url("data:application/font-woff;charset=utf-8;base64,d09GRgABAAAAAAUsAAsAAAAACJwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAAH4AAADAImwmYE9TLzIAAAGIAAAAPwAAAGBKqH5SY21hcAAAAcgAAAD0AAACrukyyJBnbHlmAAACvAAAAF8AAACEIZpWH2hlYWQAAAMcAAAAJwAAADZfcj2zaGhlYQAAA0QAAAAYAAAAJAC5AHhobXR4AAADXAAAABAAAABMAZAAAGxvY2EAAANsAAAAFAAAACgCEgIybWF4cAAAA4AAAAAeAAAAIAEfABJuYW1lAAADoAAAASIAAAIK9SUU/XBvc3QAAATEAAAAZgAAAJCTcMc2eJxVjbEOgjAURU+hFRBK1dGRL+ALnAiToyMLEzFpnPz/eAshwSa97517c/MwwJmeB9kwPl+0cf5+uGPZXsqPu4nvZabcSZldZ6kfyWnomFY/eScKqZNWupKJO6kXN3K9uCVoL7iInPr1X5baXs3tjuMqCtzEuagm/AAlzQgPAAB4nGNgYRBlnMDAysDAYM/gBiT5oLQBAwuDJAMDEwMrMwNWEJDmmsJwgCFeXZghBcjlZMgFCzOiKOIFAB71Bb8AeJy1kjFuwkAQRZ+DwRAwBtNQRUGKQ8OdKCAWUhAgKLhIuAsVSpWz5Bbkj3dEgYiUIszqWdpZe+Z7/wB1oCYmIoboiwiLT2WjKl/jscrHfGg/pKdMkyklC5Zs2LEfHYpjcRoPzme9MWWmk3dWbK9ObkWkikOetJ554fWyoEsmdSlt+uR0pCJR34b6t/TVg1SY3sYvdf8vuiKrpyaDXDISiegp17p7579Gp3p++y7HPAiY9pmTibljrr85qSidtlg4+l25GLCaS8e6rRxNBmsnERunKbaOObRz7N72ju5vdAjYpBXHgJylOAVsMseDAPEP8LYoUHicY2BiAAEfhiAGJgZWBgZ7RnFRdnVJELCQlBSRlATJMoLV2DK4glSYs6ubq5vbKrJLSbGrgEmovDuDJVhe3VzcXFwNLCOILB/C4IuQ1xTn5FPilBTj5FPmBAB4WwoqAHicY2BkYGAA4sk1sR/j+W2+MnAzpDBgAyEMQUCSg4EJxAEAwUgFHgB4nGNgZGBgSGFggJMhDIwMqEAYAByHATJ4nGNgAIIUNEwmAABl3AGReJxjYAACIQYlBiMGJ3wQAEcQBEV4nGNgZGBgEGZgY2BiAAEQyQWEDAz/wXwGAAsPATIAAHicXdBNSsNAHAXwl35iA0UQXYnMShfS9GPZA7T7LgIu03SSpkwzYTIt1BN4Ak/gKTyAeCxfw39jZkjymzcvAwmAW/wgwHUEGDb36+jQQ3GXGot79L24jxCP4gHzF/EIr4jEIe7wxhOC3g2TMYy4Q7+Lu/SHuEd/ivt4wJd4wPxbPEKMX3GI5+DJFGaSn4qNzk8mcbKSR6xdXdhSzaOZJGtdapd4vVPbi6rP+cL7TGXOHtXKll4bY1Xl7EGnPtp7Xy2n00zyKLVHfkHBa4IcJ2oD3cgggWvt/V/FbDrUlEUJhTn/0azVWbNTNr0Ens8de1tceK9xZmfB1CPjOmPH4kitmvOubcNpmVTN3oFJyjzCvnmrwhJTzqzVj9jiSX911FjeAAB4nG3HMRKCMBBA0f0giiKi4DU8k0V2GWbIZDOh4PoWWvq6J5V8If9NVNQcaDhyouXMhY4rPTcG7jwYmXhKq8Wz+p762aNaeYXom2n3m2dLTVgsrCgFJ7OTmIkYbwIbC6vIB7WmFfAAAA==") format("woff")}@media (pointer:coarse){.lil-gui.allow-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}}@media (hover:hover){.lil-gui .controller.color .display:hover:before{border:1px solid #fff9;border-radius:var(--widget-border-radius);bottom:0;content:" ";display:block;left:0;position:absolute;right:0;top:0}.lil-gui .controller.option .display.focus{background:var(--focus-color)}.lil-gui .controller.option .widget:hover .display{background:var(--hover-color)}.lil-gui .controller.number .slider:hover{background-color:var(--hover-color)}body:not(.lil-gui-dragging) .lil-gui .title:hover{background:var(--title-background-color);opacity:.85}.lil-gui .title:focus{text-decoration:underline var(--focus-color)}.lil-gui input:hover{background:var(--hover-color)}.lil-gui input:active{background:var(--focus-color)}.lil-gui input[type=checkbox]:focus{box-shadow:inset 0 0 0 1px var(--focus-color)}.lil-gui button:hover{background:var(--hover-color);border-color:var(--hover-color)}.lil-gui button:focus{border-color:var(--focus-color)}}'),p=!0),e?e.appendChild(this.domElement):i&&(this.domElement.classList.add("autoPlace"),document.body.appendChild(this.domElement)),s&&this.domElement.style.setProperty("--width",s+"px"),this.domElement.addEventListener("keydown",t=>t.stopPropagation()),this.domElement.addEventListener("keyup",t=>t.stopPropagation());}add(t,e,s,n,r){if(Object(s)===s)return new c(this,t,e,s);const l=t[e];switch(typeof l){case"number":return new d(this,t,e,s,n,r);case"boolean":return new i(this,t,e);case"string":return new u(this,t,e);case"function":return new h(this,t,e)}console.error("gui.add failed\n\tproperty:",e,"\n\tobject:",t,"\n\tvalue:",l);}addColor(t,i,e=1){return new a(this,t,i,e)}addFolder(t){return new g({parent:this,title:t})}load(t,i=!0){return t.controllers&&this.controllers.forEach(i=>{i instanceof h||i._name in t.controllers&&i.load(t.controllers[i._name]);}),i&&t.folders&&this.folders.forEach(i=>{i._title in t.folders&&i.load(t.folders[i._title]);}),this}save(t=!0){const i={controllers:{},folders:{}};return this.controllers.forEach(t=>{if(!(t instanceof h)){if(t._name in i.controllers)throw new Error(`Cannot save GUI with duplicate property "${t._name}"`);i.controllers[t._name]=t.save();}}),t&&this.folders.forEach(t=>{if(t._title in i.folders)throw new Error(`Cannot save GUI with duplicate folder "${t._title}"`);i.folders[t._title]=t.save();}),i}open(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),this.domElement.classList.toggle("closed",this._closed),this}close(){return this.open(!1)}show(t=!0){return this._hidden=!t,this.domElement.style.display=this._hidden?"none":"",this}hide(){return this.show(!1)}openAnimated(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),requestAnimationFrame(()=>{const i=this.$children.clientHeight;this.$children.style.height=i+"px",this.domElement.classList.add("transition");const e=t=>{t.target===this.$children&&(this.$children.style.height="",this.domElement.classList.remove("transition"),this.$children.removeEventListener("transitionend",e));};this.$children.addEventListener("transitionend",e);const s=t?this.$children.scrollHeight:0;this.domElement.classList.toggle("closed",!t),requestAnimationFrame(()=>{this.$children.style.height=s+"px";});}),this}title(t){return this._title=t,this.$title.innerHTML=t,this}reset(t=!0){return (t?this.controllersRecursive():this.controllers).forEach(t=>t.reset()),this}onChange(t){return this._onChange=t,this}_callOnChange(t){this.parent&&this.parent._callOnChange(t),void 0!==this._onChange&&this._onChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(t){this.parent&&this.parent._callOnFinishChange(t),void 0!==this._onFinishChange&&this._onFinishChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t});}destroy(){this.parent&&(this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.folders.splice(this.parent.folders.indexOf(this),1)),this.domElement.parentElement&&this.domElement.parentElement.removeChild(this.domElement),Array.from(this.children).forEach(t=>t.destroy());}controllersRecursive(){let t=Array.from(this.controllers);return this.folders.forEach(i=>{t=t.concat(i.controllersRecursive());}),t}foldersRecursive(){let t=Array.from(this.folders);return this.folders.forEach(i=>{t=t.concat(i.foldersRecursive());}),t}}
+
+	var template$7 = "<div style=\"display: none;\">\n<canvas class=\"editor\"></canvas>\n<div class=\"gui\" style=\"position: absolute; top: 10px; right: 10px; text-align: right;\"></div>\n</div>";
+
+	var DecalTextureUI = /*#__PURE__*/function () {
+	  function DecalTextureUI(source) {
+	    _classCallCheck(this, DecalTextureUI);
+
+	    var obj = this; // Make a node to which everything is appended.
+
+	    obj.node = html2element(template$7);
+	    /*
+	    Should I have 3 canvases? A high-resolution canvas for the actual decal, a lower resolution canvas for the editor, and a small resolution canvas for the trackpad?
+	    */
+	    // Create the canvas to draw and edit the texture on.
+
+	    var canvas = obj.node.querySelector("canvas");
+	    obj.ctx = canvas.getContext('2d');
+	    obj.ctx.canvas.width = window.innerWidth;
+	    obj.ctx.canvas.height = window.innerHeight; // create an additional alphamap texture.
+
+	    var texturecanvas = document.createElement("canvas");
+	    texturecanvas.width = 2048; // window.innerWidth;
+
+	    texturecanvas.height = 2048; // window.innerHeight;
+
+	    obj.texture = new CanvasTexture(texturecanvas);
+	    obj.texturectx = texturecanvas.getContext("2d"); // Draw the raw image onto the editor canvas.
+
+	    obj.rawImage = new ImageTexture(source); // Configure the editor
+
+	    obj.maskUI = new MaskEditor(obj.ctx); // Allow for complete redraw.
+
+	    obj.maskUI.onpointermove = function () {
+	      obj.render();
+	    }; // Trackpad to allow the user to adjust the texture. When should the changes be discarded?
+
+
+	    obj.trackpad = new TrackpadImage();
+
+	    obj.trackpad.onpointermove = function () {
+	      // Redraw the texture with the appropriate manual offset. Note that the offset from the trackpad needs to be scaled accordingly to the canvas size. Maybe the trackpad should give a non-dimensional offset out! And the drawing should scale it appropriately.
+	      var trackpadctx = obj.trackpad.ctx;
+	      var rect = obj.calculateMaskRect(trackpadctx);
+	      console.log(rect);
+	      obj.drawDecal(trackpadctx, rect);
+	      obj.updateTexture();
+	    }; // Add in the GUI.
+
+
+	    var guiconfig = {
+	      preview: function preview() {
+	        var rect = obj.calculateImageRect(obj.ctx);
+	        obj.drawDecal(obj.ctx, rect);
+	      },
+	      adjust: function adjust() {
+	        obj.render();
+	      },
+	      submit: function submit() {
+	        // When submitting hte preview needs to be drawn, and then the manager needs to be hidden. But the preview twice still doesn't work...
+	        // Would be good to somehow enlarge the clipped are to make the whole canvas area available. Enlarging should be easy, it's more about positioning the clip over the image correctly...
+	        // Would be good if the user could select the center of the decal...
+	        // Make the main texture
+	        obj.hide();
+	        obj.updateTexture(); // Update the trackpad image here. The trackpad image will be static anyway.
+
+	        var trackpadctx = obj.trackpad.ctx;
+	        var rect = obj.calculateMaskRect(trackpadctx);
+	        obj.drawDecal(trackpadctx, rect);
+	        console.log(rect);
+	      }
+	    }; // guiconfig
+	    // Add a gui before the canvas
+
+	    var gui = new g({
+	      container: obj.node.querySelector("div.gui"),
+	      title: "Decal editor"
+	    });
+	    gui.add(guiconfig, "preview");
+	    gui.add(guiconfig, "adjust");
+	    gui.add(guiconfig, "submit");
+	  } // constructor
+
+
+	  _createClass(DecalTextureUI, [{
+	    key: "drawDecal",
+	    value: function drawDecal(ctx, rect) {
+	      // Draw the clipped image to the canvas used as the texture. The image should be drawn in the center of the canvas.
+	      var obj = this; // Clear everything
+
+	      ctx.reset();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Calculate the position and extent of the drawn image.
+
+	      if (obj.maskUI.maskDrawn()) {
+	        /// draw the shape we want to use for clipping
+	        obj.maskUI.drawClip(ctx, rect); /// change composite mode to use that shape. Source-over is default
+
+	        ctx.globalCompositeOperation = 'source-in';
+	      } else {
+	        // If no mask was drawn the whole image should be drawn. This is calculated here.
+	        rect = obj.calculateImageRect(ctx);
+	      } // if
+	      /// draw the image to be clipped. But draw it offset, like the mask was offset to be in the middle of the screen.
+
+
+	      obj.rawImage.draw(ctx, rect);
+	    } // drawDecal
+
+	  }, {
+	    key: "updateTexture",
+	    value: function updateTexture() {
+	      // Draw the edited decal image onto the texture canvas.
+	      var obj = this;
+	      var rect = obj.calculateMaskRect(obj.texturectx);
+	      obj.drawDecal(obj.texturectx, rect);
+	      obj.texture.needsUpdate = true;
+	    } // adjust
+
+	  }, {
+	    key: "render",
+	    value: function render() {
+	      // Redraw the editor during editing. The image in hte background may need to be changed also.
+	      var obj = this;
+	      var ctx = obj.ctx; // Clear canvas.
+
+	      ctx.reset();
+	      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Calculate where the image should be drawn.
+
+	      var rect = obj.calculateImageRect(ctx);
+	      var dp = obj.rawImage.draw(ctx, rect);
+	      dp.then(function () {
+	        // The geometry can only be drawn to the interactive canvas.
+	        obj.maskUI.scale.rect = rect;
+	        obj.maskUI.drawGeometry();
+	      });
+	    } // render
+
+	  }, {
+	    key: "show",
+	    value: function show() {
+	      var obj = this;
+	      obj.node.style.width = "".concat(window.innerWidth, "px");
+	      obj.node.style.height = "".concat(window.innerHeight, "px");
+	      obj.render();
+	      obj.node.style.display = "";
+	    } // show
+
+	  }, {
+	    key: "hide",
+	    value: function hide() {
+	      var obj = this;
+	      obj.node.style.display = "none";
+	    } // hide
+
+	  }, {
+	    key: "resize",
+	    value: function resize(w, h) {// Resize the manager given the width and height of the window.
+	    }
+	  }, {
+	    key: "calculateMaskRect",
+	    value: function calculateMaskRect(ctx) {
+	      // Calculate the rectangle into which the clipped image should be drawn. This depends on the mask size, and any manual adjustments.
+	      var obj = this; // Given canvas.
+
+	      var canvas = ctx.canvas; // Mask - this could be infinite size if the mask has not yet been drawn. At the same time the editor can't know the default size.
+
+	      var mask = obj.maskUI.maskDrawn() ? obj.maskUI.maskRectangle() : obj.calculateImageRect(ctx); // Manual adjustment.Needs to be scaled to take into account the new canvas size.
+
+	      var adjustment = obj.trackpad.offset();
+	      var scale = canvas.height / 256;
+	      adjustment = adjustment.map(function (v) {
+	        return v * scale;
+	      }); // Calculate aspect ratio, which is original px per canvas px.
+
+	      var ar = Math.min(canvas.width / mask.width, canvas.height / mask.height); // Return the rectangle that can be used for positioning hte image on hte canvas straight away.
+
+	      return {
+	        x: (canvas.width - ar * mask.width) / 2 + adjustment[0],
+	        y: (canvas.height - ar * mask.height) / 2 + adjustment[1],
+	        width: ar * mask.width,
+	        height: ar * mask.height
+	      };
+	    } // calculateMaskRect
+
+	  }, {
+	    key: "calculateImageRect",
+	    value: function calculateImageRect(ctx) {
+	      // Calculate the rectangle within which the editor will draw the image, and the corresponding geometry. For the editor all the drawing should be done so that the original image is centered on the canvas.
+	      var obj = this;
+	      var canvas = ctx.canvas;
+	      var decal = obj.rawImage; // Calculate aspect ratio, which is original px per canvas px.
+
+	      var ar = Math.min(canvas.width / decal.width, canvas.height / decal.height); // Return the rectangle that can be used for positioning hte image on hte canvas straight away.
+
+	      return {
+	        x: (canvas.width - ar * decal.width) / 2,
+	        y: (canvas.height - ar * decal.height) / 2,
+	        width: ar * decal.width,
+	        height: ar * decal.height
+	      };
+	    } // calculateDestinationRect
+
+	  }]);
+
+	  return DecalTextureUI;
+	}(); // DecalTextureUI
+
+	var Scale = /*#__PURE__*/function () {
+	  // This is the pixel rectangle to which the 0-1 unit values of coordinates is mapped.
+	  function Scale() {
+	    _classCallCheck(this, Scale);
+
+	    this.rect = {
+	      x: 0,
+	      y: 0,
+	      width: 1,
+	      height: 1
+	    };
+	  } // constructor
+
+
+	  _createClass(Scale, [{
+	    key: "ppx2unit",
+	    value: function ppx2unit(p) {
+	      // Convert a point from pixel to unit.
+	      var obj = this;
+	      return [(p[0] - obj.rect.x) / obj.rect.width, (p[1] - obj.rect.y) / obj.rect.height];
+	    } // ppx2unit
+
+	  }, {
+	    key: "punit2px",
+	    value: function punit2px(p) {
+	      // Convert a point from pixel to unit.
+	      var obj = this;
+	      return [p[0] * obj.rect.width + obj.rect.x, p[1] * obj.rect.height + obj.rect.y];
+	    } // ppx2unit
+
+	  }]);
+
+	  return Scale;
+	}(); // Scale
+	// The new approach is that the image and the mask are drawn to a given canvas. The only requirement is that the canvas is rectangular, because that is a texture requirement.
+
+
+	var ImageTexture = /*#__PURE__*/function () {
+	  function ImageTexture(sourcelink) {
+	    _classCallCheck(this, ImageTexture);
+
+	    this.im = undefined;
+	    this.width = 0;
+	    this.height = 0;
+	    var obj = this;
+	    obj.im = new Promise(function (resolve, reject) {
+	      var im = new Image();
+	      im.src = sourcelink;
+
+	      im.onload = function () {
+	        obj.width = im.width;
+	        obj.height = im.height;
+	        resolve(im);
+	      };
+	    }); // new Promise
+	  } // constructor
+
+
+	  _createClass(ImageTexture, [{
+	    key: "draw",
+	    value: function draw(ctx, rect) {
+	      var obj = this;
+	      var defaultRect = {
+	        x: 0,
+	        y: 0,
+	        width: ctx.canvas.width,
+	        height: ctx.canvas.height
+	      }; // defaultRect
+
+	      rect = rect == undefined ? defaultRect : rect;
+	      return obj.im.then(function (im) {
+	        // Image size.
+	        var sw = im.width;
+	        var sh = im.height; // If the canvas is resized here, then everything before this point is thrown away!!
+
+	        ctx.drawImage(im, 0, 0, sw, sh, rect.x, rect.y, rect.width, rect.height);
+	      }); // new Pomise
+	    } // draw
+
+	  }]);
+
+	  return ImageTexture;
+	}(); // ImageTexture
+
+
+	var MaskEditor = /*#__PURE__*/function () {
+	  // DONE: Points should be stored in non-dimensional image units
+	  // Control the drawing of lines first, and only fill when the object is closed.
+	  // Individual vertices should be adjustable.
+	  // Allow several geometries to be selected.
+	  // Move correction is in image coordinates, but can be prescribed in pixels.
+	  function MaskEditor(ctx) {
+	    _classCallCheck(this, MaskEditor);
+
+	    this.geometries = [[]];
+	    this.closed = false;
+	    this.movecorrection = [0, 0];
+	    this.selectedgeometries = [];
+	    var obj = this;
+	    obj.ctx = ctx; // The canvas chould differentiate between click to add a point, and pointerdown and drag to move existing point around.
+	    //
+	    //ctx.canvas.addEventListener("click", function(event){
+	    //	console.log( obj.retrieveGeometry(event) );
+	    //	obj.addPoint(event);
+	    //})
+	    // Ok, on pointerdown I need to find any relevant geometry. Then, on pointerup I need to decide whether to add point, or not. Then I need a way to delete a point also.
+	    // Configure the interactive adjustment.
+	    // adjustedGeometry are the points that have been mapped to pixels. Internally the values are kept in image coordinates. Therefore thos values are not changed when adjusting this here.
+
+	    var pointerDown = undefined;
+	    var moved = false;
+	    ctx.canvas.addEventListener("pointerdown", function (event) {
+	      // Register the relevant geometry, and the initial clicked point. But how will the redrawing work? For that I need the original image.
+	      event.stopPropagation();
+	      pointerDown = event;
+	      moved = false;
+	      obj.applyGeometrySelection(event);
+	    });
+	    ctx.canvas.addEventListener("pointermove", function (event) {
+	      event.stopPropagation();
+
+	      if (pointerDown && distPx(obj.event2canvas(pointerDown), obj.event2canvas(event)) > Math.pow(5, 2)) {
+	        moved = true;
+	        var p0 = obj.scale.ppx2unit(obj.event2canvas(pointerDown));
+	        var p1 = obj.scale.ppx2unit(obj.event2canvas(event));
+	        obj.movecorrection = [p1[0] - p0[0], p1[1] - p0[1]];
+	        obj.onpointermove();
+	      } // if
+
+	    }); // pointermove
+	    // At move end the correction has to be applied permanently
+
+	    ctx.canvas.addEventListener("pointerup", function (event) {
+	      event.stopPropagation();
+
+	      if (!moved) {
+	        obj.addPoint(event);
+	      }
+
+	      obj.applyMoveCorrections();
+	      pointerDown = undefined;
+	      moved = false;
+	    }); // pointerup
+
+	    ctx.canvas.addEventListener("pointerout", function (event) {
+	      event.stopPropagation();
+	      obj.applyMoveCorrections();
+	      pointerDown = undefined;
+	      moved = false;
+	    }); // pointerout
+	    // A scale to allow user added geoemtry to be converted into image unit coordinates and back.
+
+	    obj.scale = new Scale();
+	    obj.scaledest = new Scale();
+	  } // constructor
+	  // DATA INTERFACE
+
+
+	  _createClass(MaskEditor, [{
+	    key: "addPoint",
+	    value: function addPoint(event) {
+	      var obj = this; // The last element of the geometries array is the current array.
+
+	      var current = obj.geometries[obj.geometries.length - 1]; // The event position is in pixel.
+
+	      var px = obj.event2canvas(event); // If the point is close enough to existing points, then fill the area.
+
+	      obj.closed = current.map(function (p) {
+	        return obj.scale.punit2px(p);
+	      }).some(function (p) {
+	        return Math.pow(p[0] - px[0], 2) + Math.pow(p[1] - px[1], 2) < Math.pow(10, 2);
+	      }); // Furthermore, if the area is closed, then a new area drawing should begin with the next click.
+
+	      if (obj.closed) {
+	        current.closed = true;
+	        obj.geometries.push([]);
+	      } else {
+	        // Store values in non-dim units.
+	        var pu = obj.scale.ppx2unit(px);
+	        current.push(pu);
+	      } // if
+	      // Draw just the geometry, and the underlying image remains the same.
+
+
+	      obj.drawGeometry();
+	    } // addPoint
+
+	    /* What kind of interactions do I want to support?
+	    Click - addPoint
+	    Click near point and drag - movePoint
+	    click on poygon and drag - movePolygon
+	    
+	    */
+	    // How am I going to adjust the data? I'm going to change its coordinates directly no?
+
+	  }, {
+	    key: "applyGeometrySelection",
+	    value: function applyGeometrySelection(event) {
+	      var obj = this; // First get the canvas pixel coordinates of the event.
+
+	      var clickpoint = obj.event2canvas(event); // Find the top most geometry that has the event in it. The loop should go from the last to the first geometry,
+	      // Return a series of points to which the drag interaction offset should be applied.
+
+	      var g = obj.geometries.map(function (g) {
+	        return [false];
+	      });
+
+	      var _loop = function _loop(i) {
+	        var points = obj.geometries[i].map(function (p) {
+	          return obj.scale.punit2px(p);
+	        }); // Check if the current point is within the geometry. If it is don't check for other geometries.			
+
+	        if (isPointInside(points, clickpoint)) {
+	          // All the points at once are considered initially, and if any of hte points are close enough to the clicked point, then the selection is narrowed down to that point.
+	          g[i] = [true];
+	        } // if
+	        // Always want to find only the closest point, so even when finding candidates restict to the closest one.
+
+
+	        points.filter(function (p) {
+	          return distPx(clickpoint, p) < Math.pow(10, 2);
+	        }).forEach(function (p, j) {
+	          // g[i] now has an index saying whether the click was within the geometry or not. But what I want to know is whether a distance needs to be calculated or not. And at some point I will want to select several points at once.
+	          // Here I know that the point will definitely be selected instead of the whole geometry. Furthermore, I know that a single point should be selected.
+	          g[i][0] = true;
+	          var current = g[i][1] != undefined ? points[g[i][1]] : p;
+	          var isCloser = distPx(clickpoint, p) <= distPx(clickpoint, current);
+	          g[i][1] = isCloser ? points.indexOf(p) : g[i][1];
+	        }); // forEach
+	        // If some geometry was found on this layer, then stop the process.
+
+	        if (g[i]) {
+	          return "continue";
+	        } // if
+
+	      };
+
+	      for (var i = obj.geometries.length - 1; i > -1; i--) {
+	        var _ret = _loop(i);
+
+	        if (_ret === "continue") continue;
+	      } // for	
+
+
+	      obj.correctionflag = g;
+	    } // applyGeometrySelection
+
+	  }, {
+	    key: "getMoveCorrection",
+	    value: function getMoveCorrection(i, j) {
+	      var obj = this; // First check if the geometry should be corrected, and secondly check if a point in hte geometry should be corrected. If the point is defined it should override the geometry flag.
+
+	      var isGeometry = obj.correctionflag[i][0];
+	      var isPoint = obj.correctionflag[i][1];
+	      var correctionNeeded = isPoint != undefined ? isPoint == j : isGeometry;
+	      return obj.movecorrection.map(function (p) {
+	        return p * correctionNeeded;
+	      });
+	    } // getMoveCorrection
+
+	  }, {
+	    key: "applyMoveCorrections",
+	    value: function applyMoveCorrections() {
+	      // Apply corrections permanently.
+	      var obj = this;
+
+	      var _loop2 = function _loop2(i) {
+	        obj.geometries[i].forEach(function (p, j) {
+	          var corr = obj.getMoveCorrection(i, j);
+	          p[0] += corr[0];
+	          p[1] += corr[1];
+	        });
+	      };
+
+	      for (var i = 0; i < obj.geometries.length; i++) {
+	        _loop2(i);
+	      } // for	
+
+
+	      obj.movecorrection = [0, 0];
+	    } // applyMoveCorrections
+
+	  }, {
+	    key: "onpointermove",
+	    value: function onpointermove() {// dummy functionality
+	    }
+	  }, {
+	    key: "event2canvas",
+	    value: // DATA TRANSFORM PLACEHOLDERS
+	    function event2canvas(event) {
+	      // Get the canvas bounding box.
+	      var obj = this;
+	      var rect = obj.ctx.canvas.getBoundingClientRect();
+	      return [event.clientX - rect.x, event.clientY - rect.y];
+	    } // event2canvas
+	    // DRAWING
+
+	  }, {
+	    key: "drawGeometry",
+	    value: function drawGeometry() {
+	      // Used to draw the editing elements. Geometry is drawn only on the editor canvas the interactions were attached to, and not to the texture canvas. Therefore a ctx input is not needed.
+	      var obj = this;
+
+	      var _loop3 = function _loop3(i) {
+	        var current = obj.geometries[i];
+	        var points = current.map(function (p, j) {
+	          var corr = obj.getMoveCorrection(i, j);
+	          var pc = [p[0] + corr[0], p[1] + corr[1]];
+	          return obj.scale.punit2px(pc);
+	        }); // The drwing calls perform just the drawing - no additional transformation of coordinates is done.
+
+	        obj.drawLines(points, current.closed);
+	        obj.drawPoints(points);
+	      };
+
+	      for (var i = 0; i < obj.geometries.length; i++) {
+	        _loop3(i);
+	      } // for		
+
+	    } // draw
+
+	  }, {
+	    key: "drawClip",
+	    value: function drawClip(ctx, rect) {
+	      // The clip may need to be drawn either on hte editor canvas, or onto the texture canvas. Therefore a ctx input is required.
+	      var obj = this;
+	      obj.scaledest.rect = rect; // Draw the current clip
+
+	      ctx.fillStyle = '#FFFFFF';
+	      ctx.beginPath();
+	      var closedGeometries = obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      });
+	      closedGeometries.forEach(function (closedgeometry) {
+	        var points = closedgeometry.map(function (p) {
+	          return obj.scaledest.punit2px(p);
+	        });
+	        ctx.moveTo(points[0][0], points[0][1]);
+
+	        for (var i = 0; i < points.length; i++) {
+	          ctx.lineTo(points[i][0], points[i][1]);
+	        } // for
+
+
+	        ctx.fill();
+	      }); // forEach
+
+	      ctx.clip();
+	    } // drawClip
+
+	  }, {
+	    key: "drawLines",
+	    value: function drawLines(points, closed) {
+	      var ctx = this.ctx; // Iterate through points, and draw them.
+
+	      if (points.length > 1) {
+	        ctx.fillStyle = '#000000';
+	        ctx.lineWidth = 2;
+	        ctx.moveTo(points[0][0], points[0][1]);
+	        ctx.beginPath();
+
+	        for (var i = 0; i < points.length; i++) {
+	          ctx.lineTo(points[i][0], points[i][1]);
+	        } // for
+
+
+	        if (closed) {
+	          ctx.closePath();
+	          ctx.fill();
+	        } // if
+
+
+	        ctx.stroke();
+	      }
+	    } // drawLines
+
+	  }, {
+	    key: "drawPoints",
+	    value: function drawPoints(points) {
+	      // Draw points on top of the lines. Point circles not used in the mask itself.
+	      var obj = this;
+
+	      for (var i = 0; i < points.length; i++) {
+	        obj.drawNode(points[i]);
+	      } // for
+
+	    } // drawPoints
+
+	  }, {
+	    key: "drawNode",
+	    value: function drawNode(p) {
+	      var obj = this;
+	      var ctx = obj.ctx; // ctx.arc(x,y,r,sAngle,eAngle,counterclockwise);		
+
+	      ctx.beginPath();
+	      ctx.fillStyle = '#000000';
+	      ctx.arc(p[0], p[1], 5, 0 * Math.PI, 2 * Math.PI);
+	      ctx.fill();
+	      ctx.closePath(); // ctx.arc(x,y,r,sAngle,eAngle,counterclockwise);		
+
+	      ctx.beginPath();
+	      ctx.fillStyle = '#FFFFFF';
+	      ctx.arc(p[0], p[1], 3, 0 * Math.PI, 2 * Math.PI);
+	      ctx.fill();
+	      ctx.closePath();
+	    } // drawPoint
+
+	  }, {
+	    key: "maskDrawn",
+	    value: function maskDrawn() {
+	      var obj = this;
+	      var closedGeometries = obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      });
+	      return closedGeometries.length > 0;
+	    } // maskDrawn
+
+	  }, {
+	    key: "maskRectangle",
+	    value: function maskRectangle() {
+	      var obj = this; // Loop over geometries and find min and max in pixels.
+
+	      var x = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+	      var y = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+	      obj.geometries.filter(function (geometry) {
+	        return geometry.closed;
+	      }).forEach(function (geometry) {
+	        var points = geometry.map(function (p) {
+	          return obj.scale.punit2px(p);
+	        });
+	        points.forEach(function (point) {
+	          x[0] = x[0] < point[0] ? x[0] : point[0];
+	          x[1] = x[1] > point[0] ? x[1] : point[0];
+	          y[0] = y[0] < point[1] ? y[0] : point[1];
+	          y[1] = y[1] > point[1] ? y[1] : point[1];
+	        }); // forEach
+	      }); // forEach
+
+	      return {
+	        x: x[0],
+	        y: y[0],
+	        width: x[1] - x[0],
+	        height: y[1] - y[0]
+	      };
+	    } // maskRectangle
+
+	  }]);
+
+	  return MaskEditor;
+	}(); // MaskEditor
+
+
+	var TrackpadImage = /*#__PURE__*/function () {
+	  // A list of interactive adjustments made.
+	  // Ongoing adjustment.
+	  function TrackpadImage() {
+	    _classCallCheck(this, TrackpadImage);
+
+	    this.adjusts = [[0, 0]];
+	    this.delta = [0, 0];
+	    var obj = this; // This is the node that is added to the GUI.
+
+	    obj.node = document.createElement("canvas");
+	    obj.ctx = obj.node.getContext('2d');
+	    obj.node.width = 256;
+	    obj.node.height = 256; // There should be a red dot on the canvas that can be dragged around to allow the user to adjust the center of the image.
+
+	    var initialPoint = undefined;
+	    obj.node.addEventListener("pointerdown", function (e) {
+	      // Register the initial event.
+	      initialPoint = e;
+	      obj.delta = [0, 0];
+	    }); // pointerdown
+
+	    obj.node.addEventListener("pointermove", function (e) {
+	      // Update the image.
+	      if (initialPoint) {
+	        obj.delta[0] = e.clientX - initialPoint.clientX;
+	        obj.delta[1] = e.clientY - initialPoint.clientY;
+	        obj.onpointermove();
+	      } // if
+
+	    }); // pointermove
+
+	    obj.node.addEventListener("pointerup", function (e) {
+	      // Stop the editing.
+	      initialPoint = undefined;
+	      obj.adjusts.push(obj.delta);
+	      obj.delta = [0, 0];
+	    }); // pointerup
+	  } // constructor
+
+
+	  _createClass(TrackpadImage, [{
+	    key: "offset",
+	    value: function offset() {
+	      // Return the total offset from all previous interactions, as well as the ongoing one.
+	      var obj = this;
+	      var previous = obj.adjusts.reduce(function (acc, item) {
+	        return [acc[0] + item[0], acc[1] + item[1]];
+	      }); // reduce
+
+	      return [obj.delta[0] + previous[0], obj.delta[1] + previous[1]];
+	    } // offset
+
+	  }, {
+	    key: "onpointermove",
+	    value: function onpointermove() {}
+	  }]);
+
+	  return TrackpadImage;
+	}(); // TrackpadImage
+
+
+	function distPx(p0, p1) {
+	  // Calculate the pixel distance of 2 points.
+	  return Math.pow(p0[0] - p1[0], 2) + Math.pow(p0[1] - p1[1], 2);
+	} // distPx
+
+
+	function isPointInside(boundary, point) {
+
+	  var isInside = false;
+	  var n = boundary.length;
+
+	  if (n > 2) {
+	    for (var i = 1; i < n; i++) {
+	      // Check whether this edge is being passed when moving from the point to the right. If it passes an even number of edges it's outside, otherwise it's inside.
+	      var _p = passesEdge(boundary[i - 1], boundary[i], point);
+
+	      isInside = _p ? !isInside : isInside;
+	    } // for
+	    // Need to check the same number of edge segments as vertex points. The last edge should be the last and the first point.
+
+
+	    var p = passesEdge(boundary[n - 1], boundary[0], point);
+	    isInside = p ? !isInside : isInside;
+	  } // if
+
+
+	  return isInside;
+	} // isPointInside
+	// A ray casting method to check whether a point is within a polygon or not.
+
+
+	function passesEdge(p0, p1, point) {
+	  // One point needs to be above, while the other needs to be below -> the above conditions must be different.
+	  if (p0[1] > point[1] !== p1[1] > point[1]) {
+	    // One is above, and the other below. Now find if the x are positioned so that the ray passes through. Essentially interpolate the x at the y of the point, and see if it is larger.
+	    var x = (p1[0] - p0[0]) / (p1[1] - p0[1]) * (point[1] - p0[1]) + p0[0];
+	    return x > point[0];
+	  } else {
+	    return false;
+	  } // if
+
+	} // checkIntersect
+
+	function applyIncrementalBehavior(controller, config, property, callback) {
+	  var timer = undefined;
+	  var rate = undefined;
+
+	  function increment(v, callback) {
+	    if (rate == v) {
+	      callback(v);
+	      timer = setTimeout(function () {
+	        increment(v, callback);
+	      }, 200);
+	    } // if
+
+	  } // increment
+
+
+	  controller.onChange(function (v) {
+	    clearTimeout(timer);
+	    rate = v;
+	    increment(v, callback);
+	  }).onFinishChange(function () {
+	    clearTimeout(timer);
+	    rate = undefined;
+	    config[property] = (controller._max + controller._min) / 2;
+	    controller.updateDisplay();
+	  }); // events
+	} // applyIncrementalBehavior
+
+	/*
+	One main idea is that the decal is added to the scene immediately upon creation. The pointer interaction merely selects a new position for the decal to be added to, and the buffer is only updated in the background.
+	*/
+
+	var Decal = /*#__PURE__*/function () {
+	  function Decal(assetsource, camera, admissibleTargetGeometries) {
+	    _classCallCheck(this, Decal); // Camera is required to work with the raypointer.
+
+
+	    var obj = this;
+	    obj.assetname = assetsource;
+	    obj.config = {
+	      source: assetsource,
+	      visible: true,
+	      active: true,
+	      remove: function remove() {},
+	      editor: function editor() {
+	        obj.editor.show();
+	      },
+	      unpaste: function unpaste() {
+	        obj.unpaste();
+	      },
+	      rotation: 0,
+	      size: 1
+	    }; // DECAL HELPER
+	    // Help position the decal. Should respond to domain size?
+
+	    obj.orientationHelper = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshNormalMaterial());
+	    obj.orientationHelper.visible = false; // DECAL MESH
+	    // The decal mesh requires a material, and a geometry to be combined in a mesh. The texture should be controlled by a UI editor.
+	    // Rename to DecalTextureEditor?
+
+	    obj.editor = new DecalTextureUI(assetsource); // Now make the mesh object itself.
+
+	    obj.decal = new DecalMesh(obj.editor.texture, obj.editor.alphatexture); // RAYPOINTER
+	    // The user interaction for the initial positioning.
+
+	    obj.raypointer = new DecalPointerRay(camera, admissibleTargetGeometries);
+	    obj.raypointer.line.visible = obj.config.active;
+	    obj.raypointer.decals = [obj.decal];
+
+	    obj.raypointer.positionInteraction = function (target) {
+	      obj.position(target);
+	    }; // positionInteraction
+
+	  } // constructor
+
+
+	  _createClass(Decal, [{
+	    key: "position",
+	    value: function position(target) {
+	      // Target is the output of raycaster.checkIntersection();
+	      var obj = this; // Reposition the orientation helper. Keep the previous rotation setting!
+
+	      var rotation = obj.orientationHelper.rotation.clone();
+	      obj.orientationHelper.position.copy(obj.raypointer.getLinePoint(0));
+	      obj.orientationHelper.lookAt(obj.raypointer.getLinePoint(1));
+	      obj.orientationHelper.rotation.z = rotation.z; // obj.orientationHelper.rotation.z = Math.random() * 2 * Math.PI;
+
+	      obj.decal.support = target.object;
+	      obj.decal.position.copy(obj.orientationHelper.position);
+	      obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	      obj.decal.scale = 1;
+	      obj.decal.transform();
+	    } // position
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(gui) {
+	      // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+	      // I think that transform controls won't really work for decals, because the decal object is not supposed to just be repositioned. Unless it's the orientation helper that is being repositioned....
+	      var obj = this;
+	      obj.gui = gui.addFolder("Decal: ".concat(obj.assetname));
+	      var vc = obj.gui.add(obj.config, "visible");
+	      var ac = obj.gui.add(obj.config, "active");
+	      var rc = obj.gui.add(obj.config, "rotation", -15, 15);
+	      var sc = obj.gui.add(obj.config, "size", 0.9, 1.1);
+	      obj.gui.add(obj.config, "editor");
+	      obj.gui.add(obj.config, "unpaste");
+	      obj.gui.add(obj.config, "remove");
+	      vc.onChange(function (v) {
+	        obj.config.active = v;
+	        ac.updateDisplay();
+	        obj.raypointer.line.visible = v;
+	        obj.decal.mesh.visible = v;
+	      }); // boolean
+	      // Need to know the controller, config, property, callback
+
+	      applyIncrementalBehavior(rc, obj.config, "rotation", function (phi) {
+	        obj.config.active = phi;
+	        ac.updateDisplay();
+	        obj.orientationHelper.rotation.z += phi / 360 * 2 * Math.PI;
+	        obj.decal.orientation.copy(obj.orientationHelper.rotation);
+	        obj.decal.transform();
+	      });
+	      applyIncrementalBehavior(sc, obj.config, "size", function (k) {
+	        obj.config.active = k;
+	        ac.updateDisplay();
+	        obj.decal.scale *= k;
+	        obj.decal.transform();
+	      }); // Add in a trackpad and preview.
+
+	      obj.gui.domElement.querySelector("div.children").appendChild(obj.editor.trackpad.node);
+	      return obj.gui;
+	    } // addGUI
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      // Helper to add this decal with all its ancilliary geometries to the scene.
+	      var obj = this;
+	      sceneWebGL.add(obj.orientationHelper);
+	      sceneWebGL.add(obj.raypointer.line);
+	      sceneWebGL.add(obj.decal.mesh);
+	      obj.raypointer.line.visible = obj.config.active; // Provide the remove functionality.
+
+	      obj.config.remove = function () {
+	        sceneWebGL.remove(obj.orientationHelper);
+	        sceneWebGL.remove(obj.raypointer.line);
+	        sceneWebGL.remove(obj.decal.mesh);
+	        obj.gui.destroy();
+	      }; // remove
+
+	    } // addTo
+
+	  }, {
+	    key: "unpaste",
+	    value: function unpaste() {
+	      // In case the user wants to unstick the decal, they really only want to erase the buffer geometry.
+	      var obj = this;
+	      obj.decal.mesh.geometry.copy(new BufferGeometry());
+	    } // unpaste
+
+	  }, {
+	    key: "removeCompletely",
+	    value: function removeCompletely(sceneWebGL) {
+	      var obj = this; // Note that this removes everything, but maybe what the user wanted was to just remove the mesh.
+
+	      sceneWebGL.remove(obj.orientationHelper);
+	      sceneWebGL.remove(obj.raypointer.line);
+	      sceneWebGL.remove(obj.decal.mesh);
+	    }
+	  }]);
+
+	  return Decal;
+	}(); // Decal
+
+	//                 7-------6          x---6---x
+	//                /|      /|     11  7|      5|  10
+	// z(k)          4-+-----5 |        x-+-4---x |
+	// ^ y(j)        | 3-----+-2        | x---2-+-x 
+	// |/            |/      |/      8  |3      |1   9
+	// o-->x(i)      0-------1          x---0---x
+	// coordinates of vertexes in relation to 0
+
+	var vertCoordTable = [[0, 0, 0], // 0
+	[1, 0, 0], // 1
+	[1, 1, 0], // 2
+	[0, 1, 0], // 3
+	[0, 0, 1], // 4
+	[1, 0, 1], // 5
+	[1, 1, 1], // 6
+	[0, 1, 1] // 7
+	]; // table of active edges for a specific vertex code
+	// in order
+
+	var edgeTable = [[], [0, 3, 8], [0, 1, 9], [1, 3, 8, 9], [1, 2, 10], [0, 1, 2, 3, 8, 10], [0, 2, 9, 10], [2, 3, 8, 9, 10], [2, 3, 11], [0, 2, 8, 11], [0, 1, 2, 3, 9, 11], [1, 2, 8, 9, 11], [1, 3, 10, 11], [0, 1, 8, 10, 11], [0, 3, 9, 10, 11], [8, 9, 10, 11], [4, 7, 8], [0, 3, 4, 7], [0, 1, 4, 7, 8, 9], [1, 3, 4, 7, 9], [1, 2, 4, 7, 8, 10], [0, 1, 2, 3, 4, 7, 10], [0, 2, 4, 7, 8, 9, 10], [2, 3, 4, 7, 9, 10], [2, 3, 4, 7, 8, 11], [0, 2, 4, 7, 11], [0, 1, 2, 3, 4, 7, 8, 9, 11], [1, 2, 4, 7, 9, 11], [1, 3, 4, 7, 8, 10, 11], [0, 1, 4, 7, 10, 11], [0, 3, 4, 7, 8, 9, 10, 11], [4, 7, 9, 10, 11], [4, 5, 9], [0, 3, 4, 5, 8, 9], [0, 1, 4, 5], [1, 3, 4, 5, 8], [1, 2, 4, 5, 9, 10], [0, 1, 2, 3, 4, 5, 8, 9, 10], [0, 2, 4, 5, 10], [2, 3, 4, 5, 8, 10], [2, 3, 4, 5, 9, 11], [0, 2, 4, 5, 8, 9, 11], [0, 1, 2, 3, 4, 5, 11], [1, 2, 4, 5, 8, 11], [1, 3, 4, 5, 9, 10, 11], [0, 1, 4, 5, 8, 9, 10, 11], [0, 3, 4, 5, 10, 11], [4, 5, 8, 10, 11], [5, 7, 8, 9], [0, 3, 5, 7, 9], [0, 1, 5, 7, 8], [1, 3, 5, 7], [1, 2, 5, 7, 8, 9, 10], [0, 1, 2, 3, 5, 7, 9, 10], [0, 2, 5, 7, 8, 10], [2, 3, 5, 7, 10], [2, 3, 5, 7, 8, 9, 11], [0, 2, 5, 7, 9, 11], [0, 1, 2, 3, 5, 7, 8, 11], [1, 2, 5, 7, 11], [1, 3, 5, 7, 8, 9, 10, 11], [0, 1, 5, 7, 9, 10, 11], [0, 3, 5, 7, 8, 10, 11], [5, 7, 10, 11], [5, 6, 10], [0, 3, 5, 6, 8, 10], [0, 1, 5, 6, 9, 10], [1, 3, 5, 6, 8, 9, 10], [1, 2, 5, 6], [0, 1, 2, 3, 5, 6, 8], [0, 2, 5, 6, 9], [2, 3, 5, 6, 8, 9], [2, 3, 5, 6, 10, 11], [0, 2, 5, 6, 8, 10, 11], [0, 1, 2, 3, 5, 6, 9, 10, 11], [1, 2, 5, 6, 8, 9, 10, 11], [1, 3, 5, 6, 11], [0, 1, 5, 6, 8, 11], [0, 3, 5, 6, 9, 11], [5, 6, 8, 9, 11], [4, 5, 6, 7, 8, 10], [0, 3, 4, 5, 6, 7, 10], [0, 1, 4, 5, 6, 7, 8, 9, 10], [1, 3, 4, 5, 6, 7, 9, 10], [1, 2, 4, 5, 6, 7, 8], [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 5, 6, 7, 8, 9], [2, 3, 4, 5, 6, 7, 9], [2, 3, 4, 5, 6, 7, 8, 10, 11], [0, 2, 4, 5, 6, 7, 10, 11], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 4, 5, 6, 7, 9, 10, 11], [1, 3, 4, 5, 6, 7, 8, 11], [0, 1, 4, 5, 6, 7, 11], [0, 3, 4, 5, 6, 7, 8, 9, 11], [4, 5, 6, 7, 9, 11], [4, 6, 9, 10], [0, 3, 4, 6, 8, 9, 10], [0, 1, 4, 6, 10], [1, 3, 4, 6, 8, 10], [1, 2, 4, 6, 9], [0, 1, 2, 3, 4, 6, 8, 9], [0, 2, 4, 6], [2, 3, 4, 6, 8], [2, 3, 4, 6, 9, 10, 11], [0, 2, 4, 6, 8, 9, 10, 11], [0, 1, 2, 3, 4, 6, 10, 11], [1, 2, 4, 6, 8, 10, 11], [1, 3, 4, 6, 9, 11], [0, 1, 4, 6, 8, 9, 11], [0, 3, 4, 6, 11], [4, 6, 8, 11], [6, 7, 8, 9, 10], [0, 3, 6, 7, 9, 10], [0, 1, 6, 7, 8, 10], [1, 3, 6, 7, 10], [1, 2, 6, 7, 8, 9], [0, 1, 2, 3, 6, 7, 9], [0, 2, 6, 7, 8], [2, 3, 6, 7], [2, 3, 6, 7, 8, 9, 10, 11], [0, 2, 6, 7, 9, 10, 11], [0, 1, 2, 3, 6, 7, 8, 10, 11], [1, 2, 6, 7, 10, 11], [1, 3, 6, 7, 8, 9, 11], [0, 1, 6, 7, 9, 11], [0, 3, 6, 7, 8, 11], [6, 7, 11], [6, 7, 11], [0, 3, 6, 7, 8, 11], [0, 1, 6, 7, 9, 11], [1, 3, 6, 7, 8, 9, 11], [1, 2, 6, 7, 10, 11], [0, 1, 2, 3, 6, 7, 8, 10, 11], [0, 2, 6, 7, 9, 10, 11], [2, 3, 6, 7, 8, 9, 10, 11], [2, 3, 6, 7], [0, 2, 6, 7, 8], [0, 1, 2, 3, 6, 7, 9], [1, 2, 6, 7, 8, 9], [1, 3, 6, 7, 10], [0, 1, 6, 7, 8, 10], [0, 3, 6, 7, 9, 10], [6, 7, 8, 9, 10], [4, 6, 8, 11], [0, 3, 4, 6, 11], [0, 1, 4, 6, 8, 9, 11], [1, 3, 4, 6, 9, 11], [1, 2, 4, 6, 8, 10, 11], [0, 1, 2, 3, 4, 6, 10, 11], [0, 2, 4, 6, 8, 9, 10, 11], [2, 3, 4, 6, 9, 10, 11], [2, 3, 4, 6, 8], [0, 2, 4, 6], [0, 1, 2, 3, 4, 6, 8, 9], [1, 2, 4, 6, 9], [1, 3, 4, 6, 8, 10], [0, 1, 4, 6, 10], [0, 3, 4, 6, 8, 9, 10], [4, 6, 9, 10], [4, 5, 6, 7, 9, 11], [0, 3, 4, 5, 6, 7, 8, 9, 11], [0, 1, 4, 5, 6, 7, 11], [1, 3, 4, 5, 6, 7, 8, 11], [1, 2, 4, 5, 6, 7, 9, 10, 11], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [0, 2, 4, 5, 6, 7, 10, 11], [2, 3, 4, 5, 6, 7, 8, 10, 11], [2, 3, 4, 5, 6, 7, 9], [0, 2, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7], [1, 2, 4, 5, 6, 7, 8], [1, 3, 4, 5, 6, 7, 9, 10], [0, 1, 4, 5, 6, 7, 8, 9, 10], [0, 3, 4, 5, 6, 7, 10], [4, 5, 6, 7, 8, 10], [5, 6, 8, 9, 11], [0, 3, 5, 6, 9, 11], [0, 1, 5, 6, 8, 11], [1, 3, 5, 6, 11], [1, 2, 5, 6, 8, 9, 10, 11], [0, 1, 2, 3, 5, 6, 9, 10, 11], [0, 2, 5, 6, 8, 10, 11], [2, 3, 5, 6, 10, 11], [2, 3, 5, 6, 8, 9], [0, 2, 5, 6, 9], [0, 1, 2, 3, 5, 6, 8], [1, 2, 5, 6], [1, 3, 5, 6, 8, 9, 10], [0, 1, 5, 6, 9, 10], [0, 3, 5, 6, 8, 10], [5, 6, 10], [5, 7, 10, 11], [0, 3, 5, 7, 8, 10, 11], [0, 1, 5, 7, 9, 10, 11], [1, 3, 5, 7, 8, 9, 10, 11], [1, 2, 5, 7, 11], [0, 1, 2, 3, 5, 7, 8, 11], [0, 2, 5, 7, 9, 11], [2, 3, 5, 7, 8, 9, 11], [2, 3, 5, 7, 10], [0, 2, 5, 7, 8, 10], [0, 1, 2, 3, 5, 7, 9, 10], [1, 2, 5, 7, 8, 9, 10], [1, 3, 5, 7], [0, 1, 5, 7, 8], [0, 3, 5, 7, 9], [5, 7, 8, 9], [4, 5, 8, 10, 11], [0, 3, 4, 5, 10, 11], [0, 1, 4, 5, 8, 9, 10, 11], [1, 3, 4, 5, 9, 10, 11], [1, 2, 4, 5, 8, 11], [0, 1, 2, 3, 4, 5, 11], [0, 2, 4, 5, 8, 9, 11], [2, 3, 4, 5, 9, 11], [2, 3, 4, 5, 8, 10], [0, 2, 4, 5, 10], [0, 1, 2, 3, 4, 5, 8, 9, 10], [1, 2, 4, 5, 9, 10], [1, 3, 4, 5, 8], [0, 1, 4, 5], [0, 3, 4, 5, 8, 9], [4, 5, 9], [4, 7, 9, 10, 11], [0, 3, 4, 7, 8, 9, 10, 11], [0, 1, 4, 7, 10, 11], [1, 3, 4, 7, 8, 10, 11], [1, 2, 4, 7, 9, 11], [0, 1, 2, 3, 4, 7, 8, 9, 11], [0, 2, 4, 7, 11], [2, 3, 4, 7, 8, 11], [2, 3, 4, 7, 9, 10], [0, 2, 4, 7, 8, 9, 10], [0, 1, 2, 3, 4, 7, 10], [1, 2, 4, 7, 8, 10], [1, 3, 4, 7, 9], [0, 1, 4, 7, 8, 9], [0, 3, 4, 7], [4, 7, 8], [8, 9, 10, 11], [0, 3, 9, 10, 11], [0, 1, 8, 10, 11], [1, 3, 10, 11], [1, 2, 8, 9, 11], [0, 1, 2, 3, 9, 11], [0, 2, 8, 11], [2, 3, 11], [2, 3, 8, 9, 10], [0, 2, 9, 10], [0, 1, 2, 3, 8, 10], [1, 2, 10], [1, 3, 8, 9], [0, 1, 9], [0, 3, 8], []]; // converts from an edge number to the numbers of the vertices it connects
+
+	var edgeToVertsTable = [[0, 1], // 0
+	[1, 2], // 1
+	[2, 3], // 2
+	[0, 3], // 3
+	[4, 5], // 4
+	[5, 6], // 5
+	[6, 7], // 6
+	[4, 7], // 7
+	[0, 4], // 8
+	[1, 5], // 9
+	[2, 6], // 10
+	[3, 7] // 11
+	]; // triangulation table created from: https://github.com/KineticTactic/marching-cubes-js
+
+	var triTable = [[], [0, 2, 1], [0, 1, 2], [0, 2, 1, 3, 2, 0], [0, 1, 2], [0, 4, 3, 1, 2, 5], [2, 1, 3, 0, 1, 2], [0, 2, 1, 0, 4, 2, 4, 3, 2], [1, 2, 0], [0, 3, 1, 2, 3, 0], [1, 4, 0, 2, 3, 5], [0, 4, 1, 0, 3, 4, 3, 2, 4], [1, 2, 0, 3, 2, 1], [0, 3, 1, 0, 2, 3, 2, 4, 3], [1, 2, 0, 1, 4, 2, 4, 3, 2], [1, 0, 2, 2, 0, 3], [0, 1, 2], [2, 1, 0, 3, 1, 2], [0, 1, 5, 4, 2, 3], [2, 0, 4, 2, 3, 0, 3, 1, 0], [0, 1, 5, 4, 2, 3], [3, 4, 5, 3, 0, 4, 1, 2, 6], [5, 1, 6, 5, 0, 1, 4, 2, 3], [0, 5, 4, 0, 4, 3, 0, 3, 1, 3, 4, 2], [4, 2, 3, 1, 5, 0], [4, 2, 3, 4, 1, 2, 1, 0, 2], [7, 0, 1, 6, 4, 5, 2, 3, 8], [2, 3, 5, 4, 2, 5, 4, 5, 1, 4, 1, 0], [1, 5, 0, 1, 6, 5, 3, 4, 2], [1, 5, 4, 1, 2, 5, 1, 0, 2, 3, 5, 2], [2, 3, 4, 5, 0, 7, 5, 7, 6, 7, 0, 1], [0, 1, 4, 0, 4, 2, 2, 4, 3], [2, 1, 0], [5, 3, 2, 0, 4, 1], [0, 3, 2, 1, 3, 0], [4, 3, 2, 4, 1, 3, 1, 0, 3], [0, 1, 5, 4, 3, 2], [3, 0, 6, 1, 2, 8, 4, 7, 5], [3, 1, 4, 3, 2, 1, 2, 0, 1], [0, 5, 3, 1, 0, 3, 1, 3, 2, 1, 2, 4], [4, 3, 2, 0, 1, 5], [0, 6, 1, 0, 4, 6, 2, 5, 3], [0, 5, 4, 0, 1, 5, 2, 3, 6], [1, 0, 3, 1, 3, 4, 1, 4, 5, 2, 4, 3], [5, 1, 6, 5, 0, 1, 4, 3, 2], [2, 5, 3, 0, 4, 1, 4, 6, 1, 4, 7, 6], [3, 2, 0, 3, 0, 5, 3, 5, 4, 5, 0, 1], [1, 0, 2, 1, 2, 3, 3, 2, 4], [3, 1, 2, 0, 1, 3], [4, 1, 0, 4, 2, 1, 2, 3, 1], [0, 3, 4, 0, 1, 3, 1, 2, 3], [0, 2, 1, 1, 2, 3], [5, 3, 4, 5, 2, 3, 6, 0, 1], [7, 1, 2, 6, 4, 0, 4, 3, 0, 4, 5, 3], [4, 0, 1, 4, 1, 2, 4, 2, 3, 5, 2, 1], [0, 4, 2, 0, 2, 1, 1, 2, 3], [3, 5, 2, 3, 4, 5, 1, 6, 0], [4, 2, 3, 4, 3, 1, 4, 1, 0, 1, 3, 5], [2, 3, 7, 0, 1, 6, 1, 5, 6, 1, 4, 5], [4, 1, 0, 4, 0, 3, 3, 0, 2], [5, 2, 4, 4, 2, 3, 6, 0, 1, 6, 1, 7], [2, 3, 0, 2, 0, 4, 3, 6, 0, 1, 0, 5, 6, 5, 0], [6, 5, 0, 6, 0, 1, 5, 2, 0, 4, 0, 3, 2, 3, 0], [3, 2, 0, 1, 3, 0], [2, 1, 0], [0, 4, 1, 2, 5, 3], [4, 0, 1, 2, 5, 3], [0, 4, 1, 0, 5, 4, 2, 6, 3], [0, 3, 2, 1, 3, 0], [1, 5, 4, 1, 2, 5, 3, 0, 6], [4, 3, 2, 4, 0, 3, 0, 1, 3], [2, 5, 4, 2, 4, 0, 2, 0, 3, 1, 0, 4], [0, 1, 5, 4, 3, 2], [6, 0, 4, 6, 1, 0, 5, 3, 2], [0, 1, 6, 2, 3, 8, 4, 7, 5], [2, 6, 3, 0, 5, 1, 5, 7, 1, 5, 4, 7], [3, 1, 4, 3, 2, 1, 2, 0, 1], [0, 4, 5, 0, 5, 2, 0, 2, 1, 2, 5, 3], [1, 5, 3, 0, 1, 3, 0, 3, 2, 0, 2, 4], [1, 0, 3, 1, 3, 4, 4, 3, 2], [1, 5, 2, 0, 3, 4], [2, 1, 0, 2, 5, 1, 4, 3, 6], [1, 7, 0, 3, 8, 4, 6, 2, 5], [7, 4, 3, 0, 6, 5, 0, 5, 1, 5, 6, 2], [4, 0, 1, 4, 3, 0, 2, 5, 6], [1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7], [6, 2, 5, 7, 0, 3, 0, 4, 3, 0, 1, 4], [5, 1, 6, 5, 6, 2, 1, 0, 6, 3, 6, 4, 0, 4, 6], [1, 8, 0, 5, 6, 2, 7, 4, 3], [3, 6, 4, 2, 5, 1, 2, 1, 0, 1, 5, 7], [0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6], [6, 1, 0, 6, 8, 1, 6, 2, 8, 5, 8, 2, 3, 7, 4], [6, 2, 5, 1, 7, 3, 1, 3, 0, 3, 7, 4], [3, 1, 6, 3, 6, 4, 1, 0, 6, 5, 6, 2, 0, 2, 6], [0, 3, 7, 0, 4, 3, 0, 1, 4, 8, 4, 1, 6, 2, 5], [2, 1, 4, 2, 4, 5, 0, 3, 4, 3, 5, 4], [3, 0, 2, 1, 0, 3], [2, 6, 3, 2, 5, 6, 0, 4, 1], [4, 0, 1, 4, 3, 0, 3, 2, 0], [4, 1, 0, 4, 0, 3, 4, 3, 2, 3, 0, 5], [0, 2, 4, 0, 1, 2, 1, 3, 2], [3, 0, 6, 1, 2, 7, 2, 4, 7, 2, 5, 4], [0, 1, 2, 2, 1, 3], [4, 1, 0, 4, 0, 2, 2, 0, 3], [5, 2, 4, 5, 3, 2, 6, 0, 1], [0, 4, 1, 1, 4, 7, 2, 5, 6, 2, 6, 3], [3, 7, 2, 0, 1, 5, 0, 5, 4, 5, 1, 6], [3, 2, 0, 3, 0, 5, 2, 4, 0, 1, 0, 6, 4, 6, 0], [4, 3, 2, 4, 1, 3, 4, 0, 1, 5, 3, 1], [4, 6, 1, 4, 1, 0, 6, 3, 1, 5, 1, 2, 3, 2, 1], [1, 4, 3, 1, 3, 0, 0, 3, 2], [1, 0, 2, 3, 1, 2], [1, 4, 0, 1, 2, 4, 2, 3, 4], [0, 3, 1, 0, 5, 3, 0, 4, 5, 2, 3, 5], [5, 2, 3, 1, 5, 3, 1, 3, 4, 1, 4, 0], [4, 2, 3, 4, 3, 0, 0, 3, 1], [0, 1, 2, 0, 2, 4, 0, 4, 5, 4, 2, 3], [2, 4, 6, 2, 6, 1, 4, 5, 6, 0, 6, 3, 5, 3, 6], [3, 4, 0, 3, 0, 2, 2, 0, 1], [3, 1, 0, 2, 3, 0], [0, 1, 7, 6, 2, 4, 6, 4, 5, 4, 2, 3], [1, 0, 3, 1, 3, 6, 0, 4, 3, 2, 3, 5, 4, 5, 3], [1, 6, 0, 1, 5, 6, 1, 7, 5, 4, 5, 7, 2, 3, 8], [5, 1, 0, 5, 0, 3, 4, 2, 0, 2, 3, 0], [4, 5, 2, 4, 2, 3, 5, 0, 2, 6, 2, 1, 0, 1, 2], [0, 4, 1, 5, 2, 3], [3, 4, 0, 3, 0, 2, 1, 5, 0, 5, 2, 0], [1, 2, 0], [1, 0, 2], [1, 0, 4, 5, 3, 2], [0, 1, 4, 5, 3, 2], [4, 0, 5, 4, 1, 0, 6, 3, 2], [4, 0, 1, 2, 5, 3], [1, 2, 7, 3, 0, 6, 4, 8, 5], [1, 4, 0, 1, 5, 4, 2, 6, 3], [2, 7, 3, 0, 6, 1, 6, 4, 1, 6, 5, 4], [3, 0, 1, 2, 0, 3], [3, 0, 4, 3, 2, 0, 2, 1, 0], [2, 5, 4, 2, 3, 5, 0, 1, 6], [0, 2, 1, 0, 4, 2, 0, 5, 4, 4, 3, 2], [4, 3, 2, 4, 0, 3, 0, 1, 3], [5, 3, 2, 1, 3, 5, 1, 4, 3, 1, 0, 4], [0, 1, 3, 0, 3, 5, 0, 5, 4, 2, 5, 3], [1, 0, 4, 1, 4, 2, 2, 4, 3], [1, 2, 0, 3, 2, 1], [1, 3, 4, 1, 0, 3, 0, 2, 3], [4, 3, 6, 4, 2, 3, 5, 0, 1], [4, 2, 3, 4, 3, 1, 4, 1, 0, 5, 1, 3], [3, 4, 2, 3, 6, 4, 1, 5, 0], [1, 2, 6, 3, 0, 7, 0, 5, 7, 0, 4, 5], [2, 7, 4, 2, 3, 7, 0, 1, 5, 1, 6, 5], [5, 4, 1, 5, 1, 0, 4, 2, 1, 6, 1, 3, 2, 3, 1], [4, 0, 1, 4, 2, 0, 2, 3, 0], [0, 2, 1, 2, 3, 1], [1, 7, 0, 2, 3, 4, 2, 4, 5, 4, 3, 6], [0, 4, 2, 0, 2, 1, 1, 2, 3], [4, 0, 1, 4, 3, 0, 4, 2, 3, 3, 5, 0], [4, 1, 0, 4, 0, 3, 3, 0, 2], [2, 3, 1, 2, 1, 4, 3, 6, 1, 0, 1, 5, 6, 5, 1], [3, 2, 0, 1, 3, 0], [0, 4, 1, 3, 2, 5], [0, 6, 1, 2, 7, 3, 8, 5, 4], [3, 0, 1, 3, 2, 0, 5, 4, 6], [7, 5, 4, 6, 1, 2, 1, 3, 2, 1, 0, 3], [6, 3, 2, 7, 0, 1, 5, 4, 8], [6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5], [5, 4, 7, 3, 2, 6, 2, 1, 6, 2, 0, 1], [1, 2, 6, 1, 3, 2, 1, 0, 3, 7, 3, 0, 8, 5, 4], [5, 0, 1, 5, 4, 0, 3, 2, 6], [7, 3, 2, 0, 6, 4, 0, 4, 1, 4, 6, 5], [3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0], [4, 1, 6, 4, 6, 5, 1, 0, 6, 2, 6, 3, 0, 3, 6], [6, 3, 2, 7, 0, 4, 0, 5, 4, 0, 1, 5], [1, 4, 8, 1, 5, 4, 1, 0, 5, 6, 5, 0, 7, 3, 2], [2, 0, 6, 2, 6, 3, 0, 1, 6, 4, 6, 5, 1, 5, 6], [3, 2, 5, 3, 5, 4, 1, 0, 5, 0, 4, 5], [1, 3, 0, 1, 4, 3, 4, 2, 3], [1, 3, 5, 0, 3, 1, 0, 2, 3, 0, 4, 2], [0, 5, 4, 0, 2, 5, 0, 1, 2, 2, 3, 5], [3, 4, 1, 3, 1, 2, 2, 1, 0], [0, 1, 6, 5, 2, 7, 5, 7, 4, 7, 2, 3], [0, 8, 3, 0, 5, 8, 0, 6, 5, 4, 5, 6, 1, 2, 7], [6, 4, 2, 6, 2, 3, 4, 0, 2, 5, 2, 1, 0, 1, 2], [3, 5, 1, 3, 1, 2, 0, 4, 1, 4, 2, 1], [2, 4, 5, 2, 0, 4, 2, 3, 0, 1, 4, 0], [4, 2, 3, 4, 3, 0, 0, 3, 1], [1, 4, 6, 1, 6, 0, 4, 5, 6, 3, 6, 2, 5, 2, 6], [0, 2, 3, 1, 0, 3], [0, 1, 3, 0, 3, 6, 1, 4, 3, 2, 3, 5, 4, 5, 3], [5, 1, 0, 5, 0, 3, 4, 2, 0, 2, 3, 0], [0, 1, 4, 2, 3, 5], [2, 0, 1], [3, 0, 2, 1, 0, 3], [6, 2, 5, 6, 3, 2, 4, 1, 0], [2, 6, 3, 2, 5, 6, 1, 4, 0], [6, 3, 2, 6, 7, 3, 5, 4, 0, 4, 1, 0], [4, 0, 1, 4, 3, 0, 3, 2, 0], [0, 6, 3, 1, 2, 5, 1, 5, 4, 5, 2, 7], [4, 3, 2, 4, 1, 3, 4, 0, 1, 1, 5, 3], [3, 2, 0, 3, 0, 6, 2, 5, 0, 1, 0, 4, 5, 4, 0], [0, 2, 4, 0, 1, 2, 1, 3, 2], [4, 1, 0, 4, 2, 1, 4, 3, 2, 5, 1, 2], [6, 0, 1, 4, 7, 3, 4, 3, 5, 3, 7, 2], [5, 4, 1, 5, 1, 0, 4, 3, 1, 6, 1, 2, 3, 2, 1], [0, 1, 2, 1, 3, 2], [0, 4, 3, 0, 3, 1, 1, 3, 2], [4, 0, 1, 4, 1, 2, 2, 1, 3], [3, 2, 1, 0, 3, 1], [1, 2, 0, 1, 3, 2, 3, 4, 2], [3, 0, 2, 3, 5, 0, 3, 4, 5, 5, 1, 0], [0, 1, 5, 4, 2, 6, 4, 6, 7, 6, 2, 3], [5, 6, 2, 5, 2, 3, 6, 1, 2, 4, 2, 0, 1, 0, 2], [1, 3, 0, 1, 4, 3, 1, 5, 4, 2, 3, 4], [0, 4, 6, 0, 6, 3, 4, 5, 6, 2, 6, 1, 5, 1, 6], [0, 1, 3, 0, 3, 5, 1, 6, 3, 2, 3, 4, 6, 4, 3], [4, 2, 3, 0, 5, 1], [0, 3, 5, 1, 3, 0, 1, 2, 3, 1, 4, 2], [3, 4, 1, 3, 1, 2, 2, 1, 0], [3, 8, 2, 3, 5, 8, 3, 6, 5, 4, 5, 6, 0, 1, 7], [3, 5, 1, 3, 1, 2, 0, 4, 1, 4, 2, 1], [4, 2, 3, 4, 3, 1, 1, 3, 0], [0, 2, 3, 1, 0, 3], [4, 2, 3, 4, 3, 1, 5, 0, 3, 0, 1, 3], [2, 0, 1], [0, 4, 1, 0, 2, 4, 2, 3, 4], [0, 4, 1, 2, 5, 3, 5, 7, 3, 5, 6, 7], [1, 4, 5, 1, 5, 2, 1, 2, 0, 3, 2, 5], [1, 0, 2, 1, 2, 4, 0, 5, 2, 3, 2, 6, 5, 6, 2], [2, 5, 3, 4, 5, 2, 4, 1, 5, 4, 0, 1], [7, 5, 4, 7, 8, 5, 7, 1, 8, 2, 8, 1, 0, 6, 3], [4, 3, 2, 4, 2, 1, 1, 2, 0], [5, 3, 2, 5, 2, 0, 4, 1, 2, 1, 0, 2], [0, 4, 5, 0, 3, 4, 0, 1, 3, 3, 2, 4], [5, 6, 3, 5, 3, 2, 6, 1, 3, 4, 3, 0, 1, 0, 3], [3, 5, 6, 3, 6, 2, 5, 4, 6, 1, 6, 0, 4, 0, 6], [0, 5, 1, 4, 3, 2], [2, 4, 0, 2, 0, 3, 3, 0, 1], [2, 5, 1, 2, 1, 3, 0, 4, 1, 4, 3, 1], [2, 0, 1, 3, 2, 1], [0, 2, 1], [1, 2, 0, 2, 3, 0], [1, 0, 2, 1, 2, 4, 4, 2, 3], [0, 1, 3, 0, 3, 2, 2, 3, 4], [1, 0, 2, 3, 1, 2], [0, 1, 4, 0, 4, 3, 3, 4, 2], [3, 0, 4, 3, 4, 5, 1, 2, 4, 2, 5, 4], [0, 1, 3, 2, 0, 3], [1, 0, 2], [0, 1, 2, 0, 2, 4, 4, 2, 3], [2, 3, 1, 0, 2, 1], [2, 3, 4, 2, 4, 5, 0, 1, 4, 1, 5, 4], [0, 2, 1], [0, 1, 2, 3, 0, 2], [0, 2, 1], [0, 1, 2], []]; // takes 3d data (val >= 0) as a 3d array and returns list of vertices (1d float32) and indices (1d uint16) for the mesh
+
+
+	var generateMeshVTK = function generateMeshVTK(data, threshold) {
+	  // Adaptation of generateMesh for data that comes as lists of vertices and connectivity.
+	  //const start = Date.now();
+	  var verts = [];
+	  var indices = [];
+	  var normals = [];
+
+	  var _loop2 = function _loop2(_i2) {
+	    var otherVertLength = verts.length / 3; // values for cell data points are stored as 1d array
+	    // index = i + 2*j + 4*k (local coords)
+
+	    var cellVals = [];
+	    var cellVertices = []; // generate code for the cell
+
+	    code = 0;
+
+	    for (var l = 0; l < 8; l++) {
+	      var c = vertCoordTable[l];
+	      var vert = data.vertices[data.connectivity[_i2][l]];
+	      var val = data.mach[data.connectivity[_i2][l]];
+	      code |= (val > threshold) << l; // Note that cell vals don't appear in the order of their vertex name!!
+
+	      cellVals[c[0] + 2 * c[1] + 4 * c[2]] = val;
+	      cellVertices[l] = vert;
+	    } // gets appropriate active edges
+
+
+	    var edges = edgeTable[code]; //calculate factors for each edge (distance from 1st connected vertex in index space)
+
+	    var factors = edgesToFactors(edges, cellVals, threshold); //turns edge list into coords
+	    // const theseVerts = edgesToCoords(edges, [i, j, k], [1,1,1], factors);
+
+	    var theseVerts = edgesToCoords2(cellVertices, edges, factors); //create entries for indicies list
+
+	    var tri = triTable[code];
+	    var theseIndices = tri.map(function (a) {
+	      return a + otherVertLength;
+	    }); //calculate normal vector for each vertex
+
+	    verts.push.apply(verts, _toConsumableArray(theseVerts));
+	    indices.push.apply(indices, _toConsumableArray(theseIndices)); //normals.push(...theseNormals);
+	  };
+
+	  for (var _i2 = 0; _i2 < data.connectivity.length; _i2++) {
+	    var code;
+
+	    _loop2(_i2);
+	  } //console.log("mesh generation took: ", Date.now() - start);
+
+
+	  return {
+	    verts: verts,
+	    indices: indices,
+	    normals: normals
+	  };
+	}; // generateMeshVTK
+
+
+	var edgesToFactors = function edgesToFactors(edges, cellVals, threshold) {
+	  var factors = [];
+
+	  for (var _i3 = 0; _i3 < edges.length; _i3++) {
+	    var _verts = edgeToVertsTable[edges[_i3]];
+	    var a = vertCoordTable[_verts[0]];
+	    var b = vertCoordTable[_verts[1]]; // get interpolation factor
+	    // get values at connected vertices
+
+	    var va = cellVals[a[0] + 2 * a[1] + 4 * a[2]];
+	    var vb = cellVals[b[0] + 2 * b[1] + 4 * b[2]];
+	    factors.push((threshold - va) / (vb - va));
+	  }
+
+	  return factors;
+	}; // interpolates between 2 coords
+
+
+	var interpolateCoord = function interpolateCoord(a, b, fac) {
+	  var _final = [];
+
+	  for (var _i4 = 0; _i4 < a.length; _i4++) {
+	    _final[_i4] = a[_i4] * (1 - fac) + b[_i4] * fac;
+	  }
+
+	  return _final;
+	}; // cellCoord is coord of 0 vertex in cell
+
+
+	var edgesToCoords2 = function edgesToCoords2(vertices, edges, factors) {
+	  var coords = []; // loop through each edge
+
+	  for (var _i6 = 0; _i6 < edges.length; _i6++) {
+	    // edgeToVertsTable returns 2 indices of the 2 vertices that make up a particular edge of a reference cube cell. These indices must be further converted into the actual coordinates.
+	    var _verts3 = edgeToVertsTable[edges[_i6]]; // Convert the reference cube vertex indices to 3d reference cube mesh indices.
+
+	    var a = vertices[_verts3[0]];
+	    var b = vertices[_verts3[1]];
+
+	    coords.push.apply(coords, _toConsumableArray(interpolateCoord(a, b, factors[_i6])));
+	  }
+
+	  return coords;
+	};
+
+	var IsoSurface = /*#__PURE__*/function () {
+	  function IsoSurface(configFilename, colorbar) {
+	    _classCallCheck(this, IsoSurface);
+
+	    this.a = 0;
+	    this.b = 1;
+	    this.step = 0.05;
+	    var obj = this;
+	    obj.colorbar = colorbar;
+	    obj.config = {
+	      visible: true,
+	      source: configFilename,
+	      threshold: 0.30545,
+	      remove: function remove() {}
+	    }; // config
+
+	    obj.configPromise = fetch(configFilename).then(function (res) {
+	      return res.json();
+	    });
+	    obj.dataPromise = obj.configPromise.then(function (json) {
+	      // Load the pressure surface. Encoding prescribed in Matlab. Float64 didn't render.
+	      var verticesPromise = fetch(json.vertices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      var indicesPromise = fetch(json.indices).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Uint32Array(ab);
+	      }); // uint32
+
+	      var valuePromise = fetch(json.mach).then(function (res) {
+	        return res.arrayBuffer();
+	      }).then(function (ab) {
+	        return new Float32Array(ab);
+	      }); // float32
+
+	      return Promise.all([verticesPromise, indicesPromise, valuePromise]).then(function (a) {
+	        // Reformat the data to Thanassis' structure.
+	        obj.updateControlsToValuesRange(a[2]); // Connectivity is expected to be an array of arrays, with each sub-array representing a cube cell with 8 indices.
+
+	        var connectivity = bin2array(a[1], 8); // Vertices are expected to be an array of arrays, each sub-array representing a vertex with three components
+
+	        var vertices = bin2array(a[0], 3);
+	        return {
+	          connectivity: connectivity,
+	          vertices: vertices,
+	          mach: a[2]
+	        }; // return
+	      }); // Promise.all
+	    }); // then
+
+	    obj.meshPromise = obj.dataPromise.then(function (d) {
+	      // Calculate an isosurface using Thanassis' code.
+	      var surface = generateMeshVTK(d, obj.config.threshold); // Material.
+
+	      var material = new MeshLambertMaterial({
+	        color: obj.colorbar.getColor(obj.config.threshold),
+	        side: DoubleSide
+	      }); // Geometry
+
+	      var positions = Float32Array.from(surface.verts);
+	      var indices = Uint32Array.from(surface.indices);
+	      var geometry = new BufferGeometry();
+	      geometry.setAttribute('position', new BufferAttribute(positions, 3));
+	      geometry.attributes.position.usage = DynamicDrawUsage;
+	      geometry.setIndex(new BufferAttribute(indices, 1));
+	      geometry.computeVertexNormals();
+	      var mesh = new Mesh(geometry, material);
+	      mesh.name = obj.config.source;
+	      return mesh;
+	    }); // then
+	  } // constructor
+
+
+	  _createClass(IsoSurface, [{
+	    key: "threshold",
+	    get: function get() {
+	      // Default value is 0.
+	      var obj = this;
+	      return obj.config.threshold;
+	    } // get threshold
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      var obj = this; // Update the mesh buffers. This generate mesh still works on i,j,k as the vertex coordinate values.
+
+	      Promise.all([obj.dataPromise, obj.meshPromise]).then(function (a) {
+	        var d = a[0];
+	        var mesh = a[1]; // Generate the surface using Thanassis code.
+
+	        var surface = generateMeshVTK(d, obj.config.threshold);
+	        /* This update here is quite wasteful, and should definitely be improved somehow.
+	        The issue is that the isosurface geometry will have a different number of triangles for different thresholds. This means that the buffer must in some cases be inreased after an interaction, but increasing buffers is not possible. Instead, a buffer large enough to store any size can be initiated, and updated, with the range of the buffer being used by the GPU limited.
+	        */
+
+	        var positions = Float32Array.from(surface.verts);
+	        var indices = Uint32Array.from(surface.indices);
+	        var geometry = new BufferGeometry();
+	        geometry.setAttribute('position', new BufferAttribute(positions, 3));
+	        geometry.attributes.position.usage = DynamicDrawUsage;
+	        geometry.setIndex(new BufferAttribute(indices, 1));
+	        geometry.computeVertexNormals();
+	        mesh.geometry.dispose();
+	        mesh.geometry = geometry;
+	        mesh.material.color.set(obj.colorbar.getColor(obj.threshold));
+	      }); // Promise.all
+	    } // update
+
+	  }, {
+	    key: "updateControlsToValuesRange",
+	    value: function updateControlsToValuesRange(values) {
+	      var obj = this;
+	      var a = parseFloat(getArrayMin(values).toPrecision(3));
+	      var b = parseFloat(getArrayMax(values).toPrecision(3));
+	      var step = (b - a) / 100;
+	      obj.step = step;
+	      obj.a = a;
+	      obj.b = a + 100 * step;
+	      obj.config.threshold = (2 * a + b) / 3;
+
+	      if (obj.gui) {
+	        var tc = obj.gui.controllers.find(function (c) {
+	          return c.property == "threshold";
+	        });
+	        tc.min(obj.a);
+	        tc.max(obj.b);
+	        tc.step(obj.step);
+	        tc.setValue(obj.config.threshold);
+	      } // if
+
+	    } // updateControlsToValuesRange
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      var obj = this;
+	      obj.meshPromise.then(function (mesh) {
+	        sceneWebGL.add(mesh);
+	      }); // then
+	    } // addTo
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(elementsGUI) {
+	      var obj = this; // Add GUI controllers.
+
+	      obj.gui = elementsGUI.addFolder("Isosurface: " + trimStringToLength(obj.config.source, 27));
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.meshPromise.then(function (mesh) {
+	          mesh.visible = v;
+	        });
+	      }); // boolean
+
+	      obj.gui.add(obj.config, "threshold", obj.a, obj.b, obj.step).onChange(function (v) {
+	        obj.update();
+	      }); // slider
+
+	      obj.gui.add(obj.config, "remove"); // button
+	    } // addGUI
+
+	  }]);
+
+	  return IsoSurface;
+	}(); // isoSurface
+
+	function bin2array(binarray, ncomp) {
+	  var r = [];
+
+	  for (var i = 0; i < binarray.length; i += ncomp) {
+	    var c = [];
+
+	    for (var j = 0; j < ncomp; j++) {
+	      c.push(binarray[i + j]);
+	    } // for
+
+
+	    r.push(c);
+	  } // for
+
+
+	  return r;
+	} // bin2array
+
+	var IsosurfaceServerProxy = /*#__PURE__*/function (_IsoSurface) {
+	  _inherits(IsosurfaceServerProxy, _IsoSurface);
+
+	  var _super = _createSuper(IsosurfaceServerProxy);
+
+	  function IsosurfaceServerProxy(configFilename, colorbar) {
+	    var _this;
+
+	    _classCallCheck(this, IsosurfaceServerProxy);
+
+	    _this = _super.call(this, configFilename, colorbar);
+	    _this.fineResolutionTimer = undefined;
+	    _this.fineResolutionInterval = [0, 0];
+
+	    var obj = _assertThisInitialized(_this); // Rough indices are sufficient to produce rough visualisation of meshes.
+
+
+	    obj.roughindices = makeRoughConnectivity(151, 40, 20, 2);
+	    return _this;
+	  } // constructor
+
+
+	  _createClass(IsosurfaceServerProxy, [{
+	    key: "update",
+	    value: function update() {
+	      var obj = this; // Update the mesh buffers. This generate mesh still works on i,j,k as the vertex coordinate values.
+
+	      Promise.all([obj.dataPromise, obj.meshPromise]).then(function (a) {
+	        var d = a[0];
+	        var mesh = a[1];
+	        var drawFineResolution = obj.threshold > obj.fineResolutionInterval[0] && obj.threshold < obj.fineResolutionInterval[1]; //The fine resolution interval should be updated even if the threshold stays within it after the interaction.
+	        // Every update of the threshold interval therefore shouldn't launch an update of the surface, otherwise there will be an endless loop of updates.
+
+	        if (!drawFineResolution) {
+	          obj.updateFineResolutionData();
+	        } // if
+	        // Generate the surface using Thanassis code.
+
+
+	        var surface = generateMeshVTK({
+	          connectivity: drawFineResolution ? d.connectivity : obj.roughindices,
+	          vertices: d.vertices,
+	          mach: d.mach
+	        }, obj.config.threshold);
+	        /* This update here is quite wasteful, and should definitely be improved somehow.
+	        The issue is that the isosurface geometry will have a different number of triangles for different thresholds. This means that the buffer must in some cases be inreased after an interaction, but increasing buffers is not possible. Instead, a buffer large enough to store any size can be initiated, and updated, with the range of the buffer being used by the GPU limited.
+	        */
+
+	        var positions = Float32Array.from(surface.verts);
+	        var indices = Uint32Array.from(surface.indices);
+	        var geometry = new BufferGeometry();
+	        geometry.setAttribute('position', new BufferAttribute(positions, 3));
+	        geometry.attributes.position.usage = DynamicDrawUsage;
+	        geometry.setIndex(new BufferAttribute(indices, 1));
+	        geometry.computeVertexNormals();
+	        mesh.geometry.dispose();
+	        mesh.geometry = geometry;
+	        mesh.material.color.set(obj.colorbar.getColor(obj.threshold));
+	      }); // Promise.all
+	    } // update
+
+	  }, {
+	    key: "updateFineResolutionData",
+	    value: function updateFineResolutionData() {
+	      var obj = this;
+	      clearTimeout(obj.fineResolutionTimer);
+	      obj.fineResolutionTimer = setTimeout(function () {
+	        // Change the fine resolution interval.
+	        obj.fineResolutionInterval = [obj.threshold - obj.step * 10, obj.threshold + obj.step * 10]; // Launch an update to change the visualisation.
+
+	        obj.update();
+	      }, 2000);
+	    } // debounce
+
+	  }]);
+
+	  return IsosurfaceServerProxy;
+	}(IsoSurface); // IsosurfaceServerProxy
+
+	function makeRoughConnectivity(nx, ny, nz, nb) {
+	  // nx=151; ny=40; nz=20; nb=2
+	  // I need to group the cells together. The mesh does not necessarily support the division into groups of NxNxN cells naturally.
+	  // The division is done by constructing new indices, as opposed to collecting old indices, and using hteir components.
+	  // array([   0,    1, 6041, 6040,  151,  152, 6192, 6191])
+	  var nxny = nx * ny; // 6040
+
+	  var nxnynz = nx * ny * nz; // 120800
+
+	  var roughindices = [];
+	  var N = 3; // number of cells to be grouped.
+
+	  var _loop = function _loop(b) {
+	    // block
+	    var bi = b * nxnynz; // Loop throuh vertices (!). Now for every vertex asked the surrounding cell needs to be established.
+
+	    for (var ix = 0; ix < 151 - N; ix += N) {
+	      for (var iy = 0; iy < 40 - N; iy += N) {
+	        for (var iz = 0; iz < 20 - N; iz += N) {
+	          // Is is the current vertex id used as the starting point to create the cube.
+	          var i = ix + iy * nx + iz * nxny;
+	          var i_cell = [i, i + N * 1, i + N * nxny + N * 1, i + N * nxny, i + N * nx, i + N * nx + N * 1, i + N * nxny + N * nx + N * 1, i + N * nxny + N * nx]; // Correct for hte block indices.
+
+	          var i_block = i_cell.map(function (ci) {
+	            return ci + bi;
+	          }); // Store the new cell.
+
+	          roughindices.push(i_block);
+	        } // for
+
+	      } // for
+
+	    } // for
+
+	  };
+
+	  for (var b = 0; b < nb; b++) {
+	    _loop(b);
+	  }
+	  return roughindices;
+	}
+	 // makeRoughConnectivity
+
+	var vertexShader = "\n\t  precision mediump float;\n\t  precision mediump int;\n\t  \n\t  attribute float a_mach;\n\t  varying float v_mach;\n\t  \n\t  void main()    {\n\t\tv_mach = a_mach;\n\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\t  }\n\t";
+	var fragmentShader = "\n\t  precision mediump float;\n\t  precision mediump int;\n\t  \n\t  uniform float u_thresholds[255];\n\t  uniform sampler2D u_colorbar;\n\t  \n\t  varying float v_mach;\n\t  \n\t  \n\t  vec4 sampleColorBar(sampler2D colorbar, float f, float a, float b)\n\t  {\n\t\t// The (f-a)/(b-a) term controls how colors are mapped to values.\n\t\treturn texture2D( colorbar, vec2( 0.5, (f-a)/(b-a) ) );\n\t  }\n\t  \n\t  \n\t  void main()    \n\t  {\n\t\t  \n\t\t// Value mapping limits stored at the end of thresholds.\n\t\tfloat min_mach = u_thresholds[253];\n\t\tfloat max_mach = u_thresholds[254];\n\t\t  \n\t\tgl_FragColor = sampleColorBar( u_colorbar, v_mach, min_mach, max_mach );;\n\t  }\n\t";
+	/*
+	Data should be split up between streamlines and values.
+	Maybe streamlines should also be split up to allow dynamic loading?
+	Make sure the streamlines don't block the geometry build up animation.
+	*/
+
+	var AnimatedStaticStreamlines = /*#__PURE__*/function () {
+	  // Create a cyclic IntegrationTime clock - not cyclic before time should be linear;
+	  // So instead there should be a remainder that gets transformed.
+	  // [ms];
+	  function AnimatedStaticStreamlines(source, uniforms) {
+	    _classCallCheck(this, AnimatedStaticStreamlines);
+
+	    this.on = true;
+	    this.animated = true;
+	    this.lines = [];
+	    this.t0 = performance.now();
+	    this.CurrentShowTime = 0;
+	    this.IntegrationSpan = [0, 1];
+	    this.CycleDuration = 10 * 1e3;
+	    var obj = this;
+	    obj.config = {
+	      source: source,
+	      visible: true,
+	      type: ""
+	    }; // STREAMLINES - keep for further copies.
+
+	    obj.streamlinegeometry = new BufferGeometry();
+	    obj.streamlinematerial = new ShaderMaterial({
+	      uniforms: uniforms,
+	      vertexShader: vertexShader,
+	      fragmentShader: fragmentShader
+	    }); // transparent: true,
+	    // depthTest: false,
+	    // blending: THREE.AdditiveBlending,
+
+	    obj.linesGroup = new Group();
+	    obj.streamlineLoadPromise = fetch(source).then(function (res) {
+	      return res.json();
+	    }).then(function (json) {
+	      obj.IntegrationSpan = json.IntegrationSpan;
+	      return json.data;
+	    });
+	    obj.dataPromise = obj.streamlineLoadPromise.then(function (sa) {
+	      sa.forEach(function (s, i) {
+	        // Interpolate using THREE.CatmullRomCurve3 to create more points?
+	        // Limited to 5000 lines for performance.
+	        // Create all hte lines, but detach some of them afterwards to allow for plotting.
+	        obj.addLine(s);
+	      }); // forEach
+
+	      return obj.lines;
+	    }); // then
+	  } // constructor
+	  // CORE FUNCTIONALITY
+
+
+	  _createClass(AnimatedStaticStreamlines, [{
+	    key: "update",
+	    value: function update() {
+	      var obj = this; // Calculate the current integration time
+
+	      if (obj.animated) {
+	        var t = (performance.now() - obj.t0) % obj.CycleDuration / obj.CycleDuration;
+	        obj.show(t);
+	      }
+	    } // update
+
+	  }, {
+	    key: "addLine",
+	    value: function addLine(streamlineJson) {
+	      var obj = this;
+	      var positions = new Float32Array(streamlineJson.Points);
+	      var a_mach = new Float32Array(streamlineJson.Values);
+	      var geometry = obj.streamlinegeometry.clone();
+	      geometry.setAttribute("position", new BufferAttribute(positions, 3));
+	      geometry.setAttribute("a_mach", new BufferAttribute(a_mach, 1)); // geometry.setDrawRange(0, 0);
+
+	      var line = new Line(geometry, obj.streamlinematerial.clone());
+	      line.tOffset = Math.random();
+	      line.times = streamlineJson.IntegrationTime.reverse(); // reverse so checking for last element under time.
+
+	      obj.lines.push(line);
+	      obj.linesGroup.add(line);
+	    } // addLine
+
+	  }, {
+	    key: "nlines",
+	    value: function nlines(index, count) {
+	      var obj = this;
+	      obj.dataPromise.then(function (lines) {
+	        lines.forEach(function (line, i) {
+	          if (index <= i && i <= index + count) {
+	            line.userData.attached = true;
+	            obj.linesGroup.add(line);
+	          } else {
+	            line.userData.attached = false;
+	            obj.linesGroup.remove(line);
+	          }
+	        }); // forEach
+	      }); // then
+	    } // nlines
+
+	  }, {
+	    key: "show",
+	    value: function show(t) {
+	      var obj = this; // Fadeout was achieved by changing hte color on-the-go....
+	      // That was a lot of work being done all the time - constant traversal of the data, constant communication with the GPU...
+
+	      obj.CurrentShowTime = t;
+	      obj.lines.forEach(function (line) {
+	        if (line.userData.attached) {
+	          // Even if I have the streamlines precomputed I still only move based on hte index position in hte array - still cannot simulate the actual velocity... Ok, but does it just advance to the point while keeping hte ones in hte back?
+	          // Don't increment every redraw, but instead find the index to the correct timestep. That should be the last timestep behind - always lagging a bit?
+	          // Even if the streamlines are recalculated to fit with the desired dt, the update still has to happen based on global time to avoid controls redrawing too fast.
+	          // This is the lagging cycling. For preceding cycling hte times reversal in line initialisation needs to be removed.
+	          // What to do when the reverse index isn't found? Then 0 should be output. Furthermore, stagger the indices by the random offset. But this offset should be in time!!
+	          // Multiply with animated to allow for synchronised view.
+	          var tLead = (t + obj.animated * line.tOffset) % 1 * (obj.IntegrationSpan[1] - obj.IntegrationSpan[0]) + obj.IntegrationSpan[0];
+	          var tTail = Math.max(tLead - 5 * 0.00012, obj.IntegrationSpan[0]); // Age will always be > 0. t e[0,1], tOffset e[0,1]
+
+	          var iLead = line.times.length - 1 - line.times.findIndex(function (v) {
+	            return v <= tLead;
+	          });
+	          var iTail = line.times.length - 1 - line.times.findIndex(function (v) {
+	            return v <= tTail;
+	          });
+
+	          if (obj.collect && line.userData.attached) {
+	            console.log(iLead, iTail);
+	          }
+	          /*
+	          Model it as the end of the line moving and dragging the lines behind itself?
+	          
+	          Either way you pay at one end. Or maybe 
+	          
+	          if 0 is the first index and 100 is the last index: 
+	          start = [0,0,0,0,0,0,1,2,3,4,5,...,95,96,97,98,99,100]
+	          count = [0,1,2,3,4,5,5,5,5,5,5,..., 5, 4, 3, 2, 1, 0]
+	          
+	          */
+
+
+	          var start = iLead;
+	          var count = iLead - iTail;
+	          line.geometry.setDrawRange(start, count);
+	        } // if
+
+	      }); // forEach
+	    } // show
+
+	  }, {
+	    key: "showstatic",
+	    value: function showstatic() {
+	      var obj = this;
+	      obj.animated = false;
+	      obj.lines.forEach(function (line) {
+	        line.geometry.setDrawRange(0, line.times.length - 1);
+	      });
+	    } // showstatic
+
+	  }, {
+	    key: "showanimated",
+	    value: function showanimated() {
+	      var obj = this;
+	      obj.animated = true;
+	    } // showanimated
+
+	  }, {
+	    key: "showsynchronised",
+	    value: function showsynchronised() {
+	      var obj = this;
+	      obj.animated = false;
+	      obj.show(obj.CurrentShowTime);
+	    } // showsynchronised
+
+	  }, {
+	    key: "addTo",
+	    value: function addTo(sceneWebGL) {
+	      var obj = this;
+	      sceneWebGL.add(obj.linesGroup);
+	    } // addTo
+
+	  }, {
+	    key: "addGUI",
+	    value: function addGUI(elementsGUI) {
+	      var obj = this; // lil-gui doesn't allow a new gui to be attached to an existing gui, so instead the container is passed in, and the gui created here, for brevity of code in the main script.
+
+	      /*
+	      Make a GUI menu for the streamlines.
+	      		What should be configurable?
+	      - Integration span
+	      - CycleDuration
+	      - Type of visualisation: static, free animation, synchronised animation
+	      - Flow variable
+	      */
+
+	      obj.gui = elementsGUI.addFolder("Streamlines: " + trimStringToLength(obj.config.source, 22));
+	      obj.gui.add(obj.config, "visible").onChange(function (v) {
+	        obj.linesGroup.visible = v;
+	      }); // boolean
+
+	      var typeConfig = {
+	        "static": function _static() {
+	          obj.showstatic();
+	        },
+	        flowing: function flowing() {
+	          obj.showanimated();
+	        } // ,
+	        // synchronised: function(){ obj.showsynchronised() }
+
+	      };
+	      var type = obj.gui.add(obj.config, "type", [""].concat(Object.keys(typeConfig))); // dropdown
+
+	      type.onChange(function (value) {
+	        if (typeConfig[value]) {
+	          var f = typeConfig[value];
+	          f();
+	        } // if
+
+	      }); // onChange
+	    } // addGUI
+
+	  }]);
+
+	  return AnimatedStaticStreamlines;
+	}(); // AnimatedStaticStreamlines
 
 	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -38228,18 +40402,20 @@
 	    obj.camera = camera; // Create a group here.
 
 	    obj.group = new Group();
-	    console.log(obj);
 	  } // constructor
 
 
 	  _createClass(VolumeAnnotation, [{
 	    key: "add",
-	    value: function add(x, y, z, s) {
-	      // Add a sphere
+	    value: function add(sc) {
+	      // Add a sphere based on a sphere configuration object sc.
 	      var obj = this;
-	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone());
-	      annotationGlow.position.set(x, y, z);
-	      annotationGlow.scale.setScalar(s);
+	      var annotationGlow = new Mesh(annotationSphereGeom.clone(), annotationSphereMaterial.clone()); // annotationGlow.position.set(x, y, z);
+	      // annotationGlow.scale.setScalar( s );
+
+	      annotationGlow.position.copy(sc.position);
+	      annotationGlow.rotation.setFromVector3(sc.rotation);
+	      annotationGlow.scale.copy(sc.scale);
 	      annotationGlow.name = "AnnotationSphere";
 	      obj.group.add(annotationGlow);
 	      return annotationGlow;
@@ -38257,6 +40433,15 @@
 	        obj.group.remove(s);
 	      }); // forEach
 	    } // remove
+
+	  }, {
+	    key: "clear",
+	    value: function clear() {
+	      var obj = this;
+	      obj.group.children.forEach(function (c) {
+	        obj.group.remove(c);
+	      }); // forEach
+	    } // clear
 
 	  }, {
 	    key: "hide",
@@ -38300,11 +40485,32 @@
 	  }, {
 	    key: "geometry",
 	    get: function get() {
-	      // Return json tag object.
-	      var obj = this;
-	      return obj.group.children.map(function (c) {
-	        return [c.position.x, c.position.y, c.position.z, c.scale.x];
+	      // Return json tag object. 
+	      var obj = this; // Extend geometry to include position, scale, and rotation.
+
+	      var g = obj.group.children.map(function (c) {
+	        return {
+	          position: {
+	            x: c.position.x,
+	            y: c.position.y,
+	            z: c.position.z
+	          },
+	          rotation: {
+	            x: c.rotation.x,
+	            y: c.rotation.y,
+	            z: c.rotation.z
+	          },
+	          scale: {
+	            x: c.scale.x,
+	            y: c.scale.y,
+	            z: c.scale.z
+	          }
+	        };
 	      });
+	      g.type = "3d";
+	      return g; //return obj.group.children.map(c=>{
+	      //	return [c.position.x, c.position.y, c.position.z, c.scale.x]
+	      //})
 	    } // get tag
 
 	  }, {
@@ -38336,14 +40542,31 @@
 	}(); // VolumeAnnotation
 
 	var TagButton = /*#__PURE__*/function () {
-	  function TagButton(tag, clickfunction) {
+	  function TagButton(tag, clickfunction, enterfunction, leavefunction, coloroption) {
 	    _classCallCheck(this, TagButton);
 
 	    var obj = this;
 	    obj.tag = tag;
 	    obj.node = html2element("<button class=\"btn-small\">#".concat(tag.name, "</button>"));
-	    obj.on = true; // On mouseover the tags should be highlighted. To highlight geometrical tags the corresponding SVG must be made visible.
+	    obj.on = true;
+	    obj.coloroption = [true, false].includes(coloroption) ? coloroption : true; // On mouseover the tags should be highlighted. To highlight geometrical tags the corresponding SVG must be made visible.
+
+	    obj.node.onmouseenter = function (e) {
+	      if (enterfunction) {
+	        enterfunction();
+	      } // if
+
+	    }; // onmouseenter
+
+
+	    obj.node.onmouseleave = function (e) {
+	      if (leavefunction) {
+	        leavefunction();
+	      } // if
+
+	    }; // onmouseenter
 	    // Onclick the buttons should filter the comments, and toggle the annotations.
+
 
 	    obj.node.onmousedown = function (e) {
 	      e.stopPropagation();
@@ -38366,8 +40589,8 @@
 	    value: function toggle(on) {
 	      // if on == true then turn the button on, otherwise turn it off.
 	      var obj = this;
-	      obj.node.style.background = on ? "black" : "gainsboro";
-	      obj.node.style.color = on ? "white" : "black";
+	      obj.node.style.background = obj.coloroption && on ? "black" : "gainsboro";
+	      obj.node.style.color = obj.coloroption && on ? "white" : "black";
 	      obj.on = on;
 	    } // toggle
 
@@ -38376,27 +40599,68 @@
 	  return TagButton;
 	}(); // TagButton
 
-	var template$5 = "<div>\n  <h3></h3>\n  <div style=\"width: 300px; margin-top: 5px;\">\n</div>";
+	var Tag3DGeometryButton = /*#__PURE__*/function (_TagButton) {
+	  _inherits(Tag3DGeometryButton, _TagButton);
 
-	var TagOverview = /*#__PURE__*/function () {
-	  function TagOverview(title, tagClickFunction) {
-	    _classCallCheck(this, TagOverview);
+	  var _super = _createSuper(Tag3DGeometryButton);
+
+	  function Tag3DGeometryButton(tag, scene, camera) {
+	    var _this;
+
+	    _classCallCheck(this, Tag3DGeometryButton);
+
+	    _this = _super.call(this, tag);
+
+	    var obj = _assertThisInitialized(_this); // VolumeAnnotation requires camera to update the glow.
+
+
+	    obj.annotation = new VolumeAnnotation(camera);
+	    scene.add(obj.annotation.group);
+	    obj.tag.geometry.forEach(function (sc) {
+	      obj.annotation.add(sc);
+	    }); // forEach
+
+	    obj.annotation.hide();
+
+	    obj.node.onmouseenter = function (e) {
+	      obj.annotation.show();
+	    }; // onmousein
+
+
+	    obj.node.onmouseleave = function (e) {
+	      // If the button is turned on, then it shouldn't be turned off here.
+	      if (!obj.on) {
+	        obj.annotation.hide();
+	      }
+	    }; // onmousein
+
+
+	    return _this;
+	  } // constructor
+
+
+	  return Tag3DGeometryButton;
+	}(TagButton); // Tag3DGeometryButton
+
+	var template$6 = "<div>\n  <b style=\"margin-bottom: 0px;\"></b>\n  <div style=\"width: 300px;\">\n</div>";
+
+	var TagOverviewAnnotations = /*#__PURE__*/function () {
+	  function TagOverviewAnnotations(title, scene, camera) {
+	    _classCallCheck(this, TagOverviewAnnotations);
 
 	    this.tags = [];
 	    this.buttons = [];
 	    this.needsupdating = [];
-
-	    this.tagClickFunction = function () {};
-
 	    var obj = this;
-	    obj.node = html2element(template$5); // Set the new title
+	    obj.node = html2element(template$6); // Set the new title
 
-	    obj.node.querySelector("h3").innerHTML = title;
-	    obj.tagClickFunction = tagClickFunction ? tagClickFunction : function () {};
+	    obj.node.querySelector("b").innerHTML = title;
+	    obj.scene = scene;
+	    obj.camera = camera; // The tag visualisation should happen here also.
 	  } // constructor
 
 
-	  _createClass(TagOverview, [{
+	  _createClass(TagOverviewAnnotations, [{
 	    key: "add",
 	    value: function add(newtags) {
 	      var obj = this;
@@ -38404,16 +40668,8 @@
 	        return obj.tags.push(t);
 	      });
 	      var newbuttons = newtags.map(function (tag) {
-
-	        if (tag.geometry) {
-	          tag.geometry = JSON.parse(tag.geometry);
-	          tag.geometry[0] ? tag.geometry[0].length : 0;
-	        } // if
-
-
-	        var b = new TagButton(tag, function () {
-	          obj.tagClickFunction(tag);
-	        });
+	        var b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
+	        obj.needsupdating.push(b.annotation);
 	        return b;
 	      }); // map
 
@@ -38456,8 +40712,8 @@
 
 	  }]);
 
-	  return TagOverview;
-	}(); // TagOverview
+	  return TagOverviewAnnotations;
+	}(); // TagOverviewAnnotations
 
 	var Annotation3DManager = /*#__PURE__*/function () {
 	  function Annotation3DManager(lilguimenu, renderer, scene, camera) {
@@ -38469,29 +40725,31 @@
 	    obj.camera = camera;
 	    obj.raycaster = new Raycaster();
 	    var menufolder = lilguimenu.addFolder("3D Annotations");
-	    obj.menufolder = menufolder;
-	    obj.tag = {
-	      name: ""
-	    }; // LILGUI
+	    obj.menufolder = menufolder; // LILGUI
 	    // Geometry could be adapted to send otehr data as well, such as the different axis scales.
 
 	    obj.config = {
+	      name: "",
 	      place: false,
 	      erase: false,
 	      position: false,
 	      scale: 0.1,
 	      submit: function submit() {
-	        obj.geometry = JSON.stringify(obj.annotations.geometry);
-	        obj.send(obj.tag);
+	        var tag = {
+	          name: obj.config.name,
+	          geometry: JSON.stringify(obj.annotations.geometry)
+	        };
+	        obj.send(tag);
+	        obj.annotations.clear();
 	        obj.clear();
 	      }
 	    }; // tagFormConfig
 
 	    obj.controllers = {};
-	    obj.controllers.name = menufolder.add(obj.tag, "name");
+	    obj.controllers.name = menufolder.add(obj.config, "name");
 	    obj.controllers.place = menufolder.add(obj.config, "place").name("Place📌");
-	    obj.controllers.position = menufolder.add(obj.config, "position").name("Position");
-	    obj.controllers.scale = menufolder.add(obj.config, "scale").name("Scale");
+	    obj.controllers.position = menufolder.add(obj.config, "position").name("Adjust🔧"); // obj.controllers.scale = menufolder.add( obj.config , "scale").name("Scale")
+
 	    obj.controllers.erase = menufolder.add(obj.config, "erase").name("Erase🧽");
 	    obj.controllers.submit = menufolder.add(obj.config, "submit");
 	    obj.activate();
@@ -38507,22 +40765,24 @@
 	    });
 	    obj.controllers.erase.onChange(function (v) {
 	      obj.coordinate(2, v);
-	    }); // ANNOTATIONS AND FUNCTIONALITY
+	    }); // ANNOTATIONS
 
 	    obj.annotations = new VolumeAnnotation(camera);
-	    scene.add(obj.annotations.group);
-	    renderer.domElement.addEventListener("mousemove", function (e) {
+	    scene.add(obj.annotations.group); // FUNCTIONALITY
+
+	    var hostElement = document.getElementById("css");
+	    hostElement.addEventListener("mousemove", function (e) {
 	      obj.pointer.x = e.clientX / window.innerWidth * 2 - 1;
 	      obj.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 	    }); // onPointerMove
 	    // To work with panning etc the annotation adding is disabled when the mouse moves a sufficient distance.
 
 	    var mouseDownEvent;
-	    renderer.domElement.addEventListener("mousedown", function (e) {
+	    hostElement.addEventListener("mousedown", function (e) {
 	      mouseDownEvent = e;
 	    }); // addEventListener
 
-	    renderer.domElement.addEventListener("mouseup", function (e) {
+	    hostElement.addEventListener("mouseup", function (e) {
 	      // Has the mouse moved since mousedown?
 	      if (mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1) {
 	        e.preventDefault(); // How to switch between hte currently active annotation spheres? Longpress? Or should there be an adjust button that brings out the sliders? And a place button that allows annotation adding to be disabled?
@@ -38549,7 +40809,7 @@
 	    }); // addEventListener
 	    // The menu to display vista names.
 
-	    obj.tagoverview = new TagOverview("3D Annotations");
+	    obj.tagoverview = new TagOverviewAnnotations("3D Annotations", scene, camera);
 	  } // constructor
 
 
@@ -38576,7 +40836,24 @@
 	      var p = obj.returnFirstIntersection();
 
 	      if (p) {
-	        var addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.config.scale);
+	        var sc = {
+	          position: {
+	            x: p.point.x,
+	            y: p.point.y,
+	            z: p.point.z
+	          },
+	          rotation: {
+	            x: 0,
+	            y: 0,
+	            z: 0
+	          },
+	          scale: {
+	            x: obj.config.scale,
+	            y: obj.config.scale,
+	            z: obj.config.scale
+	          }
+	        };
+	        var addedSphere = obj.annotations.add(sc);
 	        obj.annotations.select([addedSphere]);
 	      } else {
 	        // No intersection was found, but an annotation should still be placed.
@@ -38652,20 +40929,16 @@
 	    key: "clear",
 	    value: function clear() {
 	      var obj = this;
-	      obj.tag.name = "";
+	      obj.config.name = "";
+	      obj.controllers.name.updateDisplay();
 	    } // clear
 
 	  }, {
 	    key: "activate",
 	    value: function activate() {
 	      var obj = this;
-	      obj.controllers.submit.enable(obj.tag.name && obj.annotations.geometry.length > 0);
+	      obj.controllers.submit.enable(obj.config.name && obj.annotations.geometry.length > 0);
 	    } // activate
-	    // The annotation glow needs to be updated when the camera moves.
-
-	  }, {
-	    key: "update",
-	    value: function update() {} // update
 	    // Add tags that were received from hte server.
 
 	  }, {
@@ -38674,6 +40947,15 @@
 	      var obj = this;
 	      obj.tagoverview.add(annotations3d);
 	    } // add
+	    // Update to properly show the glow
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      var obj = this;
+	      obj.annotations.update();
+	      obj.tagoverview.update();
+	    } // update
 
 	  }]);
 
@@ -38693,7 +40975,7 @@
 	  submitbutton: "\n    color: black;\n\tbackground-color: LightGray;\n\tborder-radius: 0px;\n    border: none;\n\tcursor: pointer;\n\tmargin-top: 7px;\n  "
 	}; // css
 
-	var template$4 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
+	var template$5 = "\n<div>\n  <textarea class=\"comment\" type=\"text\" rows=\"1\" placeholder=\"What do you think?\" style=\"".concat(css$1.textarea, "\"></textarea>\n  <button class=\"submit\" style=\"").concat(css$1.submitbutton, "\"><b>Submit</b></button>\n</div>\n"); // template
 
 	var AddCommentForm = /*#__PURE__*/function () {
 	  function AddCommentForm() {
@@ -38701,7 +40983,7 @@
 
 	    this._user = "";
 	    var obj = this;
-	    obj.node = html2element(template$4); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
+	    obj.node = html2element(template$5); // Author input got omitted because the author also needs to be known when voting on a comment, and I didn't want to implement an input there. That's why now there will be an overall login box that will control everything.
 
 	    obj.commentinput = obj.node.querySelector("textarea.comment");
 	    obj.submitbutton = obj.node.querySelector("button.submit");
@@ -38765,7 +41047,7 @@
 	  timestampspan: "\n\tfont-size: 14px;\n\tmargin-left: 12px;\n  "
 	}; // css
 
-	var template$3 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
+	var template$4 = "\n<div class=\"comment\" style=\"color: LightGray;\">\n  <div class=\"header\">\n    <b class=\"author\"></b>\n\t<span class=\"timestamp\" style=\"".concat(css.timestampspan, "\"></span>\n  </div>\n  <div class=\"body\"></div>\n  <div class=\"footer\">\n    <button class=\"upvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4D</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"downvote\" style=\"").concat(css.button, "\">\n\t  <i class=\"icon\">\uD83D\uDC4E</i>\n\t  <i class=\"vote-number\" style=\"").concat(css.votenumberi, "\"></i>\n\t</button>\n\t<button class=\"reply\" style=\"").concat(css.button, " ").concat(css.replybutton, "\"><b>REPLY</b></button>\n  </div>\n</div>\n"); // template
 
 	var Comment = /*#__PURE__*/function () {
 	  // available tags.
@@ -38776,7 +41058,7 @@
 	    this.availabletags = [];
 	    var obj = this; // Make a new node.
 
-	    obj.node = html2element(template$3); // Fill the template with the options from the config. There must be a comment, and there must be an author.
+	    obj.node = html2element(template$4); // Fill the template with the options from the config. There must be a comment, and there must be an author.
 
 	    obj.config = config; // Fill some options that may not be defined in config.
 
@@ -38966,7 +41248,7 @@
 	// Sort the comments before passing them to the comments below. How will replies be updated? Ultimately everything should be coming from the server??
 	// This is just a template for the controls which allow the replies to be expanded or collapsed. These are invisible at first.
 
-	var template$2 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
+	var template$3 = "\n<div style=\"display: none;\">\n  <div class=\"expand-controls\" style=\"color: blue; cursor: pointer;\">\n    <i class=\"fa fa-caret-down\"></i>\n\t<i class=\"control-text\">View replies</i>\n  </div>\n  <div class=\"replies\"></div>\n</div>\n"; // Maybe the general comments can be added on top, but the replies should follow in chronological order.
 
 	var GeneralComment = /*#__PURE__*/function (_Comment) {
 	  _inherits(GeneralComment, _Comment);
@@ -38985,7 +41267,7 @@
 
 	    obj.replybutton = obj.node.querySelector("button.reply"); // The general comment can have replies associated with it. Handle these here. Furthermore an additional control for expanding, reducing hte comments is required.
 
-	    obj.replynode = html2element(template$2);
+	    obj.replynode = html2element(template$3);
 	    obj.node.appendChild(obj.replynode); // Add the functionality to the caret.
 
 	    obj.repliesExpanded = false;
@@ -39072,7 +41354,7 @@
 	}(Comment); // GeneralComment
 	 // findArrayItemById
 
-	var template$1 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
+	var template$2 = "\n<div class=\"commenting\" style=\"width:300px; margin-top: 10px;\">\n  <div class=\"hideShowText\" style=\"cursor: pointer; margin-bottom: 5px; color: gray;\">\n    <b class=\"text\">Show comments</b>\n\t<b class=\"counter\"></b>\n\t<i class=\"fa fa-caret-down\"></i>\n  </div>\n  <div class=\"commentingWrapper\" style=\"display: none;\">\n    <div class=\"comment-form\"></div>\n    <hr>\n    <div class=\"comment-tags\"></div>\n    <div class=\"comments\" style=\"overflow-y: auto; max-height: 200px;\"></div>\n  </div>\n</div>\n"; // template
 
 	var CommentingManager = /*#__PURE__*/function () {
 	  function CommentingManager() {
@@ -39082,7 +41364,7 @@
 	    this.generalcommentobjs = [];
 	    this.availabletags = [];
 	    var obj = this;
-	    obj.node = html2element(template$1); // Make the form;
+	    obj.node = html2element(template$2); // Make the form;
 
 	    obj.form = new AddCommentForm();
 	    obj.node.querySelector("div.comment-form").appendChild(obj.form.node); // Finally add teh controls that completely hide comments.
@@ -39236,6 +41518,102 @@
 	}(); // CommentingManager
 	 // arrayIncludesAll
 
+	var template$1 = "<div>\n  <b style=\"margin-bottom: 0px;\"></b>\n  <div style=\"width: 300px;\">\n</div>";
+
+	var TagOverview = /*#__PURE__*/function () {
+	  function TagOverview(title, tagClickFunction, tagEnterFunction, tagLeaveFunction, coloroption) {
+	    _classCallCheck(this, TagOverview);
+
+	    this.tags = [];
+	    this.buttons = [];
+	    this.needsupdating = [];
+
+	    this.tagClickFunction = function () {};
+
+	    this.tagEnterFunction = function () {};
+
+	    this.tagLeaveFunction = function () {};
+
+	    this.coloroption = true;
+	    var obj = this;
+	    obj.node = html2element(template$1); // Set the new title
+
+	    obj.node.querySelector("b").innerHTML = title; // The buttons do not turn on/off, because otherwise there would need to be tracking also for when the user navigates away.
+
+	    obj.tagClickFunction = tagClickFunction ? tagClickFunction : function () {};
+	    obj.tagEnterFunction = tagEnterFunction ? tagEnterFunction : function () {};
+	    obj.tagLeaveFunction = tagLeaveFunction ? tagLeaveFunction : function () {};
+	    obj.coloroption = [true, false].includes(coloroption) ? coloroption : true;
+	  } // constructor
+
+
+	  _createClass(TagOverview, [{
+	    key: "add",
+	    value: function add(newtags) {
+	      var obj = this;
+	      newtags.forEach(function (t) {
+	        return obj.tags.push(t);
+	      });
+	      var newbuttons = newtags.map(function (tag) {
+
+	        if (tag.geometry) {
+	          tag.geometry = JSON.parse(tag.geometry);
+	          tag.geometry[0] ? tag.geometry[0].length : 0;
+	        } // if
+
+
+	        var b = new TagButton(tag, function () {
+	          obj.tagClickFunction(tag);
+	        }, function () {
+	          obj.tagEnterFunction(tag);
+	        }, function () {
+	          obj.tagLeaveFunction(tag);
+	        }, obj.coloroption);
+	        return b;
+	      }); // map
+
+	      newbuttons.forEach(function (b) {
+	        obj.buttons.push(b);
+	        obj.node.appendChild(b.node);
+	      }); // forEach
+	    } // add
+
+	  }, {
+	    key: "namevalid",
+	    value: function namevalid(name) {
+	      // If any existing tag has this name the name is not valid.
+	      var obj = this;
+	      return !obj.tags.some(function (tag) {
+	        return tag.name == name;
+	      });
+	    } // namevalid
+
+	  }, {
+	    key: "purge",
+	    value: function purge() {
+	      var obj = this;
+	      obj.tags = [];
+	      obj.buttons.forEach(function (b) {
+	        return b.node.remove();
+	      });
+	      obj.buttons = [];
+	    } // purge
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      // Launch update of all the annotation spheres.
+	      var obj = this;
+	      obj.needsupdating.forEach(function (a) {
+	        a.update();
+	      });
+	    } // update
+
+	  }]);
+
+	  return TagOverview;
+	}(); // TagOverview
+
 	var VistaManager = /*#__PURE__*/function () {
 	  function VistaManager(lilguimenu, arcballcontrols, camera) {
 	    _classCallCheck(this, VistaManager);
@@ -39244,20 +41622,38 @@
 	    obj.arcballcontrols = arcballcontrols;
 	    obj.camera = camera; // The menu to add vistas
 
+	    obj.controllers = {};
 	    obj.addmenuconfig = {
 	      name: "",
 	      submit: function submit() {
-	        console.log(obj.getVista());
+	        obj.submit({
+	          name: obj.addmenuconfig.name,
+	          vista: obj.getVista()
+	        });
+	        obj.addmenuconfig.name = "";
+	        obj.controllers.name.updateDisplay();
 	      }
 	    }; // addmenuconfig
 
 	    var menufolder = lilguimenu.addFolder("Vistas");
-	    menufolder.add(obj.addmenuconfig, "name");
+	    obj.controllers.name = menufolder.add(obj.addmenuconfig, "name");
 	    menufolder.add(obj.addmenuconfig, "submit"); // The menu to display vista names.
 
-	    obj.tagoverview = new TagOverview("Vistas", function (tag) {
+	    var vistaTagClick = function vistaTagClick(tag) {
 	      obj.moveToVista(tag.vista);
-	    });
+	      obj.arcballcontrols.saveState();
+	    };
+
+	    var vistaTagEnter = function vistaTagEnter(tag) {
+	      obj.arcballcontrols.saveState();
+	      obj.moveToVista(tag.vista);
+	    };
+
+	    var vistaTagLeave = function vistaTagLeave(tag) {
+	      obj.arcballcontrols.reset();
+	    };
+
+	    obj.tagoverview = new TagOverview("Vistas", vistaTagClick, vistaTagEnter, vistaTagLeave, false);
 	  } // constructor
 
 
@@ -39304,6 +41700,11 @@
 
 	      return obj.arcballcontrols.getState();
 	    } // getVista
+	    // Dummy function
+
+	  }, {
+	    key: "submit",
+	    value: function submit() {} // submit
 
 	  }]);
 
@@ -39413,34 +41814,44 @@
 	    }); // FOLDERS
 
 	    var fk = obj.session.addFolder("Knowledge");
-	    var fe = obj.session.addFolder("Elements");
-	    var fa = obj.session.addFolder("Add element"); // ELEMENTS
+	    var fe = obj.session.addFolder("Elements"); // let fa = obj.session.addFolder("Add element");
+	    // ELEMENTS
 	    // The elements folder is dynamically populated, and a reference is needed.
 
 	    obj.elements = fe; // ADD ELEMENT
 	    // Populated from a predefined options list.
-
-	    obj.addElementOptions(fa, elementOptions); // VISTAS
+	    // obj.addElementOptions(fa, elementOptions);
+	    // VISTAS
 
 	    obj.vistas = new VistaManager(fk, arcballcontrols, camera);
-	    lefttopdiv.appendChild(obj.vistas.tagoverview.node); // Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
+	    lefttopdiv.appendChild(obj.vistas.tagoverview.node);
 
-	    obj.commenting = new CommentingManager();
-	    lefttopdiv.appendChild(obj.commenting.node); // ANNOTATIONS
+	    obj.vistas.submit = function (tag) {
+	      tag.taskId = obj.sessionId;
+	      tag.author = author;
+	      tag.type = "tag";
+	      obj.ws.send(JSON.stringify(tag));
+	    }; // ANNOTATIONS - maybe they don't fire because of the CSS div?
+
 
 	    obj.volumetags = new Annotation3DManager(fk, renderer, scene, camera);
+	    lefttopdiv.appendChild(obj.volumetags.tagoverview.node);
 
 	    obj.volumetags.send = function (tag) {
 	      // Tag comes with at least the tag name from tagform.
 	      // The author and taskId are obligatory
 	      //Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
-	      tag.taskId = obj.sessionId; // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
+	      tag.taskId = obj.sessionId;
+	      tag.author = author; // Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
 
 	      tag.type = "tag";
 	      obj.ws.send(JSON.stringify(tag));
 	    }; // submit
-	    // Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
+	    // COMMENTING
 
+
+	    obj.commenting = new CommentingManager();
+	    lefttopdiv.appendChild(obj.commenting.node); // Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
 
 	    obj.commenting.form.submit = function (comment) {
 	      // Commenting only requires the author.
@@ -39476,7 +41887,7 @@
 	    value: function update() {
 	      var obj = this;
 	      obj.stats.update();
-	      obj.volumetags.annotations.update();
+	      obj.volumetags.update();
 	    } // update
 
 	  }, {
@@ -39514,8 +41925,7 @@
 	    value: function purge() {
 	      var obj = this;
 	      obj.vistas.tagoverview.purge();
-	      obj.volumetags.tagoverview.purge(); // obj.tagoverview.purge();
-
+	      obj.volumetags.tagoverview.purge();
 	      obj.commenting.purge();
 	    } // purge
 	    // Processing of knowledge entries cannot rely on types, because these are no longer captured. Instead just define what the individual components require.
@@ -39523,7 +41933,8 @@
 	  }, {
 	    key: "process",
 	    value: function process(d) {
-	      var obj = this; // First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
+	      var obj = this;
+	      console.log(d); // First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
 
 	      d = d.filter(function (a) {
 	        return [obj.sessionId].includes(a.taskId);
@@ -39546,9 +41957,18 @@
 
 	      obj.commenting.add(comments); // 3D ANNOTATIONS
 
-	      obj.volumetags.add([]); // VISTAS
+	      var volumes = d.filter(function (a) {
+	        return a.geometry;
+	      });
+	      volumes.forEach(function (v) {
+	        v.geometry = JSON.parse(v.geometry);
+	      });
+	      obj.volumetags.add(volumes); // VISTAS
 
-	      obj.addTestVistas();
+	      var vistas = d.filter(function (a) {
+	        return a.vista;
+	      });
+	      obj.vistas.add(vistas);
 	    } // process
 
 	  }, {
@@ -39850,6 +42270,8 @@
 	new Color();
 	var colorbar = new ColorBar(0.23, 0.78);
 	colorbar.colormap = "d3Spectral"; // Decals.
+
+	var decalGeometries = []; // Geometries that can have a decal added on them.
 	// Make the overall GUI for elements.
 
 	var gui;
@@ -39866,11 +42288,11 @@
 	  var task = "./assets/deltawing/" + "mach_0p5_re_1e5_aoa_15_sweep_60_2500steps"; // For development
 
 	  addWingGeometry(task + '/wing/config.json');
-	  addStaticImage('./assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI / 2, 0, 0); // addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	  // addDecal('assets/20220125_143807_gray.jpg');
-	  // addIsoSurface(task + '/block/config.json');
-	  // addAnimatedStreamlines(task + '/streamlines/vortex.json');
-
+	  addStaticImage('./assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI / 2, 0, 0);
+	  addYoutubeVideo('JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI / 2, Math.PI / 2);
+	  addDecal('assets/20220125_143807_gray.jpg');
+	  addIsoSurface(task + '/block/config.json');
+	  addAnimatedStreamlines(task + '/streamlines/vortex.json');
 	  window.addEventListener('resize', onWindowResize);
 	} // init
 
@@ -39957,6 +42379,8 @@
 	  m.addTo(sceneWebGL);
 	  m.addGUI(gui.elements);
 	  m.dataPromise.then(function (mesh) {
+	    // To allow decals to be placed on it.
+	    decalGeometries.push(mesh); // Subscribe the mesh material to the colorbar for future changes.
 
 	    colorbar.subscribers.push([m, function () {
 	      m.dataPromise.then(function (mesh) {
@@ -40002,6 +42426,39 @@
 	    }); // then
 	  });
 	} // addStaticImage
+
+
+	function addDecal(decalImageFilename) {
+	  // DECAL: make the asset url an input.
+	  var decalobj = new Decal(decalImageFilename, camera, decalGeometries);
+	  decalobj.addTo(sceneWebGL);
+	  decalobj.addGUI(gui.elements); // And append the nodal to the session.
+
+	  document.body.appendChild(decalobj.editor.node); // Disable the pointer long press events if the user is navigating the domain.
+
+	  arcballcontrols.addEventListener('change', function () {
+	    decalobj.raypointer.enabled = false;
+	  }); // change
+	} // addDecal
+
+
+	function addIsoSurface(configFilename) {
+	  var iso = new IsosurfaceServerProxy(configFilename, colorbar);
+	  iso.addTo(sceneWebGL);
+	  iso.addGUI(gui.elements);
+	  console.log("Isosurface", iso);
+	} // addIsoSurface
+
+
+	function addAnimatedStreamlines(configFilename) {
+	  var streamlines = new AnimatedStaticStreamlines(configFilename, colorbar.uniforms);
+	  streamlines.addTo(sceneWebGL);
+	  streamlines.addGUI(gui.elements); // Streamlines need to be made aware of an external update.
+
+	  elementsThatNeedToBeUpdated.push(streamlines);
+	  streamlines.nlines(0, 2000);
+	  console.log(streamlines);
+	} // addAnimatedStreamlines
 	// HUD
 
 
@@ -40057,7 +42514,8 @@
 
 	function addTransformControls() {
 	  // Attach and detach can be used to control the appearance of controls.
-	  transformcontrols = new TransformControls(camera, rendererCSS.domElement);
+	  // transformcontrols = new TransformControls( camera, rendererCSS.domElement );
+	  transformcontrols = new TransformControls(camera, document.getElementById("css"));
 	  transformcontrols.addEventListener('dragging-changed', function (event) {
 	    arcballcontrols.enabled = !event.value;
 	  });

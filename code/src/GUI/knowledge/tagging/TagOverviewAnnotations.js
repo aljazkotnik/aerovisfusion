@@ -2,17 +2,24 @@ import { html2element } from "../../../helpers.js";
 import TagButton from "./TagButton.js";
 import Tag3DGeometryButton from "./Tag3DGeometryButton.js";
 
-let template = `<div style="width: 300px; margin-top: 5px;"></div>`;
+let template = `<div>
+  <b style="margin-bottom: 0px;"></b>
+  <div style="width: 300px;">
+</div>`;
 
-export default class TagOverview{
+export default class TagOverviewAnnotations{
   
   tags = [];
   buttons = [];
   needsupdating = [];
   
-  constructor(scene, camera){
+  constructor(title, scene, camera){
     let obj = this;
 	obj.node = html2element(template);
+	
+	// Set the new title
+	obj.node.querySelector("b").innerHTML = title;
+	
 	obj.scene = scene;
 	obj.camera = camera;
 	// The tag visualisation should happen here also.
@@ -24,24 +31,8 @@ export default class TagOverview{
 	
 	
 	let newbuttons = newtags.map(tag=>{
-		// If the tag has geometry with points with 4 components then its a 3D volume geometry.
-		// Or should a type be simply prescribed?
-		let n = 0;
-		if(tag.geometry){
-			tag.geometry = JSON.parse( tag.geometry );
-			n = tag.geometry[0] ? tag.geometry[0].length : 0;
-		} // if
-		
-		let b;
-		switch(n){
-			case 4:
-			    b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
-				obj.needsupdating.push(b.annotation);
-				break;
-			default:
-				b = new TagButton(tag);
-		} // switch
-	
+		let b = new Tag3DGeometryButton(tag, obj.scene, obj.camera);
+		obj.needsupdating.push(b.annotation);
 		return b
 	}) // map
 	
@@ -77,4 +68,4 @@ export default class TagOverview{
   } // update
   
   
-} // TagOverview
+} // TagOverviewAnnotations

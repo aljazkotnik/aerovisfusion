@@ -1,6 +1,8 @@
 import TagButton from "./TagButton.js";
 import VolumeAnnotation from "./VolumeAnnotation.js";
 
+
+// Adjust so that mouse down keeps the annotation on-screen, and the button reflects this too. Maybe work on picking a random color for the sphere also? Has to work somehow, if the colors can change depending on active status.
 export default class Tag3DGeometryButton extends TagButton{
 	constructor(tag, scene, camera){
 		super(tag);
@@ -11,8 +13,8 @@ export default class Tag3DGeometryButton extends TagButton{
 		obj.annotation = new VolumeAnnotation( camera );
 		scene.add(obj.annotation.group);
 		
-		obj.tag.geometry.forEach(g=>{
-			obj.annotation.add(...g);
+		obj.tag.geometry.forEach(sc=>{
+			obj.annotation.add(sc);
 		}) // forEach
 		obj.annotation.hide();
 		
@@ -22,7 +24,10 @@ export default class Tag3DGeometryButton extends TagButton{
 		} // onmousein
 		
 		obj.node.onmouseleave = function(e){
-			obj.annotation.hide();
+			// If the button is turned on, then it shouldn't be turned off here.
+			if(!obj.on){
+				obj.annotation.hide();
+			}
 		} // onmousein
 		
 	} // constructor

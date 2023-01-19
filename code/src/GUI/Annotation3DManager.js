@@ -1,7 +1,7 @@
 
 import * as THREE from "three";
 import VolumeAnnotation from "./knowledge/tagging/VolumeAnnotation.js";
-import TagOverview from "./knowledge/tagging/TagOverview.js";
+import TagOverviewAnnotations from "./knowledge/tagging/TagOverviewAnnotations.js";
 
 
 export default class Annotation3DManager{
@@ -20,21 +20,24 @@ export default class Annotation3DManager{
 	obj.menufolder = menufolder;
 	
 	
-	obj.tag = {
-		name: "",
-	}
 	
 	
 	// LILGUI
 	// Geometry could be adapted to send otehr data as well, such as the different axis scales.
 	obj.config = {
+		name: "",
 		place: false,
 		erase: false,
 		position: false,
 		scale: 0.1,
 		submit: function(){
-			obj.geometry = JSON.stringify( obj.annotations.geometry );
-			obj.send(obj.tag);
+			let tag = {
+				name: obj.config.name,
+				geometry: JSON.stringify( obj.annotations.geometry )
+			};
+			
+			obj.send(tag);
+			obj.annotations.clear();
 			obj.clear();
 		}
 	} // tagFormConfig
@@ -42,10 +45,10 @@ export default class Annotation3DManager{
 	
 	obj.controllers = {};
 	
-	obj.controllers.name = menufolder.add( obj.tag , "name")
+	obj.controllers.name = menufolder.add( obj.config , "name")
 	obj.controllers.place = menufolder.add( obj.config , "place").name("Place📌")
-	obj.controllers.position = menufolder.add( obj.config , "position").name("Position")
-	obj.controllers.scale = menufolder.add( obj.config , "scale").name("Scale")
+	obj.controllers.position = menufolder.add( obj.config , "position").name("Adjust🔧")
+	// obj.controllers.scale = menufolder.add( obj.config , "scale").name("Scale")
 	obj.controllers.erase = menufolder.add( obj.config , "erase").name("Erase🧽")
 	obj.controllers.submit = menufolder.add( obj.config , "submit")
 	
@@ -67,13 +70,16 @@ export default class Annotation3DManager{
 	
 	
 	
-	
-	
-	// ANNOTATIONS AND FUNCTIONALITY
+	// ANNOTATIONS
 	obj.annotations = new VolumeAnnotation(camera);
 	scene.add( obj.annotations.group )
 	
-	renderer.domElement.addEventListener( "mousemove", function(e){
+	
+	// FUNCTIONALITY
+	const hostElement = document.getElementById("css");
+	
+	
+	hostElement.addEventListener( "mousemove", function(e){
 		obj.pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 		obj.pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
 	}); // onPointerMove
@@ -81,12 +87,12 @@ export default class Annotation3DManager{
 	
 	// To work with panning etc the annotation adding is disabled when the mouse moves a sufficient distance.
 	var mouseDownEvent
-	renderer.domElement.addEventListener("mousedown", function(e){
+	hostElement.addEventListener("mousedown", function(e){
 		mouseDownEvent = e;
 	}) // addEventListener
 
 	
-	renderer.domElement.addEventListener("mouseup", function(e){
+	hostElement.addEventListener("mouseup", function(e){
 	
 		// Has the mouse moved since mousedown?
 		if(mouseEventMovementDistanceSquared(mouseDownEvent, e) < 1){
@@ -110,7 +116,7 @@ export default class Annotation3DManager{
 	
 	
 	// The menu to display vista names.
-	obj.tagoverview = new TagOverview("3D Annotations");
+	obj.tagoverview = new TagOverviewAnnotations("3D Annotations", scene, camera);
 	
   } // constructor
   
@@ -138,7 +144,12 @@ export default class Annotation3DManager{
 	  // Place on a xy plane going through the domain midpoint?
 	  let p = obj.returnFirstIntersection();
 	  if(p){
-		let addedSphere = obj.annotations.add(p.point.x, p.point.y, p.point.z, obj.config.scale);
+		const sc = {
+			position: {x: p.point.x, y: p.point.y, z: p.point.z},
+			rotation: {x: 0, y: 0, z: 0},
+			scale: {x: obj.config.scale, y: obj.config.scale, z: obj.config.scale}
+		}
+		let addedSphere = obj.annotations.add(sc);
 		obj.annotations.select([addedSphere]);		
 	  } else {
 		// No intersection was found, but an annotation should still be placed.
@@ -206,27 +217,20 @@ export default class Annotation3DManager{
   // Dummy function.
   changeTransformObject(v){}
   
-  
-  
-  
-  send(tag){
-
-  } // send
+  send(tag){} // send
   
   clear(){
 	  let obj = this;
-	  obj.tag.name = ""
+	  obj.config.name = "";
+	  obj.controllers.name.updateDisplay();
   } // clear
   
   
   activate(){
 	  let obj = this;
-	  obj.controllers.submit.enable( obj.tag.name && obj.annotations.geometry.length > 0 );
+	  obj.controllers.submit.enable( obj.config.name && obj.annotations.geometry.length > 0 );
   } // activate
   
-  
-  // The annotation glow needs to be updated when the camera moves.
-  update(){} // update
   
   
   // Add tags that were received from hte server.
@@ -234,6 +238,14 @@ export default class Annotation3DManager{
 	let obj = this;
 	obj.tagoverview.add( annotations3d );
   } // add
+  
+  
+  // Update to properly show the glow
+  update(){
+	let obj = this;
+	obj.annotations.update();
+	obj.tagoverview.update();
+  } // update
   
   
 } // Annotation3DManager

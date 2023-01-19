@@ -97,12 +97,10 @@ function init() {
 	// For development
 	addWingGeometry( task + '/wing/config.json');
 	addStaticImage( './assets/schlieren_mon_15p_0s_flat_side_flipped.jpg', 1, 0.4, 100, 0, Math.PI/2, 0, 0);
-	// addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
-	// addDecal('assets/20220125_143807_gray.jpg');
-	
-	// addIsoSurface(task + '/block/config.json');
-	
-	// addAnimatedStreamlines(task + '/streamlines/vortex.json');
+	addYoutubeVideo( 'JWOH6wC0uTU', 1, 0.8, 100, 0, 0, Math.PI/2, Math.PI/2 );
+	addDecal('assets/20220125_143807_gray.jpg');
+	addIsoSurface(task + '/block/config.json');
+	addAnimatedStreamlines(task + '/streamlines/vortex.json');
 
 	window.addEventListener( 'resize', onWindowResize );
 	
@@ -236,7 +234,6 @@ function addYoutubeVideo(id, w, x, y, z, rx, ry, rz){
 	// By default the video is oriented witth the width along the x axis and height along the y axis.
 	// Therefore it needs to first be rotated around the z axis by -90degrees, and then along the y axis for 90 degrees.
 
-	
 	let iv = new IframeVideo( id, w, x, y, z, rx, ry, rz );
 	
 	iv.addTo( sceneCSS, sceneWebGL );
@@ -397,7 +394,8 @@ function setGizmoOpacity(active){
 
 function addTransformControls(){
 	// Attach and detach can be used to control the appearance of controls.
-	transformcontrols = new TransformControls( camera, rendererCSS.domElement );
+	// transformcontrols = new TransformControls( camera, rendererCSS.domElement );
+	transformcontrols = new TransformControls( camera, document.getElementById("css") );
 	transformcontrols.addEventListener( 'dragging-changed', function ( event ){
 		arcballcontrols.enabled = ! event.value;
 	});

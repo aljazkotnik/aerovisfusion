@@ -26,23 +26,37 @@ export default class VistaManager{
 	
 	
 	// The menu to add vistas
+	obj.controllers = {};
+	
 	obj.addmenuconfig = {
 		name: "",
 		submit: function(){
-			console.log( obj.getVista() )
+			obj.submit({
+				name: obj.addmenuconfig.name,
+				vista: obj.getVista()
+			})
+			obj.addmenuconfig.name = "";
+			obj.controllers.name.updateDisplay()
 		}
 	}; // addmenuconfig
 	
 	let menufolder = lilguimenu.addFolder("Vistas");
-	menufolder.add( obj.addmenuconfig, "name" );
+	obj.controllers.name = menufolder.add( obj.addmenuconfig, "name" );
 	menufolder.add( obj.addmenuconfig, "submit" );
 	
 	
 	
 	// The menu to display vista names.
-	obj.tagoverview = new TagOverview("Vistas", function(tag){
-		obj.moveToVista( tag.vista )
-	});
+	const vistaTagClick = function(tag){ 
+	    obj.moveToVista( tag.vista );
+		obj.arcballcontrols.saveState();
+	};
+	const vistaTagEnter = function(tag){ 
+		obj.arcballcontrols.saveState();
+		obj.moveToVista( tag.vista ) 
+	};
+	const vistaTagLeave = function(tag){ obj.arcballcontrols.reset(); }
+	obj.tagoverview = new TagOverview("Vistas", vistaTagClick, vistaTagEnter, vistaTagLeave, false);
 	
 	
 	
@@ -90,6 +104,9 @@ export default class VistaManager{
 	return obj.arcballcontrols.getState();
 
   } // getVista
+  
+  // Dummy function
+  submit(){} // submit
   
 } // VistaManager
 

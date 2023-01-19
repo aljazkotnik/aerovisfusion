@@ -126,7 +126,7 @@ export default class SessionGUI{
 		// FOLDERS
 		let fk = obj.session.addFolder("Knowledge");
 		let fe = obj.session.addFolder("Elements");
-		let fa = obj.session.addFolder("Add element");
+		// let fa = obj.session.addFolder("Add element");
 		
 		
 		
@@ -137,7 +137,7 @@ export default class SessionGUI{
 		
 		// ADD ELEMENT
 		// Populated from a predefined options list.
-		obj.addElementOptions(fa, elementOptions);
+		// obj.addElementOptions(fa, elementOptions);
 		
 		
 		
@@ -145,23 +145,28 @@ export default class SessionGUI{
 		// VISTAS
 		obj.vistas = new VistaManager( fk, arcballcontrols, camera );
 		lefttopdiv.appendChild( obj.vistas.tagoverview.node );
+		obj.vistas.submit = function(tag){
+			tag.taskId = obj.sessionId;
+			tag.author = author;
+			tag.type = "tag";
+	
+			obj.ws.send( JSON.stringify( tag ) );
+		};
 		
-		// Add in the commenting system. The metadata filename is used as the id of this 'video', and thus this player. The node needs to be added also.
-		obj.commenting = new CommentingManager();
-		lefttopdiv.appendChild( obj.commenting.node );
 		
 		
 		
-		// ANNOTATIONS
+		// ANNOTATIONS - maybe they don't fire because of the CSS div?
 		obj.volumetags = new Annotation3DManager(fk, renderer, scene, camera);
+		lefttopdiv.appendChild( obj.volumetags.tagoverview.node );
 		obj.volumetags.send = function(tag){
 			// Tag comes with at least the tag name from tagform.
 			
 			// The author and taskId are obligatory
 			//Author is required to fom groups for the treenavigation, and the taskId allows the annotations to be piped to the corresponding data. 
-			
 			tag.taskId = obj.sessionId;
-
+			tag.author = author;
+			
 
 			// Type tag is assigned so that tags are distinguished from queries and heartbeat pings. Tag type combinations are allowed by always extracting whatever is possible from hte tags. Possible values are controlled for on the server side.
 			tag.type = "tag";
@@ -172,20 +177,9 @@ export default class SessionGUI{
 		} // submit
 		
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		// COMMENTING
+		obj.commenting = new CommentingManager();
+		lefttopdiv.appendChild( obj.commenting.node );
 		
 		// Ah, with the commenting I want to have general comments and replies. And for the replies it's still the commentform that is used. So maybe that can be configured here actually. Ah, but it can't, because it depends on the dynamically generated comment DOM elements.
 		obj.commenting.form.submit = function(comment){
@@ -214,12 +208,34 @@ export default class SessionGUI{
 		
 		
 		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+		
+		
+		
+		
 	} // constructor
 	
 	update(){
 		let obj = this;
 		obj.stats.update();
-		obj.volumetags.annotations.update();
+		obj.volumetags.update();
 	} // update
 	
 	
@@ -261,7 +277,6 @@ export default class SessionGUI{
 		let obj = this;
 		obj.vistas.tagoverview.purge();
 		obj.volumetags.tagoverview.purge();
-		// obj.tagoverview.purge();
 		obj.commenting.purge();
 	} // purge
   
@@ -270,7 +285,7 @@ export default class SessionGUI{
 	// Processing of knowledge entries cannot rely on types, because these are no longer captured. Instead just define what the individual components require.
 	process(d){
 		let obj = this;
-		
+		console.log(d)
 		
 		// First a nice KLUDGE to get us going - it should only display knowledge relevant to this demo, and so filter out anything with an inappropriate taskId.
 		d = d.filter(a=>[obj.sessionId].includes(a.taskId));
@@ -299,13 +314,16 @@ export default class SessionGUI{
 		
 		
 		// 3D ANNOTATIONS
-		obj.volumetags.add([])
+		let volumes = d.filter(a=>a.geometry);
+		volumes.forEach(v=>{v.geometry = JSON.parse(v.geometry)});
+		obj.volumetags.add(volumes)
 		
 		
 		
 		
 		// VISTAS
-		obj.addTestVistas();
+		let vistas = d.filter(a=>a.vista);
+		obj.vistas.add(vistas)	
 		
 		
 	} // process
