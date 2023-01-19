@@ -191,7 +191,7 @@ function setupScene(){
 	
 	
 	// APPEND RENDERES
-	// document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
+	document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
 	document.getElementById('webgl').appendChild( rendererWebGL.domElement );
 	
 
@@ -509,6 +509,6 @@ function animate() {
 function render(){
 	
 	rendererWebGL.render(sceneWebGL, camera);
-	// rendererCSS.render(sceneCSS, camera );
+	rendererCSS.render(sceneCSS, camera );
 	
 } // render

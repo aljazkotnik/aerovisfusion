@@ -42367,8 +42367,8 @@
 
 	  rendererWebGL.domElement.style.zIndex = 1;
 	  rendererWebGL.name = "rendererWebGL"; // APPEND RENDERES
-	  // document.getElementById( 'css' ).appendChild( rendererCSS.domElement );
 
+	  document.getElementById('css').appendChild(rendererCSS.domElement);
 	  document.getElementById('webgl').appendChild(rendererWebGL.domElement);
 	} // setupScene
 	// SCENE ELEMENTS:
@@ -42640,7 +42640,8 @@
 
 
 	function render() {
-	  rendererWebGL.render(sceneWebGL, camera); // rendererCSS.render(sceneCSS, camera );
+	  rendererWebGL.render(sceneWebGL, camera);
+	  rendererCSS.render(sceneCSS, camera);
 	} // render
 
 }());
