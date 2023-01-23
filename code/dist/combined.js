@@ -41718,7 +41718,7 @@
 	    _classCallCheck(this, SessionGUI);
 
 	    var obj = this;
-	    var author = "Aljaz";
+	    var author = "Visitor";
 	    obj.sessionId = "Delta wing";
 	    obj.dom = html2element(template); // Setup the connection with the server.
 

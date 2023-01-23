@@ -20,7 +20,7 @@ const template = `
 export default class SessionGUI{
 	constructor(elementOptions, renderer, scene, camera, arcballcontrols){
 		let obj = this;
-		const author = "Aljaz"
+		const author = "Visitor"
 		obj.sessionId = "Delta wing";
 		obj.dom = html2element(template);
 		
